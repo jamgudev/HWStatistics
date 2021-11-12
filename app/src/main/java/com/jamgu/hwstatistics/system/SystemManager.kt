@@ -58,7 +58,7 @@ object SystemManager {
         try {
             val isLightDeviceIdleModeMethod: Method = pm.javaClass.getDeclaredMethod("isLightDeviceIdleMode")
             result = isLightDeviceIdleModeMethod.invoke(pm) as? Boolean
-            Log.d("jamgu", "result = $result")
+//            Log.d("jamgu", "result = $result")
         } catch (e: IllegalAccessException) {
             Log.e(TAG, "Reflection failed for isLightDeviceIdleMode: $e", e)
         } catch (e: InvocationTargetException) {
