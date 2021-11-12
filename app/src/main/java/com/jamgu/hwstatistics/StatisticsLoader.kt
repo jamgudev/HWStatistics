@@ -3,7 +3,6 @@ package com.jamgu.hwstatistics
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Intent
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
@@ -14,13 +13,12 @@ import androidx.fragment.app.FragmentActivity
 import com.jamgu.hwstatistics.brightness.BrightnessManager
 import com.jamgu.hwstatistics.cpu.CPU
 import com.jamgu.hwstatistics.cpu.CPUInfoManager
-import com.jamgu.hwstatistics.cpu.CpuUtil
-import com.jamgu.hwstatistics.cpu.other.CpuUtilisationReader
 import com.jamgu.hwstatistics.mediastate.MediaStateManager
 import com.jamgu.hwstatistics.network.NetWorkManager
 import com.jamgu.hwstatistics.phonestate.PhoneStateManager
 import com.jamgu.hwstatistics.system.SystemManager
 import com.jamgu.hwstatistics.thread.ThreadPool
+import com.jamgu.hwstatistics.timer.RoughTimer
 import com.jamgu.hwstatistics.util.roundToDecimals
 import com.permissionx.guolindev.PermissionX
 import java.lang.ref.WeakReference
@@ -31,20 +29,21 @@ import java.util.Date
 /**
  * Created by jamgu on 2021/10/14
  */
-class StatisticsLoader: INeedPermission {
+class StatisticsLoader : INeedPermission {
 
     private lateinit var weakContext: WeakReference<Context>
 
     companion object {
         private const val TAG = "StatisticsLoader"
-        private const val TOTAL_LENGTH = 10
+        private const val TOTAL_LENGTH = 100000
     }
 
     private var mTimer: ValueAnimator? = null
+    private var mRoughTimer: RoughTimer? = null
     private var mHandlerThread: HandlerThread? = null
 
     private var uiCallback: ((String) -> Unit)? = null
-    private val data: ArrayList<ArrayList<Any>> = ArrayList()
+    private val mData: ArrayList<ArrayList<Any>> = ArrayList()
 
     fun init(ctx: Context, callback: ((String) -> Unit)?): StatisticsLoader {
         mHandlerThread = HandlerThread("Statistics Thread")
@@ -52,7 +51,7 @@ class StatisticsLoader: INeedPermission {
 
         uiCallback = callback
         weakContext = WeakReference(ctx)
-        data.clear()
+        mData.clear()
         val context = weakContext.get()
         PhoneStateManager.register(context)
         BrightnessManager.registerReceiver(context)
@@ -63,19 +62,28 @@ class StatisticsLoader: INeedPermission {
     @SuppressLint("SimpleDateFormat")
     private fun start() {
         if (mTimer == null) {
-            mTimer = ValueAnimator.ofInt(TOTAL_LENGTH, 0)
+            mTimer = ValueAnimator.ofInt(0, TOTAL_LENGTH)
         }
 
-        data.clear()
+        mData.clear()
 
         var lastVal = -1
         var currentRepeatCount = 0
         var lastTimeMills = 0L
         var lastTimeString = ""
+        var dataTemp = ArrayList<Any>()
+        var tempDataTimes = 1f
         mTimer?.apply {
             addUpdateListener {
                 val curVal = it.animatedValue
-                if (curVal is Int && curVal != lastVal) {
+                // 重置
+                if (curVal is Int && lastVal - curVal >= 10000) {
+                    lastVal = -1
+                    currentRepeatCount++
+                }
+
+//                Log.d(TAG, "curVal = $curVal, lastVal = $lastVal")
+                if (curVal is Int && (curVal - 200) >= lastVal) {
                     if (curVal == 10) currentRepeatCount++
 
                     // do something
@@ -85,87 +93,199 @@ class StatisticsLoader: INeedPermission {
 
                     // 无限循环时，下一次开启计时的时间，与上一次结束的时间之间的间隔很短，
                     // 会多一次的数据，所以去重
+//                    if (curTimeString == lastTimeString) {
+//                        return@addUpdateListener
+//                    }
+//
+//                    val data = getData(curTimeString, currentTimeMillis)
+//
+//                    mData.add(data)
+
+                    val newData = getData(curTimeString, currentTimeMillis)
+
+                    // 先缓存
                     if (curTimeString == lastTimeString) {
-                        return@addUpdateListener
+                        // 还没数据，直接赋值
+                        if (dataTemp.isEmpty()) {
+                            dataTemp = newData
+                            tempDataTimes = 1f
+                        } else {    // 有数据了，叠加
+                            dataTemp.plus(newData)
+                            tempDataTimes += 1f
+                        }
+                    } else {
+                        if (dataTemp.isNotEmpty()) {
+                            mData.add(dataTemp.divideBy(tempDataTimes))
+                            Log.d(TAG, "curTimeString: $curTimeString, data_num = $tempDataTimes")
+                        }
+                        tempDataTimes = 1f
+                        dataTemp = newData
                     }
 
-                    val screenOn = getScreenStatus()
-                    val screenBrightness = getScreenBrightness()
-                    val phoneState = getPhoneState()
-                    val systemOnStatus = getSystemStatus()
-                    val musicState = getMusicState()
-                    val networkType = getNetworkType()
-                    val netWorkSpeed = getNetWorkSpeed()
-                    val cpuInfo = getCpuInfo()
-                    val cpuTotalUsage = getCpuTotalUsage()
-
-                    val domain = Builder2().apply {
-                        curTimeMills(curTimeString)
-                        screenOn(screenOn)
-                        screenBrightness(screenBrightness)
-                        if (phoneState.size == 2) {
-                            phoneRing(phoneState[0])
-                            phoneOffHook(phoneState[1])
-                        }
-                        systemOn(systemOnStatus)
-                        musicOn(musicState)
-                        if (networkType >= 0) {
-                            // wifi
-                            if (networkType == 1) {
-                                wifiNetwork(1)
-                                mobileNetwork(0)
-                            } else { // mobile
-                                wifiNetwork(0)
-                                mobileNetwork(1)
-                            }
-                        }
-                        networkSpeed(netWorkSpeed)
-                        totalCpu(cpuTotalUsage)
-                        cpus(cpuInfo)
-                    }.buildArray()
-
-                    data.add(domain)
+//                    uiCallback?.invoke("TS: $curTimeString, TM: $currentTimeMillis")
 
                     lastTimeString = curTimeString
                     lastTimeMills = currentTimeMillis
-
-                    val statisticText = "curTimeMils: $curTimeString, $currentTimeMillis"
-//                            + "screen_on: $screenOn，" +
-//                            "screen_br: $screenBrightness, phone_state_ringing: ${phoneState[0]}, " +
-//                            "phone_state_off_hook: ${phoneState[1]}, system_on: $systemOnStatus, " +
-//                            "music_on: $musicState, network_type: $networkType, network_speed: $netWorkSpeed kb/s, " +
-//                            "\n\n" +
-//                            "cpus: $cpuInfo"
-
-                    Log.d(TAG, "curVal = $curVal, curRepeat = $currentRepeatCount, info:| $statisticText")
-                    uiCallback?.invoke(statisticText)
-
+                    Log.d(TAG, "curVal = $curVal, curRepeat = $currentRepeatCount")
                     lastVal = curVal
                 }
             }
 
             interpolator = LinearInterpolator()
-            duration = TOTAL_LENGTH * 1000L
+            duration = 100 * 1000L
             repeatCount = INFINITE
             start()
         }
     }
 
-    fun stop() {
-        if (mTimer?.isRunning == true) {
-            destroyTimer()
+    private fun getData(curTimeString: String, currentTimeMillis: Long): ArrayList<Any> {
+        val screenOn = getScreenStatus()
+        val screenBrightness = getScreenBrightness()
+        val phoneState = getPhoneState()
+        val systemOnStatus = getSystemStatus()
+        val musicState = getMusicState()
+        val networkType = getNetworkType()
+        val netWorkSpeed = getNetWorkSpeed()
+        val cpuInfo = getCpuInfo()
+        val cpuTotalUsage = getCpuTotalUsage()
+
+        val domain = Builder2().apply {
+            curTimeMills(curTimeString)
+            screenOn(screenOn)
+            screenBrightness(screenBrightness)
+            if (phoneState.size == 2) {
+                phoneRing(phoneState[0])
+                phoneOffHook(phoneState[1])
+            }
+            systemOn(systemOnStatus)
+            musicOn(musicState)
+            if (networkType >= 0) {
+                // wifi
+                if (networkType == 1) {
+                    wifiNetwork(1)
+                    mobileNetwork(0)
+                } else { // mobile
+                    wifiNetwork(0)
+                    mobileNetwork(1)
+                }
+            }
+            networkSpeed(netWorkSpeed)
+            totalCpu(cpuTotalUsage)
+            cpus(cpuInfo)
+        }.buildArray()
+
+        return domain
+    }
+
+    @SuppressLint("SimpleDateFormat")
+    private fun startRoughly() {
+        val handlerThread = mHandlerThread ?: return
+
+        if (mRoughTimer == null) {
+            mRoughTimer = RoughTimer(handlerThread.looper)
         }
+
+        mData.clear()
+
+        var lastTimeString = ""
+        var dataTemp = ArrayList<Any>()
+        var tempDataTimes = 1f
+        mRoughTimer?.run({
+            // do something
+            val currentTimeMillis = System.currentTimeMillis()
+            val sdf = SimpleDateFormat("yyyy/MM/dd HH:mm:ss")
+            val curTimeString: String = sdf.format(Date(currentTimeMillis))
+
+            val newData = getData(curTimeString, currentTimeMillis)
+
+            // 先缓存
+            if (curTimeString == lastTimeString) {
+                // 还没数据，直接赋值
+                if (dataTemp.isEmpty()) {
+                    dataTemp = newData
+                    tempDataTimes = 1f
+                } else {    // 有数据了，叠加
+                    dataTemp.plus(newData)
+                    tempDataTimes += 1f
+                }
+            } else {
+                if (dataTemp.isNotEmpty()) {
+                    mData.add(dataTemp.divideBy(tempDataTimes))
+                    Log.d(TAG, "curTimeString: $curTimeString, data_num = $tempDataTimes")
+                }
+                tempDataTimes = 1f
+                dataTemp = newData
+            }
+
+            lastTimeString = curTimeString
+//            uiCallback?.invoke("TS: $curTimeString, TM: $currentTimeMillis")
+
+        }, 200)
 
     }
 
+    /**
+     * 传入newData，会将两者相加
+     */
+    private fun ArrayList<Any>.plus(newData: ArrayList<Any>?): ArrayList<Any> {
+        if (newData.isNullOrEmpty() || this.isNullOrEmpty()) return this
+
+        this.forEachIndexed { i, it ->
+            if (i == 0) return@forEachIndexed
+
+            if (it is Number) {
+                if (it is Float) {
+                    val newVal = it.plus(newData[i].toString().toFloat())
+                    this[i] = newVal
+                } else if (it is Int) {
+                    val newVal = it.plus(newData[i].toString().toInt())
+                    this[i] = newVal
+                }
+            }
+        }
+
+        return this
+    }
+
+    /**
+     * 传入分母，会将列表内各元素分别处于它
+     */
+    private fun ArrayList<Any>.divideBy(divider: Float): ArrayList<Any> {
+        if (this.isNullOrEmpty()) return this
+
+        this.forEachIndexed { i, it ->
+            if (i == 0) return@forEachIndexed
+
+            if (it is Number) {
+                if (it is Float) {
+                    val newVal = it / divider
+                    this[i] = newVal.roundToDecimals(2)
+                } else if (it is Int) {
+                    val newVal = it / divider
+                    this[i] = newVal.roundToDecimals(2)
+                }
+            }
+        }
+
+        return this
+    }
+
+
+    fun stop() {
+        if (mTimer?.isRunning == true || mRoughTimer?.isStarted() == true) {
+            destroyTimer()
+        }
+    }
+
     fun isStarted(): Boolean {
-        return mTimer?.isStarted == true
+        return mTimer?.isStarted == true || mRoughTimer?.isStarted() == true
     }
 
     fun startNonMainThread() {
         mHandlerThread?.let {
             Handler(it.looper).post {
                 start()
+//                startRoughly()
             }
         }
     }
@@ -176,12 +296,54 @@ class StatisticsLoader: INeedPermission {
         PhoneStateManager.unregister(context)
         BrightnessManager.unregisterReceiver(context)
         SystemManager.unregisterSystemReceiver(context)
-        data.clear()
+        mData.clear()
         weakContext.clear()
         mHandlerThread?.quitSafely()
     }
 
-    fun getData() = data
+    fun getData(): ArrayList<ArrayList<Any>> {
+        mData.add(0,
+            arrayListOf(
+                "cur_time_mills",
+                "system_on",
+                "screen_on",
+                "screen_brightness",
+                "music_on",
+                "phone_ring",
+                "phone_off_hook",
+                "wifi_network",
+                "mobile_network",
+                "network_speed",
+                "cpu0",
+                "cpu1",
+                "cpu2",
+                "cpu3",
+                "cpu4",
+                "cpu5",
+                "cpu6",
+                "cpu7",
+//                "cpuTemp0",
+//                "cpuTemp1",
+//                "cpuTemp2",
+//                "cpuTemp3",
+//                "cpuTemp4",
+//                "cpuTemp5",
+//                "cpuTemp6",
+//                "cpuTemp7",
+                "cpu_total_util",
+                "cpu0_util",
+                "cpu1_util",
+                "cpu2_util",
+                "cpu3_util",
+                "cpu4_util",
+                "cpu5_util",
+                "cpu6_util",
+                "cpu7_util",
+                "avg_p",
+            )
+        )
+        return mData
+    }
 
     fun requestedPermission(context: FragmentActivity?): Boolean {
         val permissions = ArrayList<String>().apply {
@@ -228,6 +390,12 @@ class StatisticsLoader: INeedPermission {
             it.removeAllUpdateListeners()
         }
         mTimer = null
+
+        mRoughTimer?.let {
+            if (it.isStarted())
+                it.close()
+        }
+        mRoughTimer = null
     }
 
     /**
@@ -300,12 +468,15 @@ class StatisticsLoader: INeedPermission {
             cpuUtils = cpuInfo?.getPerCpuUtilisation()
         }
 
-        for(i in 0 until cpuNumb) {
-            val cpuMaxFreq = CPUInfoManager.getCpuMaxFreq(i)
-            val cpuMinFreq = CPUInfoManager.getCpuMinFreq(i)
+        for (i in 0 until cpuNumb) {
+//            val cpuMaxFreq = CPUInfoManager.getCpuMaxFreq(i)
+//            val cpuMinFreq = CPUInfoManager.getCpuMinFreq(i)
+//            val cpuTemp = CPUInfoManager.getCpuTemp(i)
+            val cpuMaxFreq = 0f
+            val cpuMinFreq = 0f
             val cpuRunningFreq = CPUInfoManager.getCpuRunningFreq(i)
-            val cpuTemp = CPUInfoManager.getCpuTemp(i)
-            val cpu = CPU(cpuMaxFreq, cpuMinFreq, cpuRunningFreq, cpuTemp, cpuUtils?.get(i)?: 0f)
+            val cpuTemp = 0f
+            val cpu = CPU(cpuMaxFreq, cpuMinFreq, cpuRunningFreq, cpuTemp, cpuUtils?.get(i) ?: 0f)
             cpus.add(cpu)
         }
         return cpus

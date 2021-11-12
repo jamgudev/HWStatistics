@@ -63,47 +63,6 @@ class MainActivity : AppCompatActivity() {
                 if (data.isNullOrEmpty()) {
                     Toast.makeText(this, "Data Is Empty...", Toast.LENGTH_SHORT).show()
                 } else {
-                    // 加个表头
-                    data.add(0,
-                        arrayListOf(
-                            "cur_time_mills",
-                            "system_on",
-                            "screen_on",
-                            "screen_brightness",
-                            "music_on",
-                            "phone_ring",
-                            "phone_off_hook",
-                            "wifi_network",
-                            "mobile_network",
-                            "network_speed",
-                            "cpu0",
-                            "cpu1",
-                            "cpu2",
-                            "cpu3",
-                            "cpu4",
-                            "cpu5",
-                            "cpu6",
-                            "cpu7",
-                            "cpuTemp0",
-                            "cpuTemp1",
-                            "cpuTemp2",
-                            "cpuTemp3",
-                            "cpuTemp4",
-                            "cpuTemp5",
-                            "cpuTemp6",
-                            "cpuTemp7",
-                            "cpu_total_util",
-                            "cpu0_util",
-                            "cpu1_util",
-                            "cpu2_util",
-                            "cpu3_util",
-                            "cpu4_util",
-                            "cpu5_util",
-                            "cpu6_util",
-                            "cpu7_util",
-                            "avg_p",
-                        )
-                    )
                     ExcelUtil.writeExcelNew(this, data, uri)
                 }
             }

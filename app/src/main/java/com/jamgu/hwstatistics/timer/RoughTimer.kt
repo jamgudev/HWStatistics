@@ -6,7 +6,7 @@ import android.os.Looper
 /**
  * Created by jamgu on 2021/11/11
  */
-class Timer(private val looper: Looper) {
+class RoughTimer(private val looper: Looper) {
 
     private var mHandler: Handler? = null
 
