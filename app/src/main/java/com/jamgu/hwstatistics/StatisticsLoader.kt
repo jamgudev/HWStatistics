@@ -13,12 +13,14 @@ import androidx.fragment.app.FragmentActivity
 import com.jamgu.hwstatistics.brightness.BrightnessManager
 import com.jamgu.hwstatistics.cpu.CPU
 import com.jamgu.hwstatistics.cpu.CPUInfoManager
+import com.jamgu.hwstatistics.gpu.GPUManager
 import com.jamgu.hwstatistics.mediastate.MediaStateManager
 import com.jamgu.hwstatistics.network.NetWorkManager
 import com.jamgu.hwstatistics.phonestate.PhoneStateManager
 import com.jamgu.hwstatistics.system.SystemManager
 import com.jamgu.hwstatistics.thread.ThreadPool
 import com.jamgu.hwstatistics.timer.RoughTimer
+import com.jamgu.hwstatistics.util.IOHelper
 import com.jamgu.hwstatistics.util.roundToDecimals
 import com.permissionx.guolindev.PermissionX
 import java.lang.ref.WeakReference
@@ -149,7 +151,11 @@ class StatisticsLoader : INeedPermission {
         val cpuInfo = getCpuInfo()
         val cpuTotalUsage = getCpuTotalUsage()
 
-        val domain = Builder2().apply {
+        GPUManager.getGpuUtilization()
+//        IOHelper.getGpu3DCruFreq()
+
+
+        return Builder2().apply {
             curTimeMills(curTimeString)
             screenOn(screenOn)
             screenBrightness(screenBrightness)
@@ -173,8 +179,6 @@ class StatisticsLoader : INeedPermission {
             totalCpu(cpuTotalUsage)
             cpus(cpuInfo)
         }.buildArray()
-
-        return domain
     }
 
     @SuppressLint("SimpleDateFormat")
@@ -232,7 +236,6 @@ class StatisticsLoader : INeedPermission {
 
         this.forEachIndexed { i, it ->
             if (i == 0) return@forEachIndexed
-
             if (it is Number) {
                 if (it is Float) {
                     val newVal = it.plus(newData[i].toString().toFloat())
@@ -302,7 +305,8 @@ class StatisticsLoader : INeedPermission {
     }
 
     fun getData(): ArrayList<ArrayList<Any>> {
-        mData.add(0,
+        mData.add(
+            0,
             arrayListOf(
                 "cur_time_mills",
                 "system_on",
@@ -354,33 +358,37 @@ class StatisticsLoader : INeedPermission {
         if (notGrantedPermission.isEmpty()) {
             return true
         } else {
-            PermissionX.init(context)
-                    .permissions(notGrantedPermission)
-                    .onExplainRequestReason { scope, deniedList ->
-                        scope.showRequestReasonDialog(
-                            deniedList, "获取网络类型需要申请读取手机状态权限",
-                            "好的", "拒绝"
-                        )
-                    }
-                    .onForwardToSettings { scope, deniedList ->
-                        scope.showForwardToSettingsDialog(
-                            deniedList, "You need to allow necessary permissions in Settings manually",
-                            "OK", "Cancel"
-                        )
-                    }
-                    .request { allGranted, _, deniedList ->
-                        Log.d("NetWorkManager", "permission granted!")
-                        if (allGranted) {
-                            // do nothing
-                        } else {
-                            ThreadPool.runUITask {
-                                Toast.makeText(context, "These permissions are denied: $deniedList", Toast.LENGTH_LONG)
-                                        .show()
-                            }
-                        }
-                    }
+            requestPermission(context, notGrantedPermission)
             return false
         }
+    }
+
+    private fun requestPermission(context: FragmentActivity?, notGrantedPermission: List<String>) {
+        PermissionX.init(context)
+                .permissions(notGrantedPermission)
+                .onExplainRequestReason { scope, deniedList ->
+                    scope.showRequestReasonDialog(
+                        deniedList, "获取网络类型需要申请读取手机状态权限",
+                        "好的", "拒绝"
+                    )
+                }
+                .onForwardToSettings { scope, deniedList ->
+                    scope.showForwardToSettingsDialog(
+                        deniedList, "You need to allow necessary permissions in Settings manually",
+                        "OK", "Cancel"
+                    )
+                }
+                .request { allGranted, _, deniedList ->
+                    Log.d("NetWorkManager", "permission granted!")
+                    if (allGranted) {
+                        // do nothing
+                    } else {
+                        ThreadPool.runUITask {
+                            Toast.makeText(context, "These permissions are denied: $deniedList", Toast.LENGTH_LONG)
+                                    .show()
+                        }
+                    }
+                }
     }
 
     private fun destroyTimer() {
