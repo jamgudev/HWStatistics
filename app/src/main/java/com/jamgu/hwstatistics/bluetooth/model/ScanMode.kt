@@ -13,16 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jamgu.hwstatistics.util.cpu
 
-import java.util.Collections
+package com.jamgu.hwstatistics.bluetooth.model
 
-data class CpuData constructor(val statFile: String, val overallCpu: Float, private val perCpuUtilisation: List<Float>, val hasError: Boolean) {
+import android.bluetooth.BluetoothAdapter
 
-    constructor(statFile: String, overallCpu: Float, perCpuUtilisation: List<Float>) : this(statFile, overallCpu, perCpuUtilisation, false)
-    constructor(statFile: String, error: Boolean) : this(statFile, 0f, emptyList<Float>(), error)
+enum class ScanMode(private val androidMode: Int) {
+    NONE(BluetoothAdapter.SCAN_MODE_NONE),
+    CONNECTABLE(BluetoothAdapter.SCAN_MODE_CONNECTABLE),
+    CONNECTABLE_DISCOVERABLE(BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE);
 
-    fun getPerCpuUtilisation(): List<Float> {
-        return Collections.unmodifiableList(perCpuUtilisation)
+    companion object {
+        fun fromAndroidState(androidMode: Int): ScanMode {
+            return values().find { it.androidMode == androidMode } ?: NONE
+        }
     }
 }

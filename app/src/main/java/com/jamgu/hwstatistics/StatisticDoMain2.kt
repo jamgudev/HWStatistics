@@ -2,8 +2,7 @@
 
 package com.jamgu.hwstatistics
 
-import com.jamgu.hwstatistics.cpu.CPU
-import com.jamgu.hwstatistics.cpu.CPUInfoManager
+import com.jamgu.hwstatistics.cpu.model.CPU
 import com.jamgu.hwstatistics.util.roundToDecimals
 
 /**
@@ -52,6 +51,10 @@ class StatisticDoMain2 internal constructor(private val builder: Builder2){
     fun gpuCurFreq(): Float = builder.gpuCurFreq
 
     fun gpuCurUtil(): Float = builder.gpuCurUtil
+
+    fun blEnabled(): Int = builder.blEnabled
+
+    fun blConnectedNum(): Int = builder.blConnectedNum
 
 }
 
@@ -134,6 +137,11 @@ class Builder2 {
     var gpuCurFreq: Float = 0.0f
     // gpu 当前利用率
     var gpuCurUtil: Float = 0.0f
+
+    // 蓝牙是否开启
+    var blEnabled: Int = 0
+    // 蓝牙连接数量
+    var blConnectedNum: Int = 0
 
 
     fun curTimeMills(curTimeMills: String): Builder2 {
@@ -246,10 +254,19 @@ class Builder2 {
         return this
     }
 
+    fun blEnabled(enabled: Int): Builder2 {
+        this.blEnabled = enabled
+        return this
+    }
+
+    fun blConnectedNum(num: Int): Builder2 {
+        this.blConnectedNum = num
+        return this
+    }
+
     fun build(): StatisticDoMain2 {
         return StatisticDoMain2(this)
     }
-
 
     fun buildArray(): ArrayList<Any> {
         return arrayListOf(
@@ -260,7 +277,8 @@ class Builder2 {
 //            cpuTemp0, cpuTemp1, cpuTemp2, cpuTemp3, cpuTemp4, cpuTemp5, cpuTemp6, cpuTemp7,
             totalCpu,
             cpu0utils, cpu1utils, cpu2utils, cpu3utils, cpu4utils, cpu5utils, cpu6utils, cpu7utils,
-            gpuCurFreq, gpuCurUtil
+            gpuCurFreq, gpuCurUtil,
+            blEnabled + (blEnabled * blConnectedNum)
         )
 
     }

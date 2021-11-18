@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.jamgu.hwstatistics.util.cpu;
+package com.jamgu.hwstatistics.cpu.model;
 
-class CpuInfo {
+public class CpuInfo {
     private float mUsage;
     private long mLastTotal;
     private long mLastIdle;

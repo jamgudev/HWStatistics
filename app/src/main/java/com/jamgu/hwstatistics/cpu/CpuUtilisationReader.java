@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jamgu.hwstatistics.util.cpu;
+package com.jamgu.hwstatistics.cpu;
 
 import android.util.Log;
+import com.jamgu.hwstatistics.cpu.model.CpuData;
+import com.jamgu.hwstatistics.cpu.model.CpuInfo;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -24,7 +26,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 // Taken http://stackoverflow.com/questions/7593829/how-to-get-the-processor-number-on-android
-public class CpuUtilisationReader {
+class CpuUtilisationReader {
     private static final String TAG = "CpuUtilisationReader";
     private static final String STAT_FILE = "/proc/stat";
 

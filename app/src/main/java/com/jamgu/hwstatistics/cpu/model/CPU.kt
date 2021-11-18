@@ -1,4 +1,4 @@
-package com.jamgu.hwstatistics.cpu
+package com.jamgu.hwstatistics.cpu.model
 
 import com.jamgu.hwstatistics.util.roundToDecimals
 

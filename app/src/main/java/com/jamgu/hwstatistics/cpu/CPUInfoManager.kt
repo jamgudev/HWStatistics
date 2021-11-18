@@ -4,8 +4,7 @@ import android.content.Context
 import android.content.Context.HARDWARE_PROPERTIES_SERVICE
 import android.os.HardwarePropertiesManager
 import android.util.Log
-import com.jamgu.hwstatistics.util.cpu.CpuData
-import com.jamgu.hwstatistics.util.cpu.CpuUtilisationReader
+import com.jamgu.hwstatistics.cpu.model.CpuData
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileFilter
