@@ -4,13 +4,18 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.database.ContentObserver
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
-import android.util.Log
+import android.provider.Settings.System.SCREEN_BRIGHTNESS
 
 /**
  * Created by jamgu on 2021/10/15
  */
 object BrightnessManager {
+
+    private const val TAG = "BrightnessManager"
 
     private const val DEFAULT_BRIGHTNESS_NOT_FOUND = -1
     internal const val SCREEN_ON = 1
@@ -18,16 +23,38 @@ object BrightnessManager {
 
     internal var SCREEN_ON_STATUS = SCREEN_ON
     private val mReceiver = ScreenReceiver()
+    private var mBrightness = DEFAULT_BRIGHTNESS_NOT_FOUND
+
+    private lateinit var mBrightnessObserver: ContentObserver
 
     fun registerReceiver(context: Context?) {
         val intentFilter = IntentFilter()
         intentFilter.addAction(Intent.ACTION_SCREEN_OFF)
         intentFilter.addAction(Intent.ACTION_SCREEN_ON)
-        context?.registerReceiver(mReceiver, intentFilter)
+
+        mBrightnessObserver = object : ContentObserver(Handler(Looper.myLooper()!!)) {
+            override fun onChange(selfChange: Boolean) {
+                mBrightness = Settings.System.getInt(context?.contentResolver, SCREEN_BRIGHTNESS, DEFAULT_BRIGHTNESS_NOT_FOUND)
+            }
+        }
+
+        context?.let {
+            it.registerReceiver(mReceiver, intentFilter)
+            it.contentResolver?.registerContentObserver(
+                Settings.System.getUriFor(Settings.System.getUriFor(SCREEN_BRIGHTNESS).toString()),
+                true,
+                mBrightnessObserver
+            )
+        }
+
+        mBrightness = Settings.System.getInt(context?.contentResolver, SCREEN_BRIGHTNESS, DEFAULT_BRIGHTNESS_NOT_FOUND)
     }
 
     fun unregisterReceiver(context: Context?) {
-        context?.unregisterReceiver(mReceiver)
+        context?.let {
+            it.unregisterReceiver(mReceiver)
+            it.contentResolver?.unregisterContentObserver(mBrightnessObserver)
+        }
     }
 
     fun getScreenStatus(): Int {
@@ -38,7 +65,7 @@ object BrightnessManager {
         context ?: return DEFAULT_BRIGHTNESS_NOT_FOUND
 
         return try {
-            Settings.System.getInt(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS)
+            Settings.System.getInt(context.contentResolver, SCREEN_BRIGHTNESS, DEFAULT_BRIGHTNESS_NOT_FOUND)
         } catch (e: Settings.SettingNotFoundException) {
             DEFAULT_BRIGHTNESS_NOT_FOUND
         }
