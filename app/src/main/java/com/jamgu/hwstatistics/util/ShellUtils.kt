@@ -143,7 +143,7 @@ object ShellUtils {
                     successResult = BufferedReader(InputStreamReader(process.inputStream))
                     errorResult = BufferedReader(InputStreamReader(process.errorStream))
 
-                    var sTemp: String
+                    var sTemp: String?
                     successResult?.use { sr ->
                         sTemp = sr.readLine()
                         while (!sTemp.isNullOrEmpty()) {
