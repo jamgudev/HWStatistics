@@ -8,7 +8,7 @@ import java.io.InputStreamReader
 /**
  * Created by jamgu on 2021/11/18
  */
-object ShellUtils2 {
+object ShellUtils {
 
     private const val COMMAND_SU = "su"
     private const val COMMAND_SH = "su"
@@ -28,8 +28,8 @@ object ShellUtils2 {
      * @see ShellUtils.execCommand
      */
     @JvmStatic
-    fun execCommand(command: String, isRootCmd: Boolean): ShellUtils.CommandResult? {
-        return ShellUtils.execCommand(arrayOf(command), isRootCmd, true)
+    fun execCommand(command: String, isRootCmd: Boolean): CommandResult? {
+        return execCommand(arrayOf(command), isRootCmd, true)
     }
 
     /**
@@ -41,8 +41,8 @@ object ShellUtils2 {
      * @see ShellUtils.execCommand
      */
     @JvmStatic
-    fun execCommand(commands: List<String?>?, isRootCmd: Boolean): ShellUtils.CommandResult? {
-        return ShellUtils.execCommand(commands, isRootCmd, true)
+    fun execCommand(commands: List<String?>?, isRootCmd: Boolean): CommandResult? {
+        return execCommand(commands, isRootCmd, true)
     }
 
     /**
@@ -54,8 +54,8 @@ object ShellUtils2 {
      * @see ShellUtils.execCommand
      */
     @JvmStatic
-    fun execCommand(commands: Array<String?>?, isRootCmd: Boolean): ShellUtils.CommandResult? {
-        return ShellUtils.execCommand(commands, isRootCmd, true)
+    fun execCommand(commands: Array<String?>?, isRootCmd: Boolean): CommandResult? {
+        return execCommand(commands, isRootCmd, true)
     }
 
     /**
@@ -68,8 +68,8 @@ object ShellUtils2 {
      * @see ShellUtils.execCommand
      */
     @JvmStatic
-    fun execCommand(command: String, isRootCmd: Boolean, isNeedResultMsg: Boolean): ShellUtils.CommandResult? {
-        return ShellUtils.execCommand(arrayOf(command), isRootCmd, isNeedResultMsg)
+    fun execCommand(command: String, isRootCmd: Boolean, isNeedResultMsg: Boolean): CommandResult? {
+        return execCommand(arrayOf(command), isRootCmd, isNeedResultMsg)
     }
 
     /**
@@ -82,8 +82,8 @@ object ShellUtils2 {
      * @see ShellUtils.execCommand
      */
     @JvmStatic
-    fun execCommand(commands: List<String?>?, isRootCmd: Boolean, isNeedResultMsg: Boolean): ShellUtils.CommandResult? {
-        return ShellUtils.execCommand(commands, isRootCmd, isNeedResultMsg)
+    fun execCommand(commands: List<String?>?, isRootCmd: Boolean, isNeedResultMsg: Boolean): CommandResult? {
+        return execCommand(commands, isRootCmd, isNeedResultMsg)
     }
 
 
@@ -93,8 +93,6 @@ object ShellUtils2 {
      * @param commands command array
      * @param isRootCmd whether need to run with root
      * @param isNeedResultMsg whether need result msg
-     * @param formatter custom formatter for users to process data themselves, 
-     *         if not set, this method will just return the raw data that it supposes to look like
      * @return <ul>
      *         <li>if isNeedResultMsg is false, {@link CommandResult#successMsg} is null and
      *         {@link CommandResult#errorMsg} is null.</li>
@@ -103,7 +101,7 @@ object ShellUtils2 {
      */
     @Suppress("UselessCallOnNotNull")
     @JvmStatic
-    fun <T : Any> execCommand(
+    fun execCommand(
         commands: Array<String?>?,
         isRootCmd: Boolean = false,
         isNeedResultMsg: Boolean = false,

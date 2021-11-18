@@ -21,10 +21,10 @@ object RCommand {
                 throw FileNotFoundException(file.absolutePath)
             }
             if (bEnable) {
-                ShellUtils2.execCommand("chmod 777 " + file.absolutePath, true)
+                ShellUtils.execCommand("chmod 777 " + file.absolutePath, true)
             } else {
-                ShellUtils2.execCommand("chmod 444 " + file.absolutePath, true)
-                ShellUtils2.execCommand("chown system " + file.absolutePath, true)
+                ShellUtils.execCommand("chmod 444 " + file.absolutePath, true)
+                ShellUtils.execCommand("chown system " + file.absolutePath, true)
             }
         } catch (ep: Exception) {
             ep.printStackTrace()
@@ -41,10 +41,9 @@ object RCommand {
         }
         strReadContent = if (file.canRead()) {
             FileUtils.readFileToString(file)
-        } else {
-            val cmdResult = ShellUtils2.execCommand("cat " + file.absolutePath, true)
-            cmdResult!!.successMsg
-        }
+        } else ({
+            ShellUtils.execCommand("cat " + file.absolutePath, true)?.successMsg
+        }).toString()
         return strReadContent
     }
 
@@ -74,8 +73,8 @@ object RCommand {
         if (file.canWrite()) {
             FileUtils.writeStringToFile(file, data)
         } else {
-            val cmdResult = ShellUtils2.execCommand("echo " + data + " > " + file.absolutePath, true)
-            strReadContent = cmdResult.successMsg ?: ""
+            val cmdResult = ShellUtils.execCommand("echo " + data + " > " + file.absolutePath, true)
+            strReadContent = cmdResult?.successMsg ?: ""
         }
     }
 }
