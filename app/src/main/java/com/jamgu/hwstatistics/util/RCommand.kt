@@ -41,9 +41,9 @@ object RCommand {
         }
         strReadContent = if (file.canRead()) {
             FileUtils.readFileToString(file)
-        } else ({
-            ShellUtils.execCommand("cat " + file.absolutePath, true)?.successMsg
-        }).toString()
+        } else {
+            ShellUtils.execCommand("cat " + file.absolutePath, true)?.successMsg ?: ""
+        }
         return strReadContent
     }
 
