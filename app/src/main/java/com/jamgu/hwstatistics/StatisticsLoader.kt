@@ -93,16 +93,6 @@ class StatisticsLoader : INeedPermission {
                     val sdf = SimpleDateFormat("yyyy/MM/dd HH:mm:ss")
                     val curTimeString: String = sdf.format(Date(currentTimeMillis))
 
-                    // 无限循环时，下一次开启计时的时间，与上一次结束的时间之间的间隔很短，
-                    // 会多一次的数据，所以去重
-//                    if (curTimeString == lastTimeString) {
-//                        return@addUpdateListener
-//                    }
-//
-//                    val data = getData(curTimeString, currentTimeMillis)
-//
-//                    mData.add(data)
-
                     val newData = getData(curTimeString, currentTimeMillis)
 
                     // 先缓存
@@ -158,7 +148,6 @@ class StatisticsLoader : INeedPermission {
         val bluetoothData = BluetoothManager.getBluetoothData()
         val blEnabled = if (bluetoothData?.enabled == true) 1 else 0
         val blConnectedNum = bluetoothData?.bondedDevices?.size ?: 0
-        Log.d(TAG, "enable = $blEnabled, connect_num = $blConnectedNum")
 
         return Builder2().apply {
             curTimeMills(curTimeString)
@@ -482,23 +471,26 @@ class StatisticsLoader : INeedPermission {
 //        Log.d(TAG, "cpuUsage = $cpuUsage")
 //        val cpuUsageBeforeO = TempCpu().getCpuUsageBeforeO(cpuNumb)
 
-        var cpuUtils: List<Float>? = null
+        var cpuUtils: List<Float>?
         if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.O) {
             val cpuInfo = CPUInfoManager.getCpuUtilizationFromFile()
             cpuUtils = cpuInfo?.getPerCpuUtilisation()
-        }
 
-        for (i in 0 until cpuNumb) {
+            val size = cpuUtils?.size ?: return cpus
+
+            for (i in 0 until size) {
 //            val cpuMaxFreq = CPUInfoManager.getCpuMaxFreq(i)
 //            val cpuMinFreq = CPUInfoManager.getCpuMinFreq(i)
 //            val cpuTemp = CPUInfoManager.getCpuTemp(i)
-            val cpuMaxFreq = 0f
-            val cpuMinFreq = 0f
-            val cpuRunningFreq = CPUInfoManager.getCpuRunningFreq(i)
-            val cpuTemp = 0f
-            val cpu = CPU(cpuMaxFreq, cpuMinFreq, cpuRunningFreq, cpuTemp, cpuUtils?.get(i) ?: 0f)
-            cpus.add(cpu)
+                val cpuMaxFreq = 0f
+                val cpuMinFreq = 0f
+                val cpuRunningFreq = CPUInfoManager.getCpuRunningFreq(i)
+                val cpuTemp = 0f
+                val cpu = CPU(cpuMaxFreq, cpuMinFreq, cpuRunningFreq, cpuTemp, cpuUtils.get(i) ?: 0f)
+                cpus.add(cpu)
+            }
         }
+
         return cpus
     }
 

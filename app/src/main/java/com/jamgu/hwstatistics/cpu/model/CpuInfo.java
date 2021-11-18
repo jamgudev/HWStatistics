@@ -55,8 +55,7 @@ public class CpuInfo {
         }
         final long diffIdle = idle - mLastIdle;
         final long diffTotal = total - mLastTotal;
-//        mUsage = (float) (diffTotal - diffIdle) / diffTotal * 100;
-        mUsage = (float) (diffTotal - diffIdle) / diffTotal;
+        mUsage = (float) (diffTotal - diffIdle) / diffTotal * 100;
         mLastTotal = total;
         mLastIdle = idle;
         //Log.i(TAG, "CPU total=" + total + "; idle=" + idle + "; usage=" + mUsage);
