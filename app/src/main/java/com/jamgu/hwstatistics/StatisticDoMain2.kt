@@ -262,6 +262,7 @@ class Builder2 {
             cpu0utils, cpu1utils, cpu2utils, cpu3utils, cpu4utils, cpu5utils, cpu6utils, cpu7utils,
             gpuCurFreq, gpuCurUtil
         )
+
     }
 
 }
