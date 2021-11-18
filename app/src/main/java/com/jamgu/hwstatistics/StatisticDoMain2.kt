@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package com.jamgu.hwstatistics
 
 import com.jamgu.hwstatistics.cpu.CPU
@@ -46,6 +48,10 @@ class StatisticDoMain2 internal constructor(private val builder: Builder2){
     fun cpu6(): Float = builder.cpu6
 
     fun cpu7(): Float = builder.cpu7
+
+    fun gpuCurFreq(): Float = builder.gpuCurFreq
+
+    fun gpuCurUtil(): Float = builder.gpuCurUtil
 
 }
 
@@ -123,6 +129,12 @@ class Builder2 {
     var cpu5utils: Float = 0.0f
     var cpu6utils: Float = 0.0f
     var cpu7utils: Float = 0.0f
+
+    // gpu 当前频率
+    var gpuCurFreq: Float = 0.0f
+    // gpu 当前利用率
+    var gpuCurUtil: Float = 0.0f
+
 
     fun curTimeMills(curTimeMills: String): Builder2 {
         this.curTimeMills = curTimeMills
@@ -224,6 +236,16 @@ class Builder2 {
         return this
     }
 
+    fun gpuCurFreq(gpuCurFreq: Float): Builder2 {
+        this.gpuCurFreq = gpuCurFreq
+        return this
+    }
+
+    fun gpuCurUtil(gpuCurUtil: Float): Builder2 {
+        this.gpuCurUtil = gpuCurUtil
+        return this
+    }
+
     fun build(): StatisticDoMain2 {
         return StatisticDoMain2(this)
     }
@@ -237,7 +259,8 @@ class Builder2 {
             cpu0, cpu1, cpu2, cpu3, cpu4, cpu5, cpu6, cpu7,
 //            cpuTemp0, cpuTemp1, cpuTemp2, cpuTemp3, cpuTemp4, cpuTemp5, cpuTemp6, cpuTemp7,
             totalCpu,
-            cpu0utils, cpu1utils, cpu2utils, cpu3utils, cpu4utils, cpu5utils, cpu6utils, cpu7utils
+            cpu0utils, cpu1utils, cpu2utils, cpu3utils, cpu4utils, cpu5utils, cpu6utils, cpu7utils,
+            gpuCurFreq, gpuCurUtil
         )
     }
 

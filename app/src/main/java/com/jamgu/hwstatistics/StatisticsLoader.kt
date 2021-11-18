@@ -20,7 +20,6 @@ import com.jamgu.hwstatistics.phonestate.PhoneStateManager
 import com.jamgu.hwstatistics.system.SystemManager
 import com.jamgu.hwstatistics.thread.ThreadPool
 import com.jamgu.hwstatistics.timer.RoughTimer
-import com.jamgu.hwstatistics.util.IOHelper
 import com.jamgu.hwstatistics.util.roundToDecimals
 import com.permissionx.guolindev.PermissionX
 import java.lang.ref.WeakReference
@@ -128,7 +127,7 @@ class StatisticsLoader : INeedPermission {
 
                     lastTimeString = curTimeString
                     lastTimeMills = currentTimeMillis
-                    Log.d(TAG, "curVal = $curVal, curRepeat = $currentRepeatCount")
+                    Log.d(TAG, "curVal = $curVal, curRepeat = $currentRepeatCount, info: | ${newData[3]}")
                     lastVal = curVal
                 }
             }
@@ -151,8 +150,9 @@ class StatisticsLoader : INeedPermission {
         val cpuInfo = getCpuInfo()
         val cpuTotalUsage = getCpuTotalUsage()
 
-        GPUManager.getGpuUtilization()
-//        IOHelper.getGpu3DCruFreq()
+        val gpu3DCurUtil = GPUManager.getGpuUtilization()
+        val gpu3DCurFreq = GPUManager.getGpuCurFreq()
+        Log.d(TAG, gpu3DCurUtil.toString())
 
 
         return Builder2().apply {
@@ -178,6 +178,8 @@ class StatisticsLoader : INeedPermission {
             networkSpeed(netWorkSpeed)
             totalCpu(cpuTotalUsage)
             cpus(cpuInfo)
+            gpuCurFreq(gpu3DCurFreq)
+            gpuCurUtil(gpu3DCurUtil)
         }.buildArray()
     }
 

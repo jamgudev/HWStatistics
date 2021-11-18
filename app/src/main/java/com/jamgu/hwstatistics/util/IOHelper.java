@@ -1,6 +1,7 @@
 package com.jamgu.hwstatistics.util;
 
 import java.io.File;
+import java.io.IOException;
 
 public class IOHelper {
 
@@ -9,7 +10,7 @@ public class IOHelper {
     public static String getGpuStatusContent(){
         String gpuCurStatusContent = "get gpu status error";
         try {
-            String gpuCurFreq = getGpu3DCruFreq();
+            String gpuCurFreq = getGpu3DCurFreq();
             gpuCurStatusContent = "GPU Frequency: " + gpuCurFreq;
 
         } catch (Exception ep) {
@@ -44,7 +45,7 @@ public class IOHelper {
     }
 
     // gpu 当前频率
-    public static String getGpu3DCruFreq(){
+    public static String getGpu3DCurFreq(){
         String gpuCurFreq = "";
         try{
             gpuCurFreq = RCommand.readFileContent(new File("/sys/class/kgsl/kgsl-3d0/gpuclk"));
@@ -53,6 +54,18 @@ public class IOHelper {
             ep.printStackTrace();
         }
         return gpuCurFreq;
+    }
+
+    // gpu 利用率
+    public static String getGpu3DUtils() {
+        String gpuUtil = "";
+        try {
+            gpuUtil = RCommand.readFileContent(new File("/sys/class/kgsl/kgsl-3d0/gpu_busy_percentage"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return gpuUtil;
     }
 
     public static void setGpu3DMaxFreq(String data){

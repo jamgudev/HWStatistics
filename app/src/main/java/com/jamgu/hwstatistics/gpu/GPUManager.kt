@@ -1,11 +1,6 @@
 package com.jamgu.hwstatistics.gpu
 
-import android.util.Log
-import java.io.File
-import java.io.FileNotFoundException
-import java.io.IOException
-import java.io.RandomAccessFile
-import java.util.concurrent.atomic.AtomicBoolean
+import com.jamgu.hwstatistics.util.IOHelper
 
 /**
  * Created by jamgu on 2021/11/16
@@ -13,39 +8,28 @@ import java.util.concurrent.atomic.AtomicBoolean
 object GPUManager {
 
     private const val TAG = "GPUManager"
-    private const val UTIL_FILE_PATH = "/sys/class/kgsl/kgsl-3d0/gpu_busy_percentage"
-    private const val GPU_CURRENT_FREQ = "/sys/class/kgsl/kgsl-3d0/devfreq/cur_freq"
 
-    private lateinit var mRandomAccessFile: RandomAccessFile
-    private val mFileOpenedOk: AtomicBoolean = AtomicBoolean()
+    fun getGpuUtilization(): Float {
+        val gpu3DUtils = IOHelper.getGpu3DUtils()
 
+        val utilSplits = gpu3DUtils.split(" ")
 
-    fun getGpuUtilization(): Int {
-        openFile()
-
-        if (mFileOpenedOk.get()) {
-            try {
-                mRandomAccessFile.seek(0)
-                var cpuLine: String
-                var cpuId = -1
-                cpuLine = mRandomAccessFile.readLine()
-                Log.d(TAG, cpuLine)
-            } catch (e: IOException) {
-                Log.e(TAG, "Error parsing file: $e")
-            }
+        if (utilSplits.size == 2) {
+            return utilSplits[0].toFloat()
         }
 
-        return 0
+        return 0.0f
+    }
 
+    fun getGpuCurFreq(): Float {
+        val gpu3DFreq = IOHelper.getGpu3DCurFreq()
+
+        if (!gpu3DFreq.isNullOrEmpty()) {
+            return gpu3DFreq.toFloat()
+        }
+
+        return 0.0f
     }
 
 
-    private fun openFile() {
-        try {
-            mRandomAccessFile = RandomAccessFile(UTIL_FILE_PATH, "r")
-            mFileOpenedOk.set(true)
-        } catch (e: FileNotFoundException) {
-            Log.d(TAG, "$UTIL_FILE_PATH not found, ${e.message.toString()}")
-        }
-    }
 }
