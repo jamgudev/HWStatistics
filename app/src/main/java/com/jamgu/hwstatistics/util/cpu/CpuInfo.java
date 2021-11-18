@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.jamgu.hwstatistics.cpu.other;
+package com.jamgu.hwstatistics.util.cpu;
 
 class CpuInfo {
     private float mUsage;

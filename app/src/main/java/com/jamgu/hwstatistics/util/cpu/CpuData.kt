@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jamgu.hwstatistics.cpu.other
+package com.jamgu.hwstatistics.util.cpu
 
 import java.util.Collections
 
