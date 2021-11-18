@@ -3,12 +3,7 @@ package com.jamgu.hwstatistics.network
 import android.annotation.SuppressLint
 import android.content.Context
 import android.net.TrafficStats
-import android.util.Log
-import android.widget.Toast
-import androidx.fragment.app.FragmentActivity
 import com.jamgu.hwstatistics.INeedPermission
-import com.jamgu.hwstatistics.thread.ThreadPool
-import com.permissionx.guolindev.PermissionX
 
 /**
  * Created by jamgu on 2021/10/15

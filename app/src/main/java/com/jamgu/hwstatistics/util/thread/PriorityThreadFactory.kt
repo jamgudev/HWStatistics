@@ -1,4 +1,4 @@
-package com.jamgu.hwstatistics.thread
+package com.jamgu.hwstatistics.util.thread
 
 import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.AtomicInteger

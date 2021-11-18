@@ -1,4 +1,4 @@
-package com.jamgu.hwstatistics.thread;
+package com.jamgu.hwstatistics.util.thread;
 
 import android.os.Handler;
 import android.os.Looper;

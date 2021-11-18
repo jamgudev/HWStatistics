@@ -18,7 +18,7 @@ import com.jamgu.hwstatistics.mediastate.MediaStateManager
 import com.jamgu.hwstatistics.network.NetWorkManager
 import com.jamgu.hwstatistics.phonestate.PhoneStateManager
 import com.jamgu.hwstatistics.system.SystemManager
-import com.jamgu.hwstatistics.thread.ThreadPool
+import com.jamgu.hwstatistics.util.thread.ThreadPool
 import com.jamgu.hwstatistics.timer.RoughTimer
 import com.jamgu.hwstatistics.util.roundToDecimals
 import com.permissionx.guolindev.PermissionX
