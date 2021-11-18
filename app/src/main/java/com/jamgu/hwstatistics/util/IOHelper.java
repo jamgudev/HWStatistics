@@ -79,6 +79,19 @@ public class IOHelper {
         }
     }
 
+    /**
+     * @return 返回总cpu利用率，各cpu利用率的字符串
+     */
+    public static String getCpuUtils() {
+        String cpuInfo = "";
+        try {
+            cpuInfo = RCommand.readFileContent(new File("/proc/stat"));
+        }catch (Exception ep){
+            ep.printStackTrace();
+        }
+        return cpuInfo;
+    }
+
     // I/O Scheduler
     // /sys/block/mmcblk0/queue/scheduler
 //    public static String[] getAvailableScheduler(){

@@ -471,33 +471,29 @@ class StatisticsLoader : INeedPermission {
 //        Log.d(TAG, "cpuUsage = $cpuUsage")
 //        val cpuUsageBeforeO = TempCpu().getCpuUsageBeforeO(cpuNumb)
 
-        var cpuUtils: List<Float>?
-        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.O) {
-            val cpuInfo = CPUInfoManager.getCpuUtilizationFromFile()
-            cpuUtils = cpuInfo?.getPerCpuUtilisation()
+        val cpuUtils: List<Float>?
+        val cpuInfo = CPUInfoManager.getCpuUtilization()
+        cpuUtils = cpuInfo?.getPerCpuUtilisation()
 
-            val size = cpuUtils?.size ?: return cpus
+        val size = cpuUtils?.size ?: return cpus
 
-            for (i in 0 until size) {
+        for (i in 0 until size) {
 //            val cpuMaxFreq = CPUInfoManager.getCpuMaxFreq(i)
 //            val cpuMinFreq = CPUInfoManager.getCpuMinFreq(i)
 //            val cpuTemp = CPUInfoManager.getCpuTemp(i)
-                val cpuMaxFreq = 0f
-                val cpuMinFreq = 0f
-                val cpuRunningFreq = CPUInfoManager.getCpuRunningFreq(i)
-                val cpuTemp = 0f
-                val cpu = CPU(cpuMaxFreq, cpuMinFreq, cpuRunningFreq, cpuTemp, cpuUtils.get(i) ?: 0f)
-                cpus.add(cpu)
-            }
+            val cpuMaxFreq = 0f
+            val cpuMinFreq = 0f
+            val cpuRunningFreq = CPUInfoManager.getCpuRunningFreq(i)
+            val cpuTemp = 0f
+            val cpu = CPU(cpuMaxFreq, cpuMinFreq, cpuRunningFreq, cpuTemp, cpuUtils[i])
+            cpus.add(cpu)
         }
 
         return cpus
     }
 
     private fun getCpuTotalUsage(): Float {
-        return if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.O) {
-            CPUInfoManager.getCpuUtilizationFromFile()?.overallCpu ?: 0f
-        } else 0f
+        return CPUInfoManager.getCpuUtilization()?.overallCpu ?: 0f
     }
 
     override fun permission(): Array<String> = arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)

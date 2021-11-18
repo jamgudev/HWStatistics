@@ -18,6 +18,7 @@ package com.jamgu.hwstatistics.cpu;
 import android.util.Log;
 import com.jamgu.hwstatistics.cpu.model.CpuData;
 import com.jamgu.hwstatistics.cpu.model.CpuInfo;
+import com.jamgu.hwstatistics.util.IOHelper;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -37,6 +38,7 @@ class CpuUtilisationReader {
 
     public CpuUtilisationReader() {
         update();
+        mFileOpenedOk.set(false);
     }
 
     private void closeFile() throws IOException {
@@ -142,7 +144,7 @@ class CpuUtilisationReader {
                     cpuLine = statFile.readLine();
                     parseCpuLine(cpuId, cpuLine);
                     cpuId++;
-                } while (cpuLine != null);
+                } while (cpuId <= 7);
             } catch (final IOException e) {
                 Log.e(TAG, "Error parsing file: " + e);
             }
@@ -175,7 +177,17 @@ class CpuUtilisationReader {
         return sb.toString();
     }
 
+    /**
+     * api 26，android 8.0 之前，/proc/stat 还是可以直接访问的
+     * android 8.0之后，需要root权限，通过copy一份，读副本才可以拿到
+     */
     public void update() {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.O) {
+            updateBeforeO();
+        } else updateAfterO();
+    }
+
+    private void updateBeforeO() {
         try {
             openFile();
             parseFile();
@@ -187,6 +199,26 @@ class CpuUtilisationReader {
         } catch (final IOException e) {
             Log.e(TAG, "cannot close " + STAT_FILE + ":" + e);
         }
+    }
+
+    private void updateAfterO() {
+        String cpuUtils = IOHelper.getCpuUtils();
+        String[] cpuSplits = cpuUtils.split("\n");
+
+        if (cpuSplits == null || cpuSplits.length < 9) {
+            return;
+        }
+
+        mFileOpenedOk.set(true);
+
+        String cpuLine;
+        int cpuId = -1;
+        do {
+            cpuLine = cpuSplits[cpuId + 1];
+            parseCpuLine(cpuId, cpuLine);
+            cpuId++;
+        } while (cpuId <= 7);
+
     }
 
 }

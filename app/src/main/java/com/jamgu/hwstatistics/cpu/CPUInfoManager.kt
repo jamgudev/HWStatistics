@@ -1,15 +1,10 @@
 package com.jamgu.hwstatistics.cpu
 
-import android.content.Context
-import android.content.Context.HARDWARE_PROPERTIES_SERVICE
-import android.os.HardwarePropertiesManager
 import android.util.Log
 import com.jamgu.hwstatistics.cpu.model.CpuData
-import java.io.BufferedReader
+import com.jamgu.hwstatistics.util.readFile
 import java.io.File
 import java.io.FileFilter
-import java.io.FileNotFoundException
-import java.io.FileReader
 
 /**
  * Created by jamgu on 2021/10/18
@@ -36,16 +31,14 @@ object CPUInfoManager {
 
     private const val CPU_UTILIZATION_PATH = "/proc/stat"
 
-    private var cpuUtilReader: CpuUtilisationReader? = null
+    private var cpuUtilReader: CpuUtilisationReader = CpuUtilisationReader()
 
     init {
-        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.O) {
-            cpuUtilReader = CpuUtilisationReader()
-        }
     }
 
     /**
-     * required running in sub thread.
+     * 获取cpu核数
+     * does not need root.
      */
     fun getCpuCoresNumb(): Int {
         return try {
@@ -60,6 +53,10 @@ object CPUInfoManager {
         }
     }
 
+    /**
+     * 获取cpu当前运行频率
+     * does not need root.
+     */
     fun getCpuRunningFreq(cpuIdx: Int): Float {
         var freq = -1f
         try {
@@ -71,6 +68,10 @@ object CPUInfoManager {
         return freq
     }
 
+    /**
+     * 获取cpu最大频率
+     * does not need root.
+     */
     fun getCpuMaxFreq(cpuIdx: Int): Float {
         var freq = -1f
         try {
@@ -82,6 +83,10 @@ object CPUInfoManager {
         return freq
     }
 
+    /**
+     * 获取cpu最小频率
+     * does not need root
+     */
     fun getCpuMinFreq(cpuIdx: Int): Float {
         var freq = -1f
         try {
@@ -93,6 +98,10 @@ object CPUInfoManager {
         return freq
     }
 
+    /**
+     * 获取cpu温度
+     * does not need root
+     */
     fun getCpuTemp(cpuIdx: Int): Float {
         var temp = -1f
         try {
@@ -107,44 +116,17 @@ object CPUInfoManager {
 
 
     /**
-     * api level <= #android.os.Build.VERSION_CODES.N
+     * api level < #android.os.Build.VERSION_CODES.O, just read /proc/stat directly
+     *
+     * after O, root required, otherwise return 0.
      */
-    fun getCpuUtilizationFromFile(): CpuData? {
-        return cpuUtilReader?.let {
+    fun getCpuUtilization(): CpuData? {
+        return cpuUtilReader.let {
             it.update()
             it.cpuInfo
         }
     }
 
-    /**
-     * required android 8.0, need system-wise permissions.
-     */
-    fun getCpuUtilization(context: Context?, cpuCount: Int): FloatArray {
-        val cpuUsages = ArrayList<Float>(cpuCount)
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-            val hwPropertiesManager =
-                context?.getSystemService(HARDWARE_PROPERTIES_SERVICE) as? HardwarePropertiesManager
-            val cpuUsagesInfo = hwPropertiesManager?.cpuUsages
-            cpuUsagesInfo?.forEach {
-                cpuUsages.add(it.active * 1.0f / it.total)
-            }
-        }
-        return cpuUsages.toFloatArray()
-    }
-
-    private fun readFile(path: String): String {
-        var fileString = ""
-        try {
-            FileReader(path).use { fr ->
-                BufferedReader(fr).use { br ->
-                    fileString = br.readLine()
-                }
-            }
-        } catch (e: FileNotFoundException) {
-            Log.d(TAG, e.message.toString())
-        }
-        return fileString
-    }
 
     private val CPU_FILTER = FileFilter {
         val name = it.name
