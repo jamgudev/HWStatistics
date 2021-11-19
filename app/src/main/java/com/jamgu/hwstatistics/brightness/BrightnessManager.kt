@@ -4,9 +4,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.database.ContentObserver
-import android.os.Handler
-import android.os.Looper
 import android.provider.Settings
 import android.provider.Settings.System.SCREEN_BRIGHTNESS
 
@@ -23,38 +20,15 @@ object BrightnessManager {
 
     internal var SCREEN_ON_STATUS = SCREEN_ON
     private val mReceiver = ScreenReceiver()
-    private var mBrightness = DEFAULT_BRIGHTNESS_NOT_FOUND
-
-    private lateinit var mBrightnessObserver: ContentObserver
 
     fun registerReceiver(context: Context?) {
         val intentFilter = IntentFilter()
         intentFilter.addAction(Intent.ACTION_SCREEN_OFF)
         intentFilter.addAction(Intent.ACTION_SCREEN_ON)
-
-        mBrightnessObserver = object : ContentObserver(Handler(Looper.myLooper()!!)) {
-            override fun onChange(selfChange: Boolean) {
-                mBrightness = Settings.System.getInt(context?.contentResolver, SCREEN_BRIGHTNESS, DEFAULT_BRIGHTNESS_NOT_FOUND)
-            }
-        }
-
-        context?.let {
-            it.registerReceiver(mReceiver, intentFilter)
-            it.contentResolver?.registerContentObserver(
-                Settings.System.getUriFor(Settings.System.getUriFor(SCREEN_BRIGHTNESS).toString()),
-                true,
-                mBrightnessObserver
-            )
-        }
-
-        mBrightness = Settings.System.getInt(context?.contentResolver, SCREEN_BRIGHTNESS, DEFAULT_BRIGHTNESS_NOT_FOUND)
     }
 
     fun unregisterReceiver(context: Context?) {
-        context?.let {
-            it.unregisterReceiver(mReceiver)
-            it.contentResolver?.unregisterContentObserver(mBrightnessObserver)
-        }
+        context?.unregisterReceiver(mReceiver)
     }
 
     fun getScreenStatus(): Int {
@@ -63,7 +37,6 @@ object BrightnessManager {
 
     fun getBrightness(context: Context?): Int {
         context ?: return DEFAULT_BRIGHTNESS_NOT_FOUND
-
         return try {
             Settings.System.getInt(context.contentResolver, SCREEN_BRIGHTNESS, DEFAULT_BRIGHTNESS_NOT_FOUND)
         } catch (e: Settings.SettingNotFoundException) {
