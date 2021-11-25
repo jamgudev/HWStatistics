@@ -12,6 +12,12 @@ object RCommand {
     var strReadContent = ""
 
     @JvmStatic
+    fun setEnablePrivilege(filePath: String?, bEnable: Boolean?) {
+        filePath ?: return
+        setEnablePrivilege(File(filePath), bEnable)
+    }
+
+    @JvmStatic
     fun setEnablePrivilege(file: File?, bEnable: Boolean?) {
         file ?: return
         bEnable ?: return
