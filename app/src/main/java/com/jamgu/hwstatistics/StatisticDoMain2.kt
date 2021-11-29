@@ -56,6 +56,8 @@ class StatisticDoMain2 internal constructor(private val builder: Builder2){
 
     fun blConnectedNum(): Int = builder.blConnectedNum
 
+    fun memCurFree(): Float = builder.memCurFree
+
 }
 
 class Builder2 {
@@ -143,58 +145,70 @@ class Builder2 {
     // 蓝牙连接数量
     var blConnectedNum: Int = 0
 
+    var memCurFree: Float = 0.0f
 
-    fun curTimeMills(curTimeMills: String): Builder2 {
+    fun curTimeMills(curTimeMills: String?): Builder2 {
+        curTimeMills ?: return this
         this.curTimeMills = curTimeMills
         return this
     }
 
-    fun systemOn(isOn: Int): Builder2 {
+    fun systemOn(isOn: Int?): Builder2 {
+        isOn ?: return this
         this.isSystemOn = isOn
         return this
     }
 
-    fun screenBrightness(brightness: Int): Builder2 {
+    fun screenBrightness(brightness: Int?): Builder2 {
+        brightness ?: return this
         this.screenBrightness = brightness
         return this
     }
 
-    fun screenOn(isOn: Int): Builder2 {
+    fun screenOn(isOn: Int?): Builder2 {
+        isOn ?: return this
         this.isScreenOn = isOn
         return this
     }
 
-    fun phoneRing(isRing: Int): Builder2 {
+    fun phoneRing(isRing: Int?): Builder2 {
+        isRing ?: return this
         this.isPhoneRinging = isRing
         return this
     }
 
-    fun phoneOffHook(isOffHook: Int): Builder2 {
+    fun phoneOffHook(isOffHook: Int?): Builder2 {
+        isOffHook ?: return this
         this.isPhoneOffHook = isOffHook
         return this
     }
 
-    fun musicOn(isMusicOn: Int): Builder2 {
+    fun musicOn(isMusicOn: Int?): Builder2 {
+        isMusicOn ?: return this
         this.isMusicOn = isMusicOn
         return this
     }
 
-    fun wifiNetwork(isWifi: Int): Builder2 {
+    fun wifiNetwork(isWifi: Int?): Builder2 {
+        isWifi ?: return this
         this.isWifiNetwork = isWifi
         return this
     }
 
-    fun mobileNetwork(isMobile: Int): Builder2 {
+    fun mobileNetwork(isMobile: Int?): Builder2 {
+        isMobile ?: return this
         this.isMobileNetwork = isMobile
         return this
     }
 
-    fun networkSpeed(speed: Float): Builder2 {
+    fun networkSpeed(speed: Float?): Builder2 {
+        speed ?: return this
         this.netWorkSpeed = speed
         return this
     }
 
-    fun cpus(cpus: ArrayList<CPU>): Builder2 {
+    fun cpus(cpus: ArrayList<CPU>?): Builder2 {
+        cpus ?: return this
         if (cpus.isNullOrEmpty() || cpus.size != 8) {
             return this
         }
@@ -239,28 +253,39 @@ class Builder2 {
         return this
     }
 
-    fun totalCpu(totalCpuUsage: Float): Builder2 {
+    fun totalCpu(totalCpuUsage: Float?): Builder2 {
+        totalCpuUsage ?: return this
         this.totalCpu = totalCpuUsage.roundToDecimals(2)
         return this
     }
 
-    fun gpuCurFreq(gpuCurFreq: Float): Builder2 {
+    fun gpuCurFreq(gpuCurFreq: Float?): Builder2 {
+        gpuCurFreq ?: return this
         this.gpuCurFreq = gpuCurFreq
         return this
     }
 
-    fun gpuCurUtil(gpuCurUtil: Float): Builder2 {
+    fun gpuCurUtil(gpuCurUtil: Float?): Builder2 {
+        gpuCurUtil ?: return this
         this.gpuCurUtil = gpuCurUtil
         return this
     }
 
-    fun blEnabled(enabled: Int): Builder2 {
+    fun blEnabled(enabled: Int?): Builder2 {
+        enabled ?: return this
         this.blEnabled = enabled
         return this
     }
 
-    fun blConnectedNum(num: Int): Builder2 {
+    fun blConnectedNum(num: Int?): Builder2 {
+        num ?: return this
         this.blConnectedNum = num
+        return this
+    }
+
+    fun memCurFree(curFree: Float?): Builder2 {
+        curFree ?: return this
+        this.memCurFree = curFree
         return this
     }
 
@@ -279,6 +304,7 @@ class Builder2 {
             cpu0utils, cpu1utils, cpu2utils, cpu3utils, cpu4utils, cpu5utils, cpu6utils, cpu7utils,
 //            gpuCurFreq, gpuCurUtil,
             blEnabled + (blEnabled * blConnectedNum),
+            memCurFree,
         )
 
     }

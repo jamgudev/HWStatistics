@@ -14,8 +14,8 @@ import com.jamgu.hwstatistics.bluetooth.BluetoothManager
 import com.jamgu.hwstatistics.brightness.BrightnessManager
 import com.jamgu.hwstatistics.cpu.model.CPU
 import com.jamgu.hwstatistics.cpu.CPUInfoManager
-import com.jamgu.hwstatistics.gpu.GPUManager
 import com.jamgu.hwstatistics.mediastate.MediaStateManager
+import com.jamgu.hwstatistics.memory.MemInfoManager
 import com.jamgu.hwstatistics.network.NetWorkManager
 import com.jamgu.hwstatistics.phonestate.PhoneStateManager
 import com.jamgu.hwstatistics.system.SystemManager
@@ -145,6 +145,9 @@ class StatisticsLoader : INeedPermission {
 //        val gpu3DCurFreq = GPUManager.getGpuCurFreq()
 //        GPUManager.getMaxCpuFreq()
 
+        val currentFreeMemory = MemInfoManager.getCurrentFreeMemory(weakContext.get())
+
+
         // 蓝牙
         val bluetoothData = BluetoothManager.getBluetoothData()
         val blEnabled = if (bluetoothData?.enabled == true) 1 else 0
@@ -177,6 +180,7 @@ class StatisticsLoader : INeedPermission {
 //            gpuCurUtil(gpu3DCurUtil)
             blEnabled(blEnabled)
             blConnectedNum(blConnectedNum)
+            memCurFree(currentFreeMemory)
         }.buildArray()
     }
 
@@ -345,6 +349,7 @@ class StatisticsLoader : INeedPermission {
 //                "gpu_cur_freq",
 //                "gpu_cur_util",
                 "bluetooth",
+                "mem_cur_free",
                 "avg_p",
             )
         )
