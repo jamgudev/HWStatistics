@@ -141,8 +141,9 @@ class StatisticsLoader : INeedPermission {
         val cpuInfo = getCpuInfo()
         val cpuTotalUsage = getCpuTotalUsage()
 
-        val gpu3DCurUtil = GPUManager.getGpuUtilization()
-        val gpu3DCurFreq = GPUManager.getGpuCurFreq()
+//        val gpu3DCurUtil = GPUManager.getGpuUtilization()
+//        val gpu3DCurFreq = GPUManager.getGpuCurFreq()
+//        GPUManager.getMaxCpuFreq()
 
         // 蓝牙
         val bluetoothData = BluetoothManager.getBluetoothData()
@@ -172,8 +173,8 @@ class StatisticsLoader : INeedPermission {
             networkSpeed(netWorkSpeed)
             totalCpu(cpuTotalUsage)
             cpus(cpuInfo)
-            gpuCurFreq(gpu3DCurFreq)
-            gpuCurUtil(gpu3DCurUtil)
+//            gpuCurFreq(gpu3DCurFreq)
+//            gpuCurUtil(gpu3DCurUtil)
             blEnabled(blEnabled)
             blConnectedNum(blConnectedNum)
         }.buildArray()
@@ -341,8 +342,8 @@ class StatisticsLoader : INeedPermission {
                 "cpu5_util",
                 "cpu6_util",
                 "cpu7_util",
-                "gpu_cur_freq",
-                "gpu_cur_util",
+//                "gpu_cur_freq",
+//                "gpu_cur_util",
                 "bluetooth",
                 "avg_p",
             )

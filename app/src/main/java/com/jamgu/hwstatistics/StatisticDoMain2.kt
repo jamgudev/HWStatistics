@@ -277,8 +277,8 @@ class Builder2 {
 //            cpuTemp0, cpuTemp1, cpuTemp2, cpuTemp3, cpuTemp4, cpuTemp5, cpuTemp6, cpuTemp7,
             totalCpu,
             cpu0utils, cpu1utils, cpu2utils, cpu3utils, cpu4utils, cpu5utils, cpu6utils, cpu7utils,
-            gpuCurFreq, gpuCurUtil,
-            blEnabled + (blEnabled * blConnectedNum)
+//            gpuCurFreq, gpuCurUtil,
+            blEnabled + (blEnabled * blConnectedNum),
         )
 
     }
