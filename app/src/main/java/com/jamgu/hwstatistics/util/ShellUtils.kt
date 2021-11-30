@@ -15,9 +15,8 @@ object ShellUtils {
     private const val COMMAND_EXIT = "exit\n"
     private const val COMMAND_LINE_END = "\n"
 
-    private var sDefaultFormatter: ((String) -> String) = { it }
-
-    fun checkRootPermission(): Boolean = execCommand("echo root", isRootCmd = true, isNeedResultMsg = false)?.result == 0
+    @JvmStatic
+    fun checkRootPermission(): Boolean = execCommand("echo root", isRootCmd = true, isNeedResultMsg = false).result == 0
 
     /**
      * execute shell command, default return result msg
@@ -28,7 +27,7 @@ object ShellUtils {
      * @see ShellUtils.execCommand
      */
     @JvmStatic
-    fun execCommand(command: String, isRootCmd: Boolean): CommandResult? {
+    fun execCommand(command: String, isRootCmd: Boolean): CommandResult {
         return execCommand(arrayOf(command), isRootCmd, true)
     }
 
@@ -54,7 +53,7 @@ object ShellUtils {
      * @see ShellUtils.execCommand
      */
     @JvmStatic
-    fun execCommand(commands: Array<String?>?, isRootCmd: Boolean): CommandResult? {
+    fun execCommand(commands: Array<String?>?, isRootCmd: Boolean): CommandResult {
         return execCommand(commands, isRootCmd, true)
     }
 
@@ -68,7 +67,7 @@ object ShellUtils {
      * @see ShellUtils.execCommand
      */
     @JvmStatic
-    fun execCommand(command: String, isRootCmd: Boolean, isNeedResultMsg: Boolean): CommandResult? {
+    fun execCommand(command: String, isRootCmd: Boolean, isNeedResultMsg: Boolean): CommandResult {
         return execCommand(arrayOf(command), isRootCmd, isNeedResultMsg)
     }
 
@@ -163,7 +162,7 @@ object ShellUtils {
                 }
             }
         } catch (e: IOException) {
-            e.printStackTrace()
+//            e.printStackTrace()
             return CommandResult(result, null, e.message.toString())
         }
 

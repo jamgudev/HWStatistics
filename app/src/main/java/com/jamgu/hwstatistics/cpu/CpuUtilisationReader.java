@@ -19,6 +19,7 @@ import android.util.Log;
 import com.jamgu.hwstatistics.cpu.model.CpuData;
 import com.jamgu.hwstatistics.cpu.model.CpuInfo;
 import com.jamgu.hwstatistics.util.IOHelper;
+import com.jamgu.hwstatistics.util.ShellUtils;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -202,6 +203,11 @@ class CpuUtilisationReader {
     }
 
     private void updateAfterO() {
+        boolean isRooted = ShellUtils.checkRootPermission();
+        if (! isRooted) {
+            return;
+        }
+
         String cpuUtils = IOHelper.getCpuUtils();
         String[] cpuSplits = cpuUtils.split("\n");
 
