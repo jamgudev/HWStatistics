@@ -30,7 +30,9 @@ fun readFile(path: String, tag: String = "Constants"): String {
     }
 
     if (!file.canRead()) {
-
+        val readable = file.setReadable(true)
+        Log.d(tag, "File[path:$path] is not readable!, readable = $readable")
+        return ""
     }
 
 
