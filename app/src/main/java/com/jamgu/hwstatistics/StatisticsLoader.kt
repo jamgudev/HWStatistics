@@ -144,8 +144,9 @@ class StatisticsLoader : INeedPermission {
 //        val gpu3DCurUtil = GPUManager.getGpuUtilization()
 //        val gpu3DCurFreq = GPUManager.getGpuCurFreq()
 //        GPUManager.getMaxCpuFreq()
+//        GPUManager.getGpuUtilization()
 
-        val currentFreeMemory = MemInfoManager.getCurrentFreeMemory(weakContext.get())
+        val memInfoFromFile = MemInfoManager.getMemInfoFromFile()
 
 
         // 蓝牙
@@ -180,7 +181,7 @@ class StatisticsLoader : INeedPermission {
 //            gpuCurUtil(gpu3DCurUtil)
             blEnabled(blEnabled)
             blConnectedNum(blConnectedNum)
-            memCurFree(currentFreeMemory)
+            memAllInfo(memInfoFromFile)
         }.buildArray()
     }
 
@@ -349,7 +350,14 @@ class StatisticsLoader : INeedPermission {
 //                "gpu_cur_freq",
 //                "gpu_cur_util",
                 "bluetooth",
-                "mem_cur_free",
+//                "mem_cur_free",
+                "mem_free",
+                "mem_available",
+                "mem_active",
+                "mem_inactive",
+                "mem_dirty",
+                "mem_anonPages",
+                "mem_mapped",
                 "avg_p",
             )
         )

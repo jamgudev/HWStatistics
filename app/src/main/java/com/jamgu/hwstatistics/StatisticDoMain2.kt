@@ -56,7 +56,7 @@ class StatisticDoMain2 internal constructor(private val builder: Builder2){
 
     fun blConnectedNum(): Int = builder.blConnectedNum
 
-    fun memCurFree(): Float = builder.memCurFree
+    fun memCurAvailable(): Float = builder.memCurAvailable
 
 }
 
@@ -145,7 +145,21 @@ class Builder2 {
     // 蓝牙连接数量
     var blConnectedNum: Int = 0
 
-    var memCurFree: Float = 0.0f
+    // ------ mem info
+    var memFree: Float = 0.0f
+
+    var memCurAvailable: Float = 0.0f
+
+    var memActive: Float = 0.0f
+
+    var memInactive: Float = 0.0f
+
+    var memDirty: Float = 0.0f
+
+    var memAnonPages: Float = 0.0f
+
+    var memMapped: Float = 0.0f
+    // ------ mem info
 
     fun curTimeMills(curTimeMills: String?): Builder2 {
         curTimeMills ?: return this
@@ -283,9 +297,23 @@ class Builder2 {
         return this
     }
 
-    fun memCurFree(curFree: Float?): Builder2 {
-        curFree ?: return this
-        this.memCurFree = curFree
+    fun memCurAvailable(curAvailable: Float?): Builder2 {
+        curAvailable ?: return this
+        this.memCurAvailable = curAvailable
+        return this
+    }
+
+    fun memAllInfo(memData: Array<Float>?): Builder2 {
+        memData ?: return this
+
+        this.memFree = memData[0]
+        this.memCurAvailable = memData[1]
+        this.memActive = memData[2]
+        this.memInactive = memData[3]
+        this.memDirty = memData[4]
+        this.memAnonPages = memData[5]
+        this.memMapped = memData[6]
+
         return this
     }
 
@@ -304,7 +332,7 @@ class Builder2 {
             cpu0utils, cpu1utils, cpu2utils, cpu3utils, cpu4utils, cpu5utils, cpu6utils, cpu7utils,
 //            gpuCurFreq, gpuCurUtil,
             blEnabled + (blEnabled * blConnectedNum),
-            memCurFree,
+            memFree, memCurAvailable, memActive, memInactive, memDirty, memAnonPages, memMapped,
         )
 
     }
