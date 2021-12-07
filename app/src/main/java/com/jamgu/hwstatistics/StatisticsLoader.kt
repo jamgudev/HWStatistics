@@ -14,6 +14,7 @@ import com.jamgu.hwstatistics.bluetooth.BluetoothManager
 import com.jamgu.hwstatistics.brightness.BrightnessManager
 import com.jamgu.hwstatistics.cpu.model.CPU
 import com.jamgu.hwstatistics.cpu.CPUInfoManager
+import com.jamgu.hwstatistics.gpu.GPUManager
 import com.jamgu.hwstatistics.mediastate.MediaStateManager
 import com.jamgu.hwstatistics.memory.MemInfoManager
 import com.jamgu.hwstatistics.network.NetWorkManager
@@ -143,8 +144,6 @@ class StatisticsLoader : INeedPermission {
 
 //        val gpu3DCurUtil = GPUManager.getGpuUtilization()
 //        val gpu3DCurFreq = GPUManager.getGpuCurFreq()
-//        GPUManager.getMaxCpuFreq()
-//        GPUManager.getGpuUtilization()
 
         val memInfoFromFile = MemInfoManager.getMemInfoFromFile()
 
@@ -153,6 +152,10 @@ class StatisticsLoader : INeedPermission {
         val bluetoothData = BluetoothManager.getBluetoothData()
         val blEnabled = if (bluetoothData?.enabled == true) 1 else 0
         val blConnectedNum = bluetoothData?.bondedDevices?.size ?: 0
+
+//        GPUManager.getMaxCpuFreq()
+//        GPUManager.getGpuUtilization()
+
 
         return Builder2().apply {
             curTimeMills(curTimeString)
@@ -177,11 +180,11 @@ class StatisticsLoader : INeedPermission {
             networkSpeed(netWorkSpeed)
             totalCpu(cpuTotalUsage)
             cpus(cpuInfo)
-//            gpuCurFreq(gpu3DCurFreq)
-//            gpuCurUtil(gpu3DCurUtil)
             blEnabled(blEnabled)
             blConnectedNum(blConnectedNum)
             memAllInfo(memInfoFromFile)
+//            gpuCurFreq(gpu3DCurFreq)
+//            gpuCurUtil(gpu3DCurUtil)
         }.buildArray()
     }
 
@@ -347,8 +350,6 @@ class StatisticsLoader : INeedPermission {
                 "cpu5_util",
                 "cpu6_util",
                 "cpu7_util",
-//                "gpu_cur_freq",
-//                "gpu_cur_util",
                 "bluetooth",
 //                "mem_cur_free",
                 "mem_free",
@@ -358,6 +359,8 @@ class StatisticsLoader : INeedPermission {
                 "mem_dirty",
                 "mem_anonPages",
                 "mem_mapped",
+//                "gpu_cur_freq",
+//                "gpu_cur_util",
                 "avg_p",
             )
         )
