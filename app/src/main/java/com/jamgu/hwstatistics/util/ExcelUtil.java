@@ -124,7 +124,13 @@ public class ExcelUtil {
                 ArrayList<Object> realData = exportExcel.get(i);
                 for (int j = 0; j < realData.size(); j++) {
                     Cell cell = row.createCell(j);
-                    cell.setCellValue(String.valueOf(realData.get(j)));
+                    Object val = realData.get(j);
+                    if (val instanceof Float) {
+                        float fVal = Float.parseFloat(val.toString());
+                        cell.setCellValue(fVal);
+                    } else {
+                        cell.setCellValue(String.valueOf(realData.get(j)));
+                    }
                 }
             }
 
