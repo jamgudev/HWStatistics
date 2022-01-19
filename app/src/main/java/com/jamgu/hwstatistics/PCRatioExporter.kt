@@ -8,6 +8,7 @@ import com.jamgu.hwstatistics.util.ExcelUtil
 import com.jamgu.hwstatistics.util.roundToDecimals
 import com.jamgu.hwstatistics.util.thread.ThreadPool
 import java.io.File
+import kotlin.math.absoluteValue
 import kotlin.math.pow
 import kotlin.math.sqrt
 
@@ -21,19 +22,20 @@ class PCRatioExporter {
     companion object {
         private const val TAG = "VerifyTest"
 
+        private val params = floatArrayOf(
+            0.2917f, 0.2917f, 0.2917f, 0.1547f, 0.0631f,
+            0f, 0f, 0.2917f, 0f, 0.0297f,
+            0.0118f, 0.0098f, 0.0181f, 0.0236f, 0.0155f,
+            0.0175f, 0.0182f, 0.0167f, 0.0556f, 0.0215f,
+            0.0615f, 0.0412f, 0.0297f, 0.0666f, 0.0617f,
+            0.0563f, 0.0568f, 0.2917f, -0.0026f, 0.0146f,
+            0.0088f, 0.0012f, -0.006f, 0.0058f, 0.0184f
+        )
+
         fun verifyAndExport(context: Context?) {
             context ?: return
 
             ThreadPool.runOnNonUIThread {
-                val params = floatArrayOf(
-                    0.2917f, 0.2917f, 0.2917f, 0.1547f, 0.0631f,
-                    0f, 0f, 0.2917f, 0f, 0.0297f,
-                    0.0118f, 0.0098f, 0.0181f, 0.0236f, 0.0155f,
-                    0.0175f, 0.0182f, 0.0167f, 0.0556f, 0.0215f,
-                    0.0615f, 0.0412f, 0.0297f, 0.0666f, 0.0617f,
-                    0.0563f, 0.0568f, 0.2917f, -0.0026f, 0.0146f,
-                    0.0088f, 0.0012f, -0.006f, 0.0058f, 0.0184f
-                )
 //            val fileName = "verify_all"
                 val fileName = "01181932_bb"
                 val fileDir = "${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)}"
@@ -55,52 +57,24 @@ class PCRatioExporter {
                 if (dataList.size < 2) {
                     return@runOnNonUIThread
                 }
-//                featureNormalize(dataList)
 
-                val exportList = ArrayList<ArrayList<Any>>()
+                // 把表头取出
+                val headRow = getHeadRowAndDump(dataList)
 
-                // 遍历数据
-                dataList.forEachIndexed { idx, map ->
-                    val size = map.size
+                val exportList = computePCTofEachHW(dataList) ?: return@runOnNonUIThread
 
-                    // 第一行数据为表头，直接添加
-                    if (idx == 0) {
-                        val headRow = ArrayList<Any>()
-                        (0 until size).forEach {
-                            headRow.add(it, map[it].toString())
-                        }
-                        exportList.add(headRow)
-                        return@forEachIndexed
+                // 再标准化，算出模型预测功耗
+                featureNormalize(dataList)
+                // 将功耗数据补上
+                computeActualPC(dataList)?.let {
+                    exportList.forEachIndexed { idx, subList ->
+                        subList.addAll(it[idx])
                     }
+                }
 
-                    val listInRow = ArrayList<Float>()
-                    // 先加基础功耗
-                    var estimatedPC = params[0]
-                    for (i in 0 until size) {
-                        val collectedVal = map[i] as? String
-                        // 忽略最后一列数据
-                        if (i == size - 1) break
-                        if (collectedVal != null) {
-                            val paramsValue = params[i + 1]
-                            // 计算单个预测功耗
-                            listInRow.add(collectedVal.toFloat().times(paramsValue))
-                            // 计算总预测功耗
-                            estimatedPC += listInRow[i]
-                        }
-                    }
-
-                    // 计算功耗百分比
-                    val mappedArray = listInRow.map {
-                        @Suppress("USELESS_CAST")
-                        (it / estimatedPC * 100).roundToDecimals(2) as Any
-                    } as? ArrayList ?: return@runOnNonUIThread
-                    listInRow.clear()
-
-                    // 最后把总功耗加上
-                    mappedArray.add(estimatedPC)
-
-                    Log.d(TAG, "estimatedPC = $estimatedPC, listInRow = $mappedArray")
-                    exportList.add(mappedArray)
+                // 最后加上表头
+                if (headRow != null) {
+                    exportList.add(0, headRow)
                 }
 
                 // 导出文件
@@ -112,11 +86,109 @@ class PCRatioExporter {
         }
 
         /**
+         * 把表头从数据集中取出，并会从数据集中把表头删去
+         * @param dataList 从文件读出来的数据集
+         * @return ArrayList<Any> 取出表头
+         */
+        private fun getHeadRowAndDump(dataList: MutableList<MutableMap<Int, Any>>?): ArrayList<Any>? {
+            if (dataList == null || dataList.isEmpty()) return null
+
+            val headRow = ArrayList<Any>()
+            val size = dataList[0].size
+            (0 until size).forEach {
+                headRow.add(it, dataList[0][it].toString())
+            }
+            // 补充表头
+            val extraHead = arrayListOf(
+                "act_p", "p_error"
+            )
+            headRow.addAll(extraHead)
+
+            dataList.removeAt(0)
+            return headRow
+        }
+
+        /**
+         * @param dataList 从文件读出来的数据集
+         * @return ArrayList<ArrayList<Any>> 一个包含每条数据各部分硬件功耗的二维列表
+         */
+        private fun computePCTofEachHW(dataList: List<MutableMap<Int, Any>>?): ArrayList<ArrayList<Any>>? {
+            val exportList = ArrayList<ArrayList<Any>>()
+            dataList?.forEachIndexed { _, map ->
+                val size = map.size
+
+                val listInRow = ArrayList<Float>()
+                // 先加基础功耗
+                var estimatedPC = params[0]
+                for (i in 0 until size) {
+                    val collectedVal = map[i] as? String
+                    // 忽略最后一列数据
+                    if (i == size - 1) break
+                    if (collectedVal != null) {
+                        val paramsValue = params[i + 1]
+                        // 计算单个预测功耗
+                        listInRow.add(collectedVal.toFloat().times(paramsValue))
+                        // 计算总预测功耗
+                        estimatedPC += listInRow[i]
+                    }
+                }
+
+                // 计算功耗百分比
+                val mappedArray = listInRow.map {
+                    @Suppress("USELESS_CAST")
+                    (it / estimatedPC * 100).roundToDecimals(2) as Any
+                } as? ArrayList ?: return null
+                listInRow.clear()
+
+                // 最后把总功耗加上，
+                // mappedArray.add(estimatedPC)
+
+                Log.d(TAG, "estimatedPC = $estimatedPC, listInRow = $mappedArray")
+                exportList.add(mappedArray)
+
+            }
+            return exportList
+        }
+
+        /**
+         * @param dataList 从文件读出来的数据集
+         * @return ArrayList<FloatArray> 每行的预测功耗，真实功耗，预测误差
+         */
+        private fun computeActualPC(dataList: List<MutableMap<Int, Any>>?): ArrayList<ArrayList<Float>>? {
+            dataList ?: return null
+
+            val realEstimatedPC = ArrayList<ArrayList<Float>>()
+            for (i in dataList.indices) {
+                var estimatedPc = params[0]
+                var realPc = 0f
+                val size = dataList[i].size
+                for (j in 0 until size) {
+                    val collectedVal = dataList[i][j] as? String
+                    if (collectedVal != null) {
+                        if (j == size - 1) {
+                            // 拿到真实功耗
+                            realPc = collectedVal.toFloat()
+                            break
+                        }
+
+                        val paramsValue = params[j + 1]
+                        // 加权每个部件预测功耗
+                        estimatedPc += collectedVal.toFloat().times(paramsValue)
+                    }
+                }
+
+                // 计算预测误差
+                val error = (realPc - estimatedPc).absoluteValue / realPc
+                realEstimatedPC.add(arrayListOf(estimatedPc, realPc, error))
+            }
+            return realEstimatedPC
+        }
+
+        /**
          * 数据标准化
          */
         private fun featureNormalize(dataList: List<MutableMap<Int, Any>>?) {
             dataList ?: return
-
             val xAxis = dataList.size
             if (xAxis < 2) return
 
@@ -127,6 +199,10 @@ class PCRatioExporter {
             val sigmas = ArrayList<Float>()
 
             for (j in 0 until yAxis) {
+                // 最后的功耗数据不需要标准化
+                if (j == yAxis - 1) {
+                    break
+                }
                 // 均值
                 var mu = 0f
                 // 标准差
@@ -136,7 +212,7 @@ class PCRatioExporter {
                 var maxVal = 0f
                 val yAxisDataArray = ArrayList<Float>()
                 // 跳过表头
-                for (i in 1 until xAxis) {
+                for (i in 0 until xAxis) {
                     val yVal = dataList[i][j] as? String ?: throw Throwable("not String, type: ${dataList[i][j]?.javaClass}")
                     val fYVal = yVal.toFloat()
                     yAxisDataArray.add(fYVal)
@@ -149,9 +225,7 @@ class PCRatioExporter {
                 yAxisDataArray.forEach {
                     sigma += (it - mu).pow(2)
                 }
-//                Log.d(TAG, "sigma = $sigma")
                 sigma = sqrt(sigma / yAxisDataArray.size)
-//                Log.d(TAG, "sqrt sigma = $sigma")
 
                 // 一列数值都相同，可能存在标注差为 0 的情况
                 if (sigma == 0f) {
@@ -163,7 +237,7 @@ class PCRatioExporter {
                 sigmas.add(sigma)
 
                 // 标准化数据
-                for (i in 1 until xAxis) {
+                for (i in 0 until xAxis) {
                     val yVal = dataList[i][j] as? String ?: return
                     if (sigma != 0f) {
                         dataList[i][j] = ((yVal.toFloat() - mu) / sigma).toString()
@@ -172,15 +246,6 @@ class PCRatioExporter {
                         Log.d(TAG, "($i, $j), no need to normalize = ${dataList[i][j]}")
                     }
                 }
-            }
-
-
-            means.forEach {
-                Log.d(TAG, "mus = $it")
-            }
-
-            sigmas.forEach {
-                Log.d(TAG, "sigmas = $it")
             }
         }
     }
