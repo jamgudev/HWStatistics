@@ -34,7 +34,66 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 public class ExcelUtil {
     private static final String TAG = ExcelUtil.class.getSimpleName();
 
-    public static List<Map<Integer, Object>> readExcelNew(Context context, Uri uri, String filePath) {
+    public static List<Map<Integer, Object>> readExcelNewLineByLine(Context context, Uri uri, String filePath) {
+        List<Map<Integer, Object>> list = null;
+        Workbook wb;
+        if (filePath == null) {
+            return null;
+        }
+        String extString;
+        if (!filePath.endsWith(".xls") && !filePath.endsWith(".xlsx")) {
+            Log.e(TAG, "Please select the correct Excel file");
+            return null;
+        }
+        extString = filePath.substring(filePath.lastIndexOf("."));
+        InputStream is;
+        try {
+            is = context.getContentResolver().openInputStream(uri);
+            Log.i(TAG, "readExcel: " + extString);
+            if (".xls".equals(extString)) {
+                wb = new HSSFWorkbook(is);
+            } else if (".xlsx".equals(extString)) {
+                wb = new XSSFWorkbook(is);
+            } else {
+                wb = null;
+            }
+            if (wb != null) {
+                // used to store data
+                list = new ArrayList<>();
+                // get the first sheet
+                Sheet sheet = wb.getSheetAt(0);
+
+                // get the maximum number of rows
+                int rownum = sheet.getPhysicalNumberOfRows();
+                //index starts from 1,exclude header.
+                //if you want read line by line, index should from 0.
+                for (int i = 0; i < rownum; i++) {
+                    Row row = sheet.getRow(i);
+                    //storing content
+                    Map<Integer, Object> itemMap = new HashMap<>();
+                    final int colnum = row.getPhysicalNumberOfCells();
+                    if (row != null) {
+                        for (int j = 0; j < colnum; j++) {
+                            Object value = getCellFormatValue(row.getCell(j));
+                            String cellInfo = "r: " + i + "; c:" + j + "; v:" + value;
+                            Log.i(TAG, "readExcelNew: " + cellInfo);
+                            itemMap.put(j, value);
+                        }
+                    } else {
+                        break;
+                    }
+                    list.add(itemMap);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.e(TAG, "readExcelNew: import error " + e);
+            Toast.makeText(context, "import error " + e, Toast.LENGTH_SHORT).show();
+        }
+        return list;
+    }
+
+    public static List<Map<Integer, Object>> readExcelNewByHeader(Context context, Uri uri, String filePath) {
         List<Map<Integer, Object>> list = null;
         Workbook wb;
         if (filePath == null) {
