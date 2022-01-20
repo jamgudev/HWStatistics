@@ -36,8 +36,8 @@ class PCRatioExporter {
             context ?: return
 
             ThreadPool.runOnNonUIThread {
-//            val fileName = "verify_all"
-                val fileName = "01181932_bb"
+            val fileName = "verify_all"
+//                val fileName = "01181932_bb"
                 val fileDir = "${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)}"
                 val filePath = "$fileDir/$fileName.xlsx"
                 val file = File(filePath)
@@ -50,7 +50,7 @@ class PCRatioExporter {
                 Log.d(TAG, "filePathUri = $filePathUri")
                 // 数据格式有限制，最后一列为功耗设备测出的功耗
                 // 计算百分比时会略过这一列的数据，但这一列数据得有
-                val dataList = ExcelUtil.readExcelNew(context, filePathUri, "$fileName.xlsx")
+                val dataList = ExcelUtil.readExcelNewLineByLine(context, filePathUri, "$fileName.xlsx")
                     ?: return@runOnNonUIThread
                 Log.d(TAG, "dataList = $dataList, size = ${dataList.size}")
 
@@ -59,7 +59,7 @@ class PCRatioExporter {
                 }
 
                 // 把表头取出
-                val headRow = getHeadRowAndDump(dataList)
+                val headRows = getHeadRowAndDump(dataList)
 
                 val exportList = computePCTofEachHW(dataList) ?: return@runOnNonUIThread
 
@@ -73,7 +73,8 @@ class PCRatioExporter {
                 }
 
                 // 最后加上表头
-                if (headRow != null) {
+                headRows?.reverse()
+                headRows?.forEach { headRow ->
                     exportList.add(0, headRow)
                 }
 
@@ -88,24 +89,46 @@ class PCRatioExporter {
         /**
          * 把表头从数据集中取出，并会从数据集中把表头删去
          * @param dataList 从文件读出来的数据集
-         * @return ArrayList<Any> 取出表头
+         * @return ArrayList<ArrayList<Any>>? 取出表头，可能有多行
          */
-        private fun getHeadRowAndDump(dataList: MutableList<MutableMap<Int, Any>>?): ArrayList<Any>? {
+        private fun getHeadRowAndDump(dataList: MutableList<MutableMap<Int, Any>>?): ArrayList<ArrayList<Any>>? {
             if (dataList == null || dataList.isEmpty()) return null
 
-            val headRow = ArrayList<Any>()
-            val size = dataList[0].size
-            (0 until size).forEach {
-                headRow.add(it, dataList[0][it].toString())
-            }
-            // 补充表头
-            val extraHead = arrayListOf(
-                "act_p", "p_error"
-            )
-            headRow.addAll(extraHead)
 
-            dataList.removeAt(0)
-            return headRow
+            var lastHeadRowNum = -1
+            val headRows = ArrayList<ArrayList<Any>>()
+            run breaking@{
+                dataList.forEachIndexed { idx, map ->
+                    val collectedVal = map[0] as? String
+                    try {
+                        collectedVal?.toFloat()
+                        return@breaking
+                    } catch (e: NumberFormatException) {
+                        val headRow = ArrayList<Any>()
+                        val size = dataList[idx].size
+                        (0 until size).forEach {
+                            headRow.add(it, dataList[idx][it].toString())
+                        }
+                        headRows.add(headRow)
+                        lastHeadRowNum = idx
+                    }
+                }
+            }
+
+            // 从数据集中删除表头
+            for (i in 0..lastHeadRowNum) {
+                dataList.removeFirst()
+            }
+
+            if (lastHeadRowNum >= 0) {
+                // 补充表头
+                val extraHead = arrayListOf(
+                    "act_p", "p_error"
+                )
+                headRows[lastHeadRowNum].addAll(extraHead)
+            }
+
+            return headRows
         }
 
         /**
