@@ -12,17 +12,16 @@ import android.widget.Toast
 import androidx.fragment.app.FragmentActivity
 import com.jamgu.hwstatistics.bluetooth.BluetoothManager
 import com.jamgu.hwstatistics.brightness.BrightnessManager
-import com.jamgu.hwstatistics.cpu.model.CPU
 import com.jamgu.hwstatistics.cpu.CPUInfoManager
-import com.jamgu.hwstatistics.gpu.GPUManager
+import com.jamgu.hwstatistics.cpu.model.CPU
 import com.jamgu.hwstatistics.mediastate.MediaStateManager
 import com.jamgu.hwstatistics.memory.MemInfoManager
 import com.jamgu.hwstatistics.network.NetWorkManager
 import com.jamgu.hwstatistics.phonestate.PhoneStateManager
 import com.jamgu.hwstatistics.system.SystemManager
-import com.jamgu.hwstatistics.util.thread.ThreadPool
 import com.jamgu.hwstatistics.timer.RoughTimer
 import com.jamgu.hwstatistics.util.roundToDecimals
+import com.jamgu.hwstatistics.util.thread.ThreadPool
 import com.permissionx.guolindev.PermissionX
 import java.lang.ref.WeakReference
 import java.text.SimpleDateFormat
@@ -59,6 +58,7 @@ class StatisticsLoader : INeedPermission {
         PhoneStateManager.register(context)
         BrightnessManager.registerReceiver(context)
         SystemManager.registerSystemReceiver(context)
+//        SensorsInfoManager.registerSensorListener(context)
         return this
     }
 
@@ -306,6 +306,7 @@ class StatisticsLoader : INeedPermission {
         PhoneStateManager.unregister(context)
         BrightnessManager.unregisterReceiver(context)
         SystemManager.unregisterSystemReceiver(context)
+//        SensorsInfoManager.unregisterSensorListener()
         mData.clear()
         weakContext.clear()
         mHandlerThread?.quitSafely()
@@ -492,9 +493,7 @@ class StatisticsLoader : INeedPermission {
         val cpuInfo = CPUInfoManager.getCpuUtilization()
         cpuUtils = cpuInfo?.getPerCpuUtilisation()
 
-        val size = cpuUtils?.size ?: return cpus
-
-        for (i in 0 until size) {
+        for (i in 0 until cpuNumb) {
 //            val cpuMaxFreq = CPUInfoManager.getCpuMaxFreq(i)
 //            val cpuMinFreq = CPUInfoManager.getCpuMinFreq(i)
 //            val cpuTemp = CPUInfoManager.getCpuTemp(i)
@@ -502,8 +501,13 @@ class StatisticsLoader : INeedPermission {
             val cpuMinFreq = 0f
             val cpuRunningFreq = CPUInfoManager.getCpuRunningFreq(i)
             val cpuTemp = 0f
-            val cpu = CPU(cpuMaxFreq, cpuMinFreq, cpuRunningFreq, cpuTemp, cpuUtils[i])
-            cpus.add(cpu)
+            if (cpuUtils != null && cpuUtils.isNotEmpty()) {
+                val cpu = CPU(cpuMaxFreq, cpuMinFreq, cpuRunningFreq, cpuTemp, cpuUtils[i.coerceAtMost(cpuUtils.size)])
+                cpus.add(cpu)
+            } else {
+                val cpu = CPU(cpuMaxFreq, cpuMinFreq, cpuRunningFreq, cpuTemp, 0f)
+                cpus.add(cpu)
+            }
         }
 
         return cpus
