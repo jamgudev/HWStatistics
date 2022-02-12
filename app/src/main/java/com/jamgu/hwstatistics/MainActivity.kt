@@ -14,9 +14,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView.VERTICAL
+import com.jamgu.common.thread.ThreadPool
 import com.jamgu.hwstatistics.databinding.ActivityMainBinding
 import com.jamgu.hwstatistics.util.ExcelUtil
-import com.jamgu.hwstatistics.util.thread.ThreadPool
 
 class MainActivity : AppCompatActivity() {
 
@@ -93,6 +93,10 @@ class MainActivity : AppCompatActivity() {
         binding.vRecycler.adapter = mAdapter
         binding.vRecycler.addItemDecoration(DividerItemDecoration(this, VERTICAL))
         binding.vRecycler.layoutManager = LinearLayoutManager(this)
+
+        binding.vTest.setOnClickListener {
+            PCRatioExporter.verifyAndExport(this)
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {

@@ -15,8 +15,16 @@ object GPUManager {
 
     private const val TAG = "GPUManager"
     private const val UTIL_FILE_PATH = "/sys/class/kgsl/kgsl-3d0/gpu_busy_percentage"
+    private const val GPU_CUR_FREQ = "/sys/class/kgsl/kgsl-3d0/gpuclk"
+    private const val UTIL_FILE_PATH2 = "/sys/devices/soc/5000000.qcom,kgsl-3d0/kgsl/kgsl-3d0/gpu_busy_percentage"
 
     fun getGpuUtilization(): Float {
+//        val text = readFile(UTIL_FILE_PATH)
+//        val statFile = RandomAccessFile(UTIL_FILE_PATH2, "r")
+//        statFile.seek(0)
+//        val text = statFile.readLine()
+//        Log.d(TAG, text)
+
         val gpu3DUtils = IOHelper.getGpu3DUtils()
 
         val utilSplits = gpu3DUtils.split(" ")
@@ -38,26 +46,27 @@ object GPUManager {
         return 0.0f
     }
 
+    // todo 明天试试游戏环境下，拿gpu利用率数据会不会准确些，如果误差难以估算，是不是可以这样：先算出io消耗的平均功率，最后再减掉这部分
     fun getGpuCurFreq2(): Float {
-//        val randomAccessFile = RandomAccessFile(UTIL_FILE_PATH, "r")
         try {
             val process = Runtime.getRuntime().exec("su")
             val os = process.outputStream
             os.use {
+//                os.write("tail -n 1 $UTIL_FILE_PATH".toByteArray())
                 os.write("cat $UTIL_FILE_PATH".toByteArray())
                 os.flush()
             }
             process.waitFor()
-            BufferedReader(InputStreamReader(process.inputStream)).use {
-                val readLine = it.readLine()
-                Log.d(TAG, readLine)
+            InputStreamReader(process.inputStream).use {
+                BufferedReader(it).use { br ->
+                    val readLine = br.readLine()
+                    Log.d(TAG, readLine)
+                }
             }
+            process.destroy()
         } catch (e: Exception) {
             e.printStackTrace()
         }
-//        randomAccessFile.seek(0)
-//        val readLine = randomAccessFile.readLine()
-//        Log.d(TAG, readLine)
         return 0f
     }
 

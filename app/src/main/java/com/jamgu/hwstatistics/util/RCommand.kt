@@ -80,7 +80,7 @@ object RCommand {
             FileUtils.writeStringToFile(file, data)
         } else {
             val cmdResult = ShellUtils.execCommand("echo " + data + " > " + file.absolutePath, true)
-            strReadContent = cmdResult?.successMsg ?: ""
+            strReadContent = cmdResult.successMsg ?: ""
         }
     }
 }

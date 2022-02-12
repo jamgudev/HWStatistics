@@ -1,15 +1,12 @@
 package com.jamgu.hwstatistics
 
-import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.Context
-import android.os.Handler
-import android.os.HandlerThread
 import android.util.Log
-import android.view.animation.Animation.INFINITE
-import android.view.animation.LinearInterpolator
 import android.widget.Toast
 import androidx.fragment.app.FragmentActivity
+import com.jamgu.common.thread.ThreadPool
+import com.jamgu.common.util.timer.VATimer
 import com.jamgu.hwstatistics.bluetooth.BluetoothManager
 import com.jamgu.hwstatistics.brightness.BrightnessManager
 import com.jamgu.hwstatistics.cpu.CPUInfoManager
@@ -19,9 +16,7 @@ import com.jamgu.hwstatistics.memory.MemInfoManager
 import com.jamgu.hwstatistics.network.NetWorkManager
 import com.jamgu.hwstatistics.phonestate.PhoneStateManager
 import com.jamgu.hwstatistics.system.SystemManager
-import com.jamgu.hwstatistics.timer.RoughTimer
 import com.jamgu.hwstatistics.util.roundToDecimals
-import com.jamgu.hwstatistics.util.thread.ThreadPool
 import com.permissionx.guolindev.PermissionX
 import java.lang.ref.WeakReference
 import java.text.SimpleDateFormat
@@ -40,16 +35,12 @@ class StatisticsLoader : INeedPermission {
         private const val TOTAL_LENGTH = 100000
     }
 
-    private var mTimer: ValueAnimator? = null
-    private var mRoughTimer: RoughTimer? = null
-    private var mHandlerThread: HandlerThread? = null
+    private var mTimer: VATimer? = null
 
     private var uiCallback: ((String) -> Unit)? = null
     private val mData: ArrayList<ArrayList<Any>> = ArrayList()
 
     fun init(ctx: Context, callback: ((String) -> Unit)?): StatisticsLoader {
-        mHandlerThread = HandlerThread("Statistics Thread")
-        mHandlerThread?.start()
 
         uiCallback = callback
         weakContext = WeakReference(ctx)
@@ -65,70 +56,47 @@ class StatisticsLoader : INeedPermission {
     @SuppressLint("SimpleDateFormat")
     private fun start() {
         if (mTimer == null) {
-            mTimer = ValueAnimator.ofInt(0, TOTAL_LENGTH)
+            mTimer = VATimer()
         }
 
         mData.clear()
 
-        var lastVal = -1
-        var currentRepeatCount = 0
-        var lastTimeMills = 0L
         var lastTimeString = ""
         var dataTemp = ArrayList<Any>()
         var tempDataTimes = 1f
-        mTimer?.apply {
-            addUpdateListener {
-                val curVal = it.animatedValue
-                // 重置
-                if (curVal is Int && lastVal - curVal >= 10000) {
-                    lastVal = -1
-                    currentRepeatCount++
+        mTimer?.run({
+            // do something
+            val currentTimeMillis = System.currentTimeMillis()
+            val sdf = SimpleDateFormat("yyyy/MM/dd HH:mm:ss")
+            val curTimeString: String = sdf.format(Date(currentTimeMillis))
+
+            val newData = getData(curTimeString, currentTimeMillis)
+
+            // 先缓存
+            if (curTimeString == lastTimeString) {
+                // 还没数据，直接赋值
+                if (dataTemp.isEmpty()) {
+                    dataTemp = newData
+                    tempDataTimes = 1f
+                } else {    // 有数据了，叠加
+                    dataTemp.plus(newData)
+                    tempDataTimes += 1f
                 }
-
-//                Log.d(TAG, "curVal = $curVal, lastVal = $lastVal")
-                if (curVal is Int && (curVal - 200) >= lastVal) {
-                    if (curVal == 10) currentRepeatCount++
-
-                    // do something
-                    val currentTimeMillis = System.currentTimeMillis()
-                    val sdf = SimpleDateFormat("yyyy/MM/dd HH:mm:ss")
-                    val curTimeString: String = sdf.format(Date(currentTimeMillis))
-
-                    val newData = getData(curTimeString, currentTimeMillis)
-
-                    // 先缓存
-                    if (curTimeString == lastTimeString) {
-                        // 还没数据，直接赋值
-                        if (dataTemp.isEmpty()) {
-                            dataTemp = newData
-                            tempDataTimes = 1f
-                        } else {    // 有数据了，叠加
-                            dataTemp.plus(newData)
-                            tempDataTimes += 1f
-                        }
-                    } else {
-                        if (dataTemp.isNotEmpty()) {
-                            mData.add(dataTemp.divideBy(tempDataTimes))
-                            Log.d(TAG, "curTimeString: $curTimeString, data_num = $tempDataTimes")
-                        }
-                        tempDataTimes = 1f
-                        dataTemp = newData
-                    }
-
-//                    uiCallback?.invoke("TS: $curTimeString, TM: $currentTimeMillis")
-
-                    lastTimeString = curTimeString
-                    lastTimeMills = currentTimeMillis
-                    Log.d(TAG, "curVal = $curVal, curRepeat = $currentRepeatCount, info: | ${newData[3]}")
-                    lastVal = curVal
+            } else {
+                if (dataTemp.isNotEmpty()) {
+                    mData.add(dataTemp.divideBy(tempDataTimes))
+                    Log.d(TAG, "data belong to: $lastTimeString, data_num = $tempDataTimes")
                 }
+                tempDataTimes = 1f
+                dataTemp = newData
             }
 
-            interpolator = LinearInterpolator()
-            duration = 100 * 1000L
-            repeatCount = INFINITE
-            start()
-        }
+            uiCallback?.invoke("TS: $curTimeString, TM: $currentTimeMillis")
+
+            lastTimeString = curTimeString
+            Log.d(TAG, "curVal = $it, curRepeat = ${mTimer?.getCurrentRepeatCount()}, info: | ${newData[3]}")
+
+        }, 200)
     }
 
     private fun getData(curTimeString: String, currentTimeMillis: Long): ArrayList<Any> {
@@ -188,53 +156,6 @@ class StatisticsLoader : INeedPermission {
         }.buildArray()
     }
 
-    @SuppressLint("SimpleDateFormat")
-    private fun startRoughly() {
-        val handlerThread = mHandlerThread ?: return
-
-        if (mRoughTimer == null) {
-            mRoughTimer = RoughTimer(handlerThread.looper)
-        }
-
-        mData.clear()
-
-        var lastTimeString = ""
-        var dataTemp = ArrayList<Any>()
-        var tempDataTimes = 1f
-        mRoughTimer?.run({
-            // do something
-            val currentTimeMillis = System.currentTimeMillis()
-            val sdf = SimpleDateFormat("yyyy/MM/dd HH:mm:ss")
-            val curTimeString: String = sdf.format(Date(currentTimeMillis))
-
-            val newData = getData(curTimeString, currentTimeMillis)
-
-            // 先缓存
-            if (curTimeString == lastTimeString) {
-                // 还没数据，直接赋值
-                if (dataTemp.isEmpty()) {
-                    dataTemp = newData
-                    tempDataTimes = 1f
-                } else {    // 有数据了，叠加
-                    dataTemp.plus(newData)
-                    tempDataTimes += 1f
-                }
-            } else {
-                if (dataTemp.isNotEmpty()) {
-                    mData.add(dataTemp.divideBy(tempDataTimes))
-                    Log.d(TAG, "curTimeString: $curTimeString, data_num = $tempDataTimes")
-                }
-                tempDataTimes = 1f
-                dataTemp = newData
-            }
-
-            lastTimeString = curTimeString
-//            uiCallback?.invoke("TS: $curTimeString, TM: $currentTimeMillis")
-
-        }, 200)
-
-    }
-
     /**
      * 传入newData，会将两者相加
      */
@@ -282,26 +203,19 @@ class StatisticsLoader : INeedPermission {
 
 
     fun stop() {
-        if (mTimer?.isRunning == true || mRoughTimer?.isStarted() == true) {
-            destroyTimer()
-        }
+        mTimer?.stop()
     }
 
     fun isStarted(): Boolean {
-        return mTimer?.isStarted == true || mRoughTimer?.isStarted() == true
+        return mTimer?.isStarted() ?: false
     }
 
     fun startNonMainThread() {
-        mHandlerThread?.let {
-            Handler(it.looper).post {
-                start()
-//                startRoughly()
-            }
-        }
+        start()
     }
 
     fun release() {
-        destroyTimer()
+        mTimer?.release()
         val context = weakContext.get()
         PhoneStateManager.unregister(context)
         BrightnessManager.unregisterReceiver(context)
@@ -309,7 +223,6 @@ class StatisticsLoader : INeedPermission {
 //        SensorsInfoManager.unregisterSensorListener()
         mData.clear()
         weakContext.clear()
-        mHandlerThread?.quitSafely()
     }
 
     fun getData(): ArrayList<ArrayList<Any>> {
@@ -408,21 +321,6 @@ class StatisticsLoader : INeedPermission {
                         }
                     }
                 }
-    }
-
-    private fun destroyTimer() {
-        mTimer?.let {
-            if (it.isRunning)
-                it.cancel()
-            it.removeAllUpdateListeners()
-        }
-        mTimer = null
-
-        mRoughTimer?.let {
-            if (it.isStarted())
-                it.close()
-        }
-        mRoughTimer = null
     }
 
     /**

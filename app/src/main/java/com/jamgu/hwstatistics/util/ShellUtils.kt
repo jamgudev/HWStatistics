@@ -162,7 +162,6 @@ object ShellUtils {
                 }
             }
         } catch (e: IOException) {
-//            e.printStackTrace()
             return CommandResult(result, null, e.message.toString())
         }
 

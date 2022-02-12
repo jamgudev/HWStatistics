@@ -3,6 +3,7 @@ package com.jamgu.hwstatistics.sensors
 import android.content.Context
 import android.content.Context.SENSOR_SERVICE
 import android.hardware.Sensor
+import android.hardware.Sensor.TYPE_ALL
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
@@ -71,20 +72,25 @@ object SensorsInfoManager {
 
         mSensorManager = context.getSystemService(SENSOR_SERVICE) as? SensorManager
 
-        mSensorManager?.let { sm ->
-            // 加速度传感器
-            sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)?.let{
-                sm.registerListener(mSensorEventListener, it, mSampleRate)
-            }
-            // 陀螺仪传感器
-            sm.getDefaultSensor(Sensor.TYPE_GYROSCOPE)?.let{
-                sm.registerListener(mSensorEventListener, it, mSampleRate)
-            }
-            // 光线传感器
-            sm.getDefaultSensor(Sensor.TYPE_LIGHT)?.let {
-                sm.registerListener(mSensorEventListener, it, mSampleRate)
-            }
+        val defaultSensor = mSensorManager?.getSensorList(TYPE_ALL)
+        defaultSensor?.forEach {
+            Log.d(TAG, "all size: ${defaultSensor.size}, current: ${it.name}")
         }
+
+//        mSensorManager?.let { sm ->
+//            // 加速度传感器
+//            sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)?.let{
+//                sm.registerListener(mSensorEventListener, it, mSampleRate)
+//            }
+//            // 陀螺仪传感器
+//            sm.getDefaultSensor(Sensor.TYPE_GYROSCOPE)?.let{
+//                sm.registerListener(mSensorEventListener, it, mSampleRate)
+//            }
+//            // 光线传感器
+//            sm.getDefaultSensor(Sensor.TYPE_LIGHT)?.let {
+//                sm.registerListener(mSensorEventListener, it, mSampleRate)
+//            }
+//        }
     }
 
     fun unregisterSensorListener() {
