@@ -2,10 +2,10 @@ package com.jamgu.hwstatistics
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.util.Log
 import android.widget.Toast
 import androidx.fragment.app.FragmentActivity
 import com.jamgu.common.thread.ThreadPool
+import com.jamgu.common.util.log.JLog
 import com.jamgu.common.util.timer.VATimer
 import com.jamgu.hwstatistics.bluetooth.BluetoothManager
 import com.jamgu.hwstatistics.brightness.BrightnessManager
@@ -85,16 +85,16 @@ class StatisticsLoader : INeedPermission {
             } else {
                 if (dataTemp.isNotEmpty()) {
                     mData.add(dataTemp.divideBy(tempDataTimes))
-                    Log.d(TAG, "data belong to: $lastTimeString, data_num = $tempDataTimes")
+                    JLog.d(TAG, "data belong to: $lastTimeString, data_num = $tempDataTimes")
                 }
                 tempDataTimes = 1f
                 dataTemp = newData
             }
 
-            uiCallback?.invoke("TS: $curTimeString, TM: $currentTimeMillis")
+//            uiCallback?.invoke("TS: $curTimeString, TM: $currentTimeMillis")
 
             lastTimeString = curTimeString
-            Log.d(TAG, "curVal = $it, curRepeat = ${mTimer?.getCurrentRepeatCount()}, info: | ${newData[3]}")
+            JLog.d(TAG, "curVal = $it, curRepeat = ${mTimer?.getCurrentRepeatCount()}, info: | ${newData[3]}")
 
         }, 200)
     }
@@ -154,51 +154,6 @@ class StatisticsLoader : INeedPermission {
 //            gpuCurFreq(gpu3DCurFreq)
 //            gpuCurUtil(gpu3DCurUtil)
         }.buildArray()
-    }
-
-    /**
-     * 传入newData，会将两者相加
-     */
-    private fun ArrayList<Any>.plus(newData: ArrayList<Any>?): ArrayList<Any> {
-        if (newData.isNullOrEmpty() || this.isNullOrEmpty()) return this
-
-        this.forEachIndexed { i, it ->
-            if (i == 0) return@forEachIndexed
-            if (it is Number) {
-                if (it is Float) {
-                    val newVal = it.plus(newData[i].toString().toFloat())
-                    this[i] = newVal
-                } else if (it is Int) {
-                    val newVal = it.plus(newData[i].toString().toInt())
-                    this[i] = newVal
-                }
-            }
-        }
-
-        return this
-    }
-
-    /**
-     * 传入分母，会将列表内各元素分别处于它
-     */
-    private fun ArrayList<Any>.divideBy(divider: Float): ArrayList<Any> {
-        if (this.isNullOrEmpty()) return this
-
-        this.forEachIndexed { i, it ->
-            if (i == 0) return@forEachIndexed
-
-            if (it is Number) {
-                if (it is Float) {
-                    val newVal = it / divider
-                    this[i] = newVal.roundToDecimals(2)
-                } else if (it is Int) {
-                    val newVal = it / divider
-                    this[i] = newVal.roundToDecimals(2)
-                }
-            }
-        }
-
-        return this
     }
 
 
@@ -311,7 +266,7 @@ class StatisticsLoader : INeedPermission {
                     )
                 }
                 .request { allGranted, _, deniedList ->
-                    Log.d("NetWorkManager", "permission granted!")
+                    JLog.d("NetWorkManager", "permission granted!")
                     if (allGranted) {
                         // do nothing
                     } else {
@@ -382,9 +337,9 @@ class StatisticsLoader : INeedPermission {
         val cpus = ArrayList<CPU>()
 //        val cpuUtilization = CPUInfoManager.getCpuUtilization(weakContext.get(), cpuNumb)
 //        val cpuUsageBeforeO = TempCpu().getCpuUsageBeforeO(cpuNumb)
-//        Log.d(TAG, "cpu = $cpuUsageBeforeO")
+//        JLog.d(TAG, "cpu = $cpuUsageBeforeO")
 //        val cpuUsage = CpuUtil.getCpuUsage()
-//        Log.d(TAG, "cpuUsage = $cpuUsage")
+//        JLog.d(TAG, "cpuUsage = $cpuUsage")
 //        val cpuUsageBeforeO = TempCpu().getCpuUsageBeforeO(cpuNumb)
 
         val cpuUtils: List<Float>?
@@ -416,4 +371,49 @@ class StatisticsLoader : INeedPermission {
     }
 
     override fun permission(): Array<String> = arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+}
+
+/**
+ * 传入newData，会将两者相加
+ */
+private fun ArrayList<Any>.plus(newData: ArrayList<Any>?): ArrayList<Any> {
+    if (newData.isNullOrEmpty() || this.isNullOrEmpty()) return this
+
+    this.forEachIndexed { i, it ->
+        if (i == 0) return@forEachIndexed
+        if (it is Number) {
+            if (it is Float) {
+                val newVal = it.plus(newData[i].toString().toFloat())
+                this[i] = newVal
+            } else if (it is Int) {
+                val newVal = it.plus(newData[i].toString().toInt())
+                this[i] = newVal
+            }
+        }
+    }
+
+    return this
+}
+
+/**
+ * 传入分母，会将列表内各元素分别处于它
+ */
+private fun ArrayList<Any>.divideBy(divider: Float): ArrayList<Any> {
+    if (this.isNullOrEmpty()) return this
+
+    this.forEachIndexed { i, it ->
+        if (i == 0) return@forEachIndexed
+
+        if (it is Number) {
+            if (it is Float) {
+                val newVal = it / divider
+                this[i] = newVal.roundToDecimals(2)
+            } else if (it is Int) {
+                val newVal = it / divider
+                this[i] = newVal.roundToDecimals(2)
+            }
+        }
+    }
+
+    return this
 }
