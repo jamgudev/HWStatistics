@@ -28,8 +28,19 @@
             android:id="@+id/vTest"
             android:layout_width="match_parent"
             android:layout_height="46dp"
-            android:layout_alignParentBottom="true"
+            android:layout_above="@id/vShowTime"
             android:text="Test"
+            android:textAllCaps="false"
+            android:layout_marginTop="16dp"
+            android:layout_marginLeft="16dp"
+            android:layout_marginRight="16dp"/>
+
+    <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/vShowTime"
+            android:layout_width="match_parent"
+            android:layout_height="46dp"
+            android:layout_alignParentBottom="true"
+            android:text="showTime"
             android:textAllCaps="false"
             android:layout_margin="16dp" />
 

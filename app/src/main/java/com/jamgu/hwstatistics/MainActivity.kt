@@ -24,6 +24,7 @@ class MainActivity : AppCompatActivity() {
         private const val TAG = "MainActivity"
     }
 
+    private var mShowTime: Boolean = false
     private val mLoader = StatisticsLoader()
     private lateinit var binding: ActivityMainBinding
 
@@ -43,11 +44,13 @@ class MainActivity : AppCompatActivity() {
         initViews()
 
         mLoader.init(this) {
-            ThreadPool.runUITask {
-                mData.add(it)
-                mAdapter.notifyItemInserted(mData.size - 1)
-                if (binding.vRecycler.scrollState == SCROLL_STATE_IDLE) {
-                    binding.vRecycler.scrollToPosition(mData.size - 1)
+            if (mShowTime) {
+                ThreadPool.runUITask {
+                    mData.add(it)
+                    mAdapter.notifyItemInserted(mData.size - 1)
+                    if (binding.vRecycler.scrollState == SCROLL_STATE_IDLE) {
+                        binding.vRecycler.scrollToPosition(mData.size - 1)
+                    }
                 }
             }
         }
@@ -75,6 +78,8 @@ class MainActivity : AppCompatActivity() {
 //                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
 //                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 //                    startActivity(intent)
+                    mData.clear()
+                    mAdapter.notifyDataSetChanged()
                     mLoader.startNonMainThread()
                     binding.vStart.text = "Stop"
                 } else {
@@ -96,6 +101,10 @@ class MainActivity : AppCompatActivity() {
 
         binding.vTest.setOnClickListener {
             PCRatioExporter.verifyAndExport(this)
+        }
+
+        binding.vShowTime.setOnClickListener {
+            mShowTime = !mShowTime
         }
     }
 
