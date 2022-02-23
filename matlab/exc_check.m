@@ -37,21 +37,21 @@ theta'
 % load verify data
 v = readmatrix(verifyFile);
 
-X_v = v(:, 1:end-1);
-y_v = v(:, end);
+X_v = v(:, 1:end);
+% y_v = v(:, end);
 [X_v, mu, sigma] = featureNormalize(X_v);
 
 X_v = [ones(size(X_v, 1), 1) X_v];
 
 H_v = X_v * theta;
-result = H_v - y_v;
-error = abs(result) ./ y_v;
-mean_error = mean(error)
+% result = H_v - y_v;
+% error = abs(result) ./ y_v;
+% mean_error = mean(error)
 
 figure(2);
 n_x = 1:size(H_v, 1);
 % subplot(1, 2, 2);
-plot(n_x, H_v, 'r-', n_x, y_v, 'g-');
+plot(n_x, H_v, 'r-');
 
 
 

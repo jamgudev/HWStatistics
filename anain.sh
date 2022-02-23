@@ -1,11 +1,11 @@
 #!/bin/bash
 echo "开始自动化点击"
 # 执行间隔时间
-quitTime=1
+quitTime=2
 
 # 模拟点击的位置
-inputX=955
-inputY=1714
+inputX=100
+inputY=1313
 # 执行次数
 num=1
 while [ "1" = "1" ] #死循环
