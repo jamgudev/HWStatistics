@@ -1,0 +1,8 @@
+type = raw events
+count=10
+speed=1.0
+
+start data >>
+
+Drag(200, 600, 200, 300,100)
+UserWait(1000)
