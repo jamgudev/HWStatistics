@@ -8,20 +8,16 @@ Tap(570,1880,50)
 UserWait(2950)
 
 Tap(50,1350,50)
-UserWait(1200)
-
-Tap(1000,950,50)
-UserWait(200)
-
-UserWait(2500)
-
-Tap(570,1880,50)
 UserWait(950)
 
+Tap(1000,950,50)
+UserWait(2950)
+
+Tap(570,1880,50)
+UserWait(2950)
+
 Tap(164,1362,50)
-UserWait(200)
+UserWait(950)
 
 Tap(1000,950,50)
-UserWait(200)
-
-UserWait(2500)
+UserWait(2950)
