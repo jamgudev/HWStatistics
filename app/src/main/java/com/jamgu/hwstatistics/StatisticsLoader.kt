@@ -91,7 +91,7 @@ class StatisticsLoader : INeedPermission {
                 dataTemp = newData
             }
 
-//            uiCallback?.invoke("TS: $curTimeString, TM: $currentTimeMillis")
+            uiCallback?.invoke("TS: $curTimeString, TM: $currentTimeMillis")
 
             lastTimeString = curTimeString
             JLog.d(TAG, "curVal = $it, curRepeat = ${mTimer?.getCurrentRepeatCount()}, info: | ${newData[3]}")

@@ -105,6 +105,7 @@ class MainActivity : AppCompatActivity() {
 
         binding.vShowTime.setOnClickListener {
             mShowTime = !mShowTime
+            binding.vShowTime.text = if (mShowTime) "不显示时间戳" else "显示时间戳"
         }
     }
 
