@@ -1,0 +1,14 @@
+type = raw events
+count=10
+speed=1.0
+
+start data >>
+
+Tap(998, 1832, 50)
+UserWait(950)
+
+Tap(666, 1328, 50)
+UserWait(1950)
+
+Tap(400, 1688, 50)
+UserWait(950)
