@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.Environment
 import android.util.Log
 import com.jamgu.common.thread.ThreadPool
+import com.jamgu.common.util.log.JLog
 import com.jamgu.hwstatistics.util.ExcelUtil
 import com.jamgu.hwstatistics.util.roundToDecimals
 import java.io.File
@@ -32,41 +33,35 @@ class PCRatioExporter {
             0.0088f, 0.0012f, -0.006f, 0.0058f, 0.0184f
         )
 
-        fun verifyAndExport(context: Context?) {
-            context ?: return
+        fun verifyAndExport(context: Context?, uri: Uri?, hasRealPc: Boolean = false) {
+            if (context == null || uri == null) return
+
+            val path = uri.path
+            if (path.isNullOrEmpty()) {
+                return
+            }
+
+            val fileName = path.subSequence(path.lastIndexOf("/") + 1,
+                path.lastIndexOf("."))
 
             ThreadPool.runOnNonUIThread {
-            val fileName = "verify_all"
-//                val fileName = "01181932_bb"
-                val fileDir = "${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)}"
-                val filePath = "$fileDir/$fileName.xlsx"
-                val file = File(filePath)
-                if (!file.exists()) {
-                    Log.e(TAG, "file not exist!")
-                    return@runOnNonUIThread
-                }
-
-                val filePathUri = Uri.fromFile(File(filePath))
-                Log.d(TAG, "filePathUri = $filePathUri")
-                // 数据格式有限制，最后一列为功耗设备测出的功耗
-                // 计算百分比时会略过这一列的数据，但这一列数据得有
-                val dataList = ExcelUtil.readExcelNewLineByLine(context, filePathUri, "$fileName.xlsx")
+                val dataList = ExcelUtil.readExcelNewLineByLine(context, uri, "$fileName.xlsx")
                     ?: return@runOnNonUIThread
-                Log.d(TAG, "dataList = $dataList, size = ${dataList.size}")
+                JLog.d(TAG, "dataList = $dataList, size = ${dataList.size}")
 
                 if (dataList.size < 2) {
                     return@runOnNonUIThread
                 }
 
                 // 把表头取出
-                val headRows = getHeadRowAndDump(dataList)
+                val headRows = getHeadRowAndDump(dataList, hasRealPc)
 
-                val exportList = computePCTofEachHW(dataList) ?: return@runOnNonUIThread
+                val exportList = computePCTofEachHW(dataList, hasRealPc) ?: return@runOnNonUIThread
 
                 // 再标准化，算出模型预测功耗
-                featureNormalize(dataList)
+                featureNormalize(dataList, hasRealPc)
                 // 将功耗数据补上
-                computeActualPC(dataList)?.let {
+                computeActualPC(dataList, hasRealPc)?.let {
                     exportList.forEachIndexed { idx, subList ->
                         subList.addAll(it[idx])
                     }
@@ -79,9 +74,11 @@ class PCRatioExporter {
                 }
 
                 // 导出文件
+                val fileDir = "${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)}"
+                val filePath = "$fileDir/${fileName}_export.xlsx"
+                val filePathUri = Uri.fromFile(File(filePath))
                 if (exportList.size != 0) {
-                    val exportUri = Uri.fromFile(File("$fileDir/${fileName}_export.xlsx"))
-                    ExcelUtil.writeExcelNew(context, exportList, exportUri)
+                    ExcelUtil.writeExcelNew(context, exportList, filePathUri)
                 }
             }
         }
@@ -91,7 +88,7 @@ class PCRatioExporter {
          * @param dataList 从文件读出来的数据集
          * @return ArrayList<ArrayList<Any>>? 取出表头，可能有多行
          */
-        private fun getHeadRowAndDump(dataList: MutableList<MutableMap<Int, Any>>?): ArrayList<ArrayList<Any>>? {
+        private fun getHeadRowAndDump(dataList: MutableList<MutableMap<Int, Any>>?, hasRealPc: Boolean): ArrayList<ArrayList<Any>>? {
             if (dataList == null || dataList.isEmpty()) return null
 
 
@@ -107,7 +104,10 @@ class PCRatioExporter {
                         val headRow = ArrayList<Any>()
                         val size = dataList[idx].size
                         (0 until size).forEach {
-                            headRow.add(it, dataList[idx][it].toString())
+                            val headName = dataList[idx][it].toString()
+                            if (headName != "avg_p" || hasRealPc) {
+                                headRow.add(it, headName)
+                            }
                         }
                         headRows.add(headRow)
                         lastHeadRowNum = idx
@@ -123,7 +123,7 @@ class PCRatioExporter {
             if (lastHeadRowNum >= 0) {
                 // 补充表头
                 val extraHead = arrayListOf(
-                    "act_p", "p_error"
+                    "exp_p", "p_error"
                 )
                 headRows[lastHeadRowNum].addAll(extraHead)
             }
@@ -135,7 +135,7 @@ class PCRatioExporter {
          * @param dataList 从文件读出来的数据集
          * @return ArrayList<ArrayList<Any>> 一个包含每条数据各部分硬件功耗的二维列表
          */
-        private fun computePCTofEachHW(dataList: List<MutableMap<Int, Any>>?): ArrayList<ArrayList<Any>>? {
+        private fun computePCTofEachHW(dataList: List<MutableMap<Int, Any>>?, hasRealPc: Boolean): ArrayList<ArrayList<Any>>? {
             val exportList = ArrayList<ArrayList<Any>>()
             dataList?.forEachIndexed { _, map ->
                 val size = map.size
@@ -146,7 +146,7 @@ class PCRatioExporter {
                 for (i in 0 until size) {
                     val collectedVal = map[i] as? String
                     // 忽略最后一列数据
-                    if (i == size - 1) break
+                    if (i == size - 1 && hasRealPc) break
                     if (collectedVal != null) {
                         val paramsValue = params[i + 1]
                         // 计算单个预测功耗
@@ -166,7 +166,7 @@ class PCRatioExporter {
                 // 最后把总功耗加上，
                 // mappedArray.add(estimatedPC)
 
-                Log.d(TAG, "estimatedPC = $estimatedPC, listInRow = $mappedArray")
+//                Log.d(TAG, "estimatedPC = $estimatedPC, listInRow = $mappedArray")
                 exportList.add(mappedArray)
 
             }
@@ -177,18 +177,18 @@ class PCRatioExporter {
          * @param dataList 从文件读出来的数据集
          * @return ArrayList<FloatArray> 每行的预测功耗，真实功耗，预测误差
          */
-        private fun computeActualPC(dataList: List<MutableMap<Int, Any>>?): ArrayList<ArrayList<Float>>? {
+        private fun computeActualPC(dataList: List<MutableMap<Int, Any>>?, hasRealPc: Boolean): ArrayList<ArrayList<Float>>? {
             dataList ?: return null
 
             val realEstimatedPC = ArrayList<ArrayList<Float>>()
             for (i in dataList.indices) {
                 var estimatedPc = params[0]
-                var realPc = 0f
+                var realPc = -1f
                 val size = dataList[i].size
                 for (j in 0 until size) {
                     val collectedVal = dataList[i][j] as? String
                     if (collectedVal != null) {
-                        if (j == size - 1) {
+                        if (j == size - 1 && hasRealPc) {
                             // 拿到真实功耗
                             realPc = collectedVal.toFloat()
                             break
@@ -201,8 +201,14 @@ class PCRatioExporter {
                 }
 
                 // 计算预测误差
-                val error = (realPc - estimatedPc).absoluteValue / realPc
-                realEstimatedPC.add(arrayListOf(estimatedPc, realPc, error))
+                val error = if (realPc != -1f) {
+                    (realPc - estimatedPc).absoluteValue / realPc
+                } else 0f
+                if (hasRealPc) {
+                    realEstimatedPC.add(arrayListOf(realPc, estimatedPc, error))
+                } else {
+                    realEstimatedPC.add(arrayListOf(estimatedPc))
+                }
             }
             return realEstimatedPC
         }
@@ -210,7 +216,7 @@ class PCRatioExporter {
         /**
          * 数据标准化
          */
-        private fun featureNormalize(dataList: List<MutableMap<Int, Any>>?) {
+        private fun featureNormalize(dataList: List<MutableMap<Int, Any>>?, hasRealPc: Boolean) {
             dataList ?: return
             val xAxis = dataList.size
             if (xAxis < 2) return
@@ -223,7 +229,7 @@ class PCRatioExporter {
 
             for (j in 0 until yAxis) {
                 // 最后的功耗数据不需要标准化
-                if (j == yAxis - 1) {
+                if (j == yAxis - 1 && hasRealPc) {
                     break
                 }
                 // 均值
@@ -236,7 +242,8 @@ class PCRatioExporter {
                 val yAxisDataArray = ArrayList<Float>()
                 // 跳过表头
                 for (i in 0 until xAxis) {
-                    val yVal = dataList[i][j] as? String ?: throw Throwable("not String, type: ${dataList[i][j]?.javaClass}")
+                    val yVal =
+                        dataList[i][j] as? String ?: throw Throwable("not String, type: ${dataList[i][j]?.javaClass}")
                     val fYVal = yVal.toFloat()
                     yAxisDataArray.add(fYVal)
 
@@ -255,7 +262,6 @@ class PCRatioExporter {
                     mu = 0f
                     sigma = maxVal
                 }
-                Log.d(TAG, "sqrt sigma = $sigma")
                 means.add(mu)
                 sigmas.add(sigma)
 
@@ -264,9 +270,8 @@ class PCRatioExporter {
                     val yVal = dataList[i][j] as? String ?: return
                     if (sigma != 0f) {
                         dataList[i][j] = ((yVal.toFloat() - mu) / sigma).toString()
-                        Log.d(TAG, "($i, $j), normalized = ${dataList[i][j]}")
                     } else {
-                        Log.d(TAG, "($i, $j), no need to normalize = ${dataList[i][j]}")
+//                        JLog.d(TAG, "($i, $j), no need to normalize = ${dataList[i][j]}")
                     }
                 }
             }

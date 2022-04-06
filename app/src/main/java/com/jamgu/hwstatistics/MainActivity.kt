@@ -14,6 +14,8 @@ import com.jamgu.common.thread.ThreadPool
 import com.jamgu.common.util.log.JLog
 import com.jamgu.hwstatistics.databinding.ActivityMainBinding
 import com.jamgu.hwstatistics.util.ExcelUtil
+import com.jamgu.krouter.core.router.KRouterUriBuilder
+import com.jamgu.krouter.core.router.KRouters
 
 class MainActivity : ViewBindingActivity<ActivityMainBinding>() {
 
@@ -59,8 +61,9 @@ class MainActivity : ViewBindingActivity<ActivityMainBinding>() {
         mBinding.vRecycler.addItemDecoration(DividerItemDecoration(this, VERTICAL))
         mBinding.vRecycler.layoutManager = LinearLayoutManager(this)
 
-        mBinding.vTest.setOnClickListener {
-            PCRatioExporter.verifyAndExport(this)
+        mBinding.v2PartPower.setOnClickListener {
+//            PCRatioExporter.verifyAndExport(this)
+            KRouters.open(this, PART_POWER_PAGE)
         }
 
         mBinding.vShowTime.setOnClickListener {

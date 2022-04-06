@@ -49,7 +49,7 @@ public class ExcelUtil {
         InputStream is;
         try {
             is = context.getContentResolver().openInputStream(uri);
-            Log.i(TAG, "readExcel: " + extString);
+//            Log.i(TAG, "readExcel: " + extString);
             if (".xls".equals(extString)) {
                 wb = new HSSFWorkbook(is);
             } else if (".xlsx".equals(extString)) {
@@ -76,7 +76,6 @@ public class ExcelUtil {
                         for (int j = 0; j < colnum; j++) {
                             Object value = getCellFormatValue(row.getCell(j));
                             String cellInfo = "r: " + i + "; c:" + j + "; v:" + value;
-                            Log.i(TAG, "readExcelNew: " + cellInfo);
                             itemMap.put(j, value);
                         }
                     } else {
@@ -129,7 +128,7 @@ public class ExcelUtil {
                 for (int c = 0; c < cellsCount; c++) {
                     Object value = getCellFormatValue(rowHeader.getCell(c));
                     String cellInfo = "header " + "; c:" + c + "; v:" + value;
-                    Log.i(TAG, "readExcelNew: " + cellInfo);
+//                    Log.i(TAG, "readExcelNew: " + cellInfo);
 
                     headerMap.put(c, value);
                 }

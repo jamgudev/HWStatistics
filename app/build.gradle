@@ -95,4 +95,6 @@ dependencies {
     implementation 'com.github.dyorgio.runtime:cpu-watcher:1.2.4'
     //  Common 库
     implementation 'io.github.jamgudev:common:0.6.0'
+    //  SettingPie 库
+    implementation 'io.github.jamgudev:settingpie:1.0.1'
 }
