@@ -35,36 +35,6 @@ class MainActivity : ViewBindingActivity<ActivityMainBinding>() {
     }
 
     override fun initWidget() {
-        initViews()
-        
-        mLoader.init(this) {
-            if (mShowTime) {
-                ThreadPool.runUITask {
-                    mData.add(it)
-                    mAdapter.notifyItemInserted(mData.size - 1)
-                    if (mBinding.vRecycler.scrollState == SCROLL_STATE_IDLE) {
-                        mBinding.vRecycler.scrollToPosition(mData.size - 1)
-                    }
-                }
-            }
-        }
-
-        folderLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            val uri: Uri = it.data?.data ?: return@registerForActivityResult
-            JLog.i(TAG, "onActivityResult: " + "filePath：" + uri.path)
-            // you can modify readExcelList, then write to excel.
-            ThreadPool.runOnNonUIThread {
-                val data = mLoader.getData()
-                if (data.isNullOrEmpty()) {
-                    showToast("Data Is Empty...")
-                } else {
-                    ExcelUtil.writeExcelNew(this, data, uri)
-                }
-            }
-        }
-    }
-
-    private fun initViews() {
         mBinding.vStart.setOnClickListener {
             if (mLoader.requestedPermission(this)) {
                 if (!mLoader.isStarted()) {
@@ -96,6 +66,34 @@ class MainActivity : ViewBindingActivity<ActivityMainBinding>() {
         mBinding.vShowTime.setOnClickListener {
             mShowTime = !mShowTime
             mBinding.vShowTime.text = if (mShowTime) "不显示时间戳" else "显示时间戳"
+        }
+    }
+
+    override fun initData() {
+        mLoader.init(this) {
+            if (mShowTime) {
+                ThreadPool.runUITask {
+                    mData.add(it)
+                    mAdapter.notifyItemInserted(mData.size - 1)
+                    if (mBinding.vRecycler.scrollState == SCROLL_STATE_IDLE) {
+                        mBinding.vRecycler.scrollToPosition(mData.size - 1)
+                    }
+                }
+            }
+        }
+
+        folderLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            val uri: Uri = it.data?.data ?: return@registerForActivityResult
+            JLog.i(TAG, "onActivityResult: " + "filePath：" + uri.path)
+            // you can modify readExcelList, then write to excel.
+            ThreadPool.runOnNonUIThread {
+                val data = mLoader.getData()
+                if (data.isNullOrEmpty()) {
+                    showToast("Data Is Empty...")
+                } else {
+                    ExcelUtil.writeExcelNew(this, data, uri)
+                }
+            }
         }
     }
 
