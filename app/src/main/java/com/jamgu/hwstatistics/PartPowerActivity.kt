@@ -2,8 +2,6 @@ package com.jamgu.hwstatistics
 
 import android.content.Intent
 import android.net.Uri
-import androidx.appcompat.app.AppCompatActivity
-import android.os.Bundle
 import android.widget.CheckBox
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -12,7 +10,6 @@ import com.jamgu.common.page.activity.ViewBindingActivity
 import com.jamgu.common.thread.ThreadPool
 import com.jamgu.common.util.log.JLog
 import com.jamgu.hwstatistics.databinding.ActivityPartPowerBinding
-import com.jamgu.hwstatistics.util.ExcelUtil
 import com.jamgu.krouter.annotation.KRouter
 import com.jamgu.settingpie.base.SettingViewBinder
 import com.jamgu.settingpie.model.SetItemBuilder
@@ -27,7 +24,7 @@ private const val TAG = "PartPowerActivity"
 @KRouter([PART_POWER_PAGE])
 class PartPowerActivity : ViewBindingActivity<ActivityPartPowerBinding>() {
 
-    private var hasRealPc = false
+    private val mPartPowerExporter: PCRatioExporter = PCRatioExporter(false)
 
     private var folderLauncher: ActivityResultLauncher<Intent>? = null
 
@@ -39,8 +36,8 @@ class PartPowerActivity : ViewBindingActivity<ActivityPartPowerBinding>() {
                     .viewType(VIEW_TYPE_CUSTOM)
                     .viewBinder(SettingViewBinder(R.layout.part_power_item_checkbox_realpc) { holder, _ ->
                         val vCbRealPc = holder.itemView.findViewById<CheckBox>(R.id.vCbRealPc)
-                        vCbRealPc.setOnCheckedChangeListener { view, isChecked ->
-                            hasRealPc = isChecked
+                        vCbRealPc.setOnCheckedChangeListener { _, isChecked ->
+                            mPartPowerExporter.hasRealPc = isChecked
                         }
                     })
         }.addItem {
@@ -64,7 +61,7 @@ class PartPowerActivity : ViewBindingActivity<ActivityPartPowerBinding>() {
             JLog.i(TAG, "onActivityResult: " + "filePath：" + uri.path)
             // you can modify readExcelList, then write to excel.
             ThreadPool.runOnNonUIThread {
-                PCRatioExporter.verifyAndExport(this, uri, hasRealPc)
+                mPartPowerExporter.verifyAndExport(this, uri)
             }
         }
     }
