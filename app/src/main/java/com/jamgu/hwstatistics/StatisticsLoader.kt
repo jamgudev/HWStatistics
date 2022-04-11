@@ -103,7 +103,7 @@ class StatisticsLoader : INeedPermission {
         val screenOn = getScreenStatus()
         val screenBrightness = getScreenBrightness()
         val phoneState = getPhoneState()
-        val systemOnStatus = getSystemStatus()
+//        val systemOnStatus = getSystemStatus()
         val musicState = getMusicState()
         val networkType = getNetworkType()
         val netWorkSpeed = getNetWorkSpeed()
@@ -133,7 +133,7 @@ class StatisticsLoader : INeedPermission {
                 phoneRing(phoneState[0])
                 phoneOffHook(phoneState[1])
             }
-            systemOn(systemOnStatus)
+//            systemOn(systemOnStatus)
             musicOn(musicState)
             if (networkType >= 0) {
                 // wifi
@@ -185,7 +185,7 @@ class StatisticsLoader : INeedPermission {
             0,
             arrayListOf(
                 "cur_time_mills",
-                "system_on",
+//                "system_on",
                 "screen_on",
                 "screen_brightness",
                 "music_on",
