@@ -323,7 +323,7 @@ class Builder2 {
 
     fun buildArray(): ArrayList<Any> {
         return arrayListOf(
-            curTimeMills, /*isSystemOn, */isScreenOn, screenBrightness,
+            curTimeMills, /*isSystemOn, *//*isScreenOn, */screenBrightness,
             isMusicOn, isPhoneRinging, isPhoneOffHook,
             isWifiNetwork, isMobileNetwork, netWorkSpeed,
             cpu0, cpu1, cpu2, cpu3, cpu4, cpu5, cpu6, cpu7,

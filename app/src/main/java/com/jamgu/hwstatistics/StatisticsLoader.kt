@@ -100,7 +100,7 @@ class StatisticsLoader : INeedPermission {
     }
 
     private fun getData(curTimeString: String, currentTimeMillis: Long): ArrayList<Any> {
-        val screenOn = getScreenStatus()
+//        val screenOn = getScreenStatus()
         val screenBrightness = getScreenBrightness()
         val phoneState = getPhoneState()
 //        val systemOnStatus = getSystemStatus()
@@ -127,7 +127,7 @@ class StatisticsLoader : INeedPermission {
 
         return Builder2().apply {
             curTimeMills(curTimeString)
-            screenOn(screenOn)
+//            screenOn(screenOn)
             screenBrightness(screenBrightness)
             if (phoneState.size == 2) {
                 phoneRing(phoneState[0])
@@ -186,7 +186,7 @@ class StatisticsLoader : INeedPermission {
             arrayListOf(
                 "cur_time_mills",
 //                "system_on",
-                "screen_on",
+//                "screen_on",
                 "screen_brightness",
                 "music_on",
                 "phone_ring",
