@@ -139,10 +139,10 @@ class StatisticsLoader : INeedPermission {
                 // wifi
                 if (networkType == 1) {
                     wifiNetwork(1)
-                    mobileNetwork(0)
+//                    mobileNetwork(0)
                 } else { // mobile
                     wifiNetwork(0)
-                    mobileNetwork(1)
+//                    mobileNetwork(1)
                 }
             }
             networkSpeed(netWorkSpeed)
@@ -192,7 +192,7 @@ class StatisticsLoader : INeedPermission {
                 "phone_ring",
                 "phone_off_hook",
                 "wifi_network",
-                "mobile_network",
+//                "mobile_network",
                 "network_speed",
                 "cpu0",
                 "cpu1",
@@ -219,13 +219,13 @@ class StatisticsLoader : INeedPermission {
                 "cpu5_util",
                 "cpu6_util",
                 "cpu7_util",
-                "bluetooth",
+//                "bluetooth",
 //                "mem_cur_free",
-                "mem_free",
+//                "mem_free",
                 "mem_available",
                 "mem_active",
-                "mem_inactive",
-                "mem_dirty",
+//                "mem_inactive",
+//                "mem_dirty",
                 "mem_anonPages",
                 "mem_mapped",
 //                "gpu_cur_freq",

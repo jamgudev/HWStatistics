@@ -306,11 +306,11 @@ class Builder2 {
     fun memAllInfo(memData: Array<Float>?): Builder2 {
         memData ?: return this
 
-        this.memFree = memData[0]
+//        this.memFree = memData[0]
         this.memCurAvailable = memData[1]
         this.memActive = memData[2]
-        this.memInactive = memData[3]
-        this.memDirty = memData[4]
+//        this.memInactive = memData[3]
+//        this.memDirty = memData[4]
         this.memAnonPages = memData[5]
         this.memMapped = memData[6]
 
@@ -325,13 +325,13 @@ class Builder2 {
         return arrayListOf(
             curTimeMills, /*isSystemOn, *//*isScreenOn, */screenBrightness,
             isMusicOn, isPhoneRinging, isPhoneOffHook,
-            isWifiNetwork, isMobileNetwork, netWorkSpeed,
+            isWifiNetwork, /*isMobileNetwork, */netWorkSpeed,
             cpu0, cpu1, cpu2, cpu3, cpu4, cpu5, cpu6, cpu7,
 //            cpuTemp0, cpuTemp1, cpuTemp2, cpuTemp3, cpuTemp4, cpuTemp5, cpuTemp6, cpuTemp7,
             totalCpu,
             cpu0utils, cpu1utils, cpu2utils, cpu3utils, cpu4utils, cpu5utils, cpu6utils, cpu7utils,
-            blEnabled + (blEnabled * blConnectedNum),
-            memFree, memCurAvailable, memActive, memInactive, memDirty, memAnonPages, memMapped,
+            /*blEnabled + (blEnabled * blConnectedNum),*/
+            /*memFree,*/ memCurAvailable, memActive, /*memInactive, memDirty,*/ memAnonPages, memMapped,
 //            gpuCurFreq, gpuCurUtil,
         )
 
