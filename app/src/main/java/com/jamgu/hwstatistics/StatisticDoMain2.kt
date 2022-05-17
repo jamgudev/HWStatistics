@@ -310,7 +310,7 @@ class Builder2 {
         this.memCurAvailable = memData[1]
         this.memActive = memData[2]
 //        this.memInactive = memData[3]
-//        this.memDirty = memData[4]
+        this.memDirty = memData[4]
         this.memAnonPages = memData[5]
         this.memMapped = memData[6]
 
@@ -330,8 +330,8 @@ class Builder2 {
 //            cpuTemp0, cpuTemp1, cpuTemp2, cpuTemp3, cpuTemp4, cpuTemp5, cpuTemp6, cpuTemp7,
             totalCpu,
             cpu0utils, cpu1utils, cpu2utils, cpu3utils, cpu4utils, cpu5utils, cpu6utils, cpu7utils,
-            /*blEnabled + (blEnabled * blConnectedNum),*/
-            /*memFree,*/ memCurAvailable, memActive, /*memInactive, memDirty,*/ memAnonPages, memMapped,
+            blEnabled + (blEnabled * blConnectedNum),
+            /*memFree,*/ memCurAvailable, memActive, /*memInactive,*/ memDirty, memAnonPages, memMapped,
 //            gpuCurFreq, gpuCurUtil,
         )
 
