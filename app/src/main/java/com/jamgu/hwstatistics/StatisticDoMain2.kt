@@ -253,7 +253,7 @@ class Builder2 {
         this.cpuTemp6 = cpus[6].temp.roundToDecimals(2)
         this.cpuTemp7 = cpus[7].temp.roundToDecimals(2)
 
-        if (this.totalCpu != 0f) {
+        /*if (this.totalCpu != 0f) {
             this.cpu0utils = cpus[0].utilization.roundToDecimals(2)
             this.cpu1utils = cpus[1].utilization.roundToDecimals(2)
             this.cpu2utils = cpus[2].utilization.roundToDecimals(2)
@@ -262,7 +262,7 @@ class Builder2 {
             this.cpu5utils = cpus[5].utilization.roundToDecimals(2)
             this.cpu6utils = cpus[6].utilization.roundToDecimals(2)
             this.cpu7utils = cpus[7].utilization.roundToDecimals(2)
-        }
+        }*/
 
         return this
     }
@@ -328,8 +328,8 @@ class Builder2 {
             isWifiNetwork, /*isMobileNetwork, */netWorkSpeed,
             cpu0, cpu1, cpu2, cpu3, cpu4, cpu5, cpu6, cpu7,
 //            cpuTemp0, cpuTemp1, cpuTemp2, cpuTemp3, cpuTemp4, cpuTemp5, cpuTemp6, cpuTemp7,
-            totalCpu,
-            cpu0utils, cpu1utils, cpu2utils, cpu3utils, cpu4utils, cpu5utils, cpu6utils, cpu7utils,
+            /*totalCpu,
+            cpu0utils, cpu1utils, cpu2utils, cpu3utils, cpu4utils, cpu5utils, cpu6utils, cpu7utils,*/
             blEnabled + (blEnabled * blConnectedNum),
             /*memFree,*/ memCurAvailable, memActive, /*memInactive,*/ memDirty, memAnonPages, memMapped,
 //            gpuCurFreq, gpuCurUtil,
