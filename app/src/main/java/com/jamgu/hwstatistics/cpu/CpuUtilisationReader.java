@@ -185,7 +185,9 @@ class CpuUtilisationReader {
     public void update() {
         if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.O) {
             updateBeforeO();
-        } else updateAfterO();
+        } /*else {  // 屏蔽 root 操作
+            updateAfterO();
+        }*/
     }
 
     private void updateBeforeO() {
