@@ -202,14 +202,14 @@ class StatisticsLoader : INeedPermission {
                 "cpu5",
                 "cpu6",
                 "cpu7",
-//                "cpuTemp0",
-//                "cpuTemp1",
-//                "cpuTemp2",
-//                "cpuTemp3",
-//                "cpuTemp4",
-//                "cpuTemp5",
-//                "cpuTemp6",
-//                "cpuTemp7",
+                "cpuTemp0",
+                "cpuTemp1",
+                "cpuTemp2",
+                "cpuTemp3",
+                "cpuTemp4",
+                "cpuTemp5",
+                "cpuTemp6",
+                "cpuTemp7",
 //                "cpu_total_util",
 //                "cpu0_util",
 //                "cpu1_util",
@@ -349,11 +349,11 @@ class StatisticsLoader : INeedPermission {
         for (i in 0 until cpuNumb) {
 //            val cpuMaxFreq = CPUInfoManager.getCpuMaxFreq(i)
 //            val cpuMinFreq = CPUInfoManager.getCpuMinFreq(i)
-//            val cpuTemp = CPUInfoManager.getCpuTemp(i)
+            val cpuTemp = CPUInfoManager.getCpuTemp(i)
             val cpuMaxFreq = 0f
             val cpuMinFreq = 0f
             val cpuRunningFreq = CPUInfoManager.getCpuRunningFreq(i)
-            val cpuTemp = 0f
+//            val cpuTemp = 0f
             if (cpuUtils != null && cpuUtils.isNotEmpty()) {
                 val cpu = CPU(cpuMaxFreq, cpuMinFreq, cpuRunningFreq, cpuTemp, cpuUtils[i.coerceAtMost(cpuUtils.size)])
                 cpus.add(cpu)
@@ -362,6 +362,8 @@ class StatisticsLoader : INeedPermission {
                 cpus.add(cpu)
             }
         }
+
+        JLog.d(TAG, "cpu's number = ${cpus.size}")
 
         return cpus
     }

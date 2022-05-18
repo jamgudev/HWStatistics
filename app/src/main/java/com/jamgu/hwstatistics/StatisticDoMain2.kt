@@ -327,7 +327,7 @@ class Builder2 {
             isMusicOn, isPhoneRinging, isPhoneOffHook,
             isWifiNetwork, /*isMobileNetwork, */netWorkSpeed,
             cpu0, cpu1, cpu2, cpu3, cpu4, cpu5, cpu6, cpu7,
-//            cpuTemp0, cpuTemp1, cpuTemp2, cpuTemp3, cpuTemp4, cpuTemp5, cpuTemp6, cpuTemp7,
+            cpuTemp0, cpuTemp1, cpuTemp2, cpuTemp3, cpuTemp4, cpuTemp5, cpuTemp6, cpuTemp7,
             /*totalCpu,
             cpu0utils, cpu1utils, cpu2utils, cpu3utils, cpu4utils, cpu5utils, cpu6utils, cpu7utils,*/
             blEnabled + (blEnabled * blConnectedNum),
