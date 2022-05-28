@@ -1,6 +1,6 @@
 clear;close all;clc;
 filename = 'files/all_0116_wg.xlsx';
-verifyFile = 'files/02131719_bb.xlsx';
+verifyFile = 'files/wechat_voice_talk_48_start_v_57_118.xlsx';
 alpha = 0.01;
 lambda = 0;
 num_iters = 500;
@@ -37,7 +37,7 @@ theta'
 % load verify data
 v = readmatrix(verifyFile);
 
-X_v = v(:, 1:end);
+X_v = v(:, 1:end-1);
 % y_v = v(:, end);
 [X_v, mu, sigma] = featureNormalize(X_v);
 
