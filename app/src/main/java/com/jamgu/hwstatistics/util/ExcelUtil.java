@@ -5,6 +5,7 @@ import android.net.Uri;
 import android.util.Log;
 import android.widget.Toast;
 import com.jamgu.common.thread.ThreadPool;
+import com.jamgu.common.widget.toast.JToast;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -87,7 +88,9 @@ public class ExcelUtil {
         } catch (Exception e) {
             e.printStackTrace();
             Log.e(TAG, "readExcelNew: import error " + e);
-            Toast.makeText(context, "import error " + e, Toast.LENGTH_SHORT).show();
+            ThreadPool.runUITask(() -> {
+                JToast.INSTANCE.showToast(context, "import error " + e);
+            });
         }
         return list;
     }
@@ -161,7 +164,9 @@ public class ExcelUtil {
         } catch (Exception e) {
             e.printStackTrace();
             Log.e(TAG, "readExcelNew: import error " + e);
-            Toast.makeText(context, "import error " + e, Toast.LENGTH_SHORT).show();
+            ThreadPool.runUITask(() -> {
+                JToast.INSTANCE.showToast(context, "import error " + e);
+            });
         }
         return list;
     }
