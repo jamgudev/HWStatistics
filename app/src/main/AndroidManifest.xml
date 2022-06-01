@@ -11,6 +11,7 @@
     <!-- 网络信息 -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission
             android:name="android.permission.WRITE_EXTERNAL_STORAGE"
             tools:ignore="ScopedStorage" /> <!-- 蓝牙 -->
@@ -27,10 +28,11 @@
             android:roundIcon="@mipmap/ic_launcher_round"
             android:supportsRtl="true"
             android:theme="@style/Theme.HWStatistics">
-        <activity android:name=".PartPowerActivity"></activity>
+        <activity android:name=".pcratio.PartPowerActivity"/>
         <activity
                 android:name=".MainActivity"
-                android:screenOrientation="portrait">
+                android:screenOrientation="portrait"
+                android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.appcompat.widget.AppCompatButton xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/vBtnExtractParam"
+        android:layout_width="match_parent"
+        android:layout_height="46dp"
+        android:text="提取参数"
+        android:background="@drawable/get_theta_btn_bg">
+
+</androidx.appcompat.widget.AppCompatButton>

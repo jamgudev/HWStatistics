@@ -105,6 +105,8 @@ class StatisticsLoader : INeedPermission {
         val phoneState = getPhoneState()
 //        val systemOnStatus = getSystemStatus()
         val musicState = getMusicState()
+//        val musicVolume = getMusicVolume()
+//        JLog.d(TAG, "musicVolume = $musicVolume")
         val networkType = getNetworkType()
         val netWorkSpeed = getNetWorkSpeed()
         val cpuInfo = getCpuInfo()
@@ -139,10 +141,10 @@ class StatisticsLoader : INeedPermission {
                 // wifi
                 if (networkType == 1) {
                     wifiNetwork(1)
-//                    mobileNetwork(0)
+                    mobileNetwork(0)
                 } else { // mobile
                     wifiNetwork(0)
-//                    mobileNetwork(1)
+                    mobileNetwork(1)
                 }
             }
             networkSpeed(netWorkSpeed)
@@ -189,10 +191,11 @@ class StatisticsLoader : INeedPermission {
 //                "screen_on",
                 "screen_brightness",
                 "music_on",
+//                "music_volume",
                 "phone_ring",
                 "phone_off_hook",
                 "wifi_network",
-//                "mobile_network",
+                "mobile_network",
                 "network_speed",
                 "cpu0",
                 "cpu1",
@@ -313,6 +316,13 @@ class StatisticsLoader : INeedPermission {
      */
     private fun getMusicState(): Int {
         return MediaStateManager.getMusicState(weakContext.get())
+    }
+
+    /**
+     * 获取手机音乐音量
+     */
+    private fun getMusicVolume(): Int {
+        return MediaStateManager.getMusicVolume(weakContext.get())
     }
 
     /**
