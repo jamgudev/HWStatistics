@@ -195,7 +195,7 @@ class StatisticsLoader : INeedPermission {
                 "phone_ring",
                 "phone_off_hook",
                 "wifi_network",
-//                "mobile_network",
+                "mobile_network",
                 "network_speed",
                 "cpu0",
                 "cpu1",
