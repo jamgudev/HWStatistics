@@ -64,11 +64,11 @@ class PCRatioExporter(var hasRealPc: Boolean) {
         // 把表头取出
         val headRows = getHeadRowAndDump(dataList)
 
+        // 标准化，算出模型预测功耗
+        featureNormalize(dataList)
+
         // 计算各部件功耗占比
         val exportList = computePCTofEachHW(dataList) ?: return
-
-        // 再标准化，算出模型预测功耗
-        featureNormalize(dataList)
 
         // 将功耗数据补上
         computeActualPC(dataList)?.let {
@@ -133,6 +133,8 @@ class PCRatioExporter(var hasRealPc: Boolean) {
             val extraHead = arrayListOf(
                 "exp_p", "p_error"
             )
+            // 加上基础表头
+            headRows[lastHeadRowNum].add(0, "basic")
             headRows[lastHeadRowNum].addAll(extraHead)
         }
 
@@ -149,18 +151,25 @@ class PCRatioExporter(var hasRealPc: Boolean) {
             val size = map.size
 
             val listInRow = ArrayList<Float>()
-            // 先加基础功耗
-            var estimatedPC = mParams[0]
+            var estimatedPC = 0f
             for (i in 0 until size) {
                 val collectedVal = map[i] as? String
+                // 基础功耗
+                if (i == 0) {
+                    val basicPower = mParams[0] * 1
+                    listInRow.add(basicPower)
+                    estimatedPC += basicPower
+                }
+
                 // 忽略最后一列数据
                 if (i == size - 1 && hasRealPc) break
                 if (collectedVal != null) {
                     val paramsValue = mParams[i + 1]
                     // 计算单个预测功耗
-                    listInRow.add(collectedVal.toFloat().times(paramsValue))
+                    val elementPower = collectedVal.toFloat().times(paramsValue)
+                    listInRow.add(elementPower)
                     // 计算总预测功耗
-                    estimatedPC += listInRow[i]
+                    estimatedPC += elementPower
                 }
             }
 
