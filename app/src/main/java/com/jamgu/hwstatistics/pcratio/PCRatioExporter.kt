@@ -3,16 +3,14 @@ package com.jamgu.hwstatistics.pcratio
 import android.content.Context
 import android.net.Uri
 import android.os.Environment
-import com.jamgu.common.thread.ThreadPool
 import com.jamgu.common.util.log.JLog
 import com.jamgu.hwstatistics.util.ExcelUtil
-import com.jamgu.hwstatistics.util.roundToDecimals
 import java.io.File
 import kotlin.math.absoluteValue
-import kotlin.math.pow
-import kotlin.math.sqrt
 
 private const val TAG = "PCRatioExporter"
+const val OUTPUT_FORMAT_RAW = 1
+const val OUTPUT_FORMAT_PERCENTAGE = 2
 
 /**
  * Created by jamgu on 2022/01/17
@@ -25,6 +23,8 @@ class PCRatioExporter(var hasRealPc: Boolean) {
     private lateinit var mParams: MutableList<Float>
     private lateinit var mSigma: MutableList<Float>
     private lateinit var mMu: MutableList<Float>
+    // 输出格式: 1 百分比，2 原数值，默认输出原数值，即功耗原数值
+    private var mOutputFormat: Int = OUTPUT_FORMAT_RAW
 
     fun initParams(totalParams: ArrayList<MutableList<Float>>? /* = java.util.ArrayList<kotlin.collections.MutableList<kotlin.Float>>? */) {
         if ((totalParams == null || totalParams.size < 3)) {
@@ -35,6 +35,10 @@ class PCRatioExporter(var hasRealPc: Boolean) {
         mMu = totalParams[1]
         mSigma = totalParams[2]
         mParamReady = true
+    }
+
+    fun setOutPutFormat(format: Int?) {
+        mOutputFormat = format ?: OUTPUT_FORMAT_RAW
     }
 
     /**
@@ -64,8 +68,8 @@ class PCRatioExporter(var hasRealPc: Boolean) {
         // 把表头取出
         val headRows = getHeadRowAndDump(dataList)
 
-        // 标准化，算出模型预测功耗
-        featureNormalize(dataList)
+        // 标准化
+        featureNormalize2(dataList)
 
         // 计算各部件功耗占比
         val exportList = computePCTofEachHW(dataList) ?: return
@@ -176,7 +180,11 @@ class PCRatioExporter(var hasRealPc: Boolean) {
             // 计算功耗百分比
             val mappedArray = listInRow.map {
                 @Suppress("USELESS_CAST")
-                (it / estimatedPC * 100).roundToDecimals(2) as Any
+                when(mOutputFormat) {
+                    OUTPUT_FORMAT_RAW -> it as Any
+                    OUTPUT_FORMAT_PERCENTAGE -> (it / estimatedPC * 100) as Any
+                    else -> it as Any
+                }
             } as? ArrayList ?: return null
             listInRow.clear()
 
@@ -231,7 +239,7 @@ class PCRatioExporter(var hasRealPc: Boolean) {
     }
 
     /**
-     * 数据标准化
+     * 数据标准化，均值归一化
      */
     private fun featureNormalize(dataList: List<MutableMap<Int, Any>>?) {
         dataList ?: return
@@ -254,6 +262,34 @@ class PCRatioExporter(var hasRealPc: Boolean) {
             for (i in 0 until xAxis) {
                 val yVal = dataList[i][j] as? String ?: return
                 dataList[i][j] = ((yVal.toFloat() - means[j]) / sigmas[j]).toString()
+            }
+        }
+    }
+
+    /**
+     * 数据标准化，线型归一化
+     */
+    private fun featureNormalize2(dataList: List<MutableMap<Int, Any>>?) {
+        dataList ?: return
+        val xAxis = dataList.size
+        if (xAxis < 2) return
+
+        val yAxis = dataList[1].size
+        if (yAxis <= 0) return
+
+        val min = mMu
+        val max = mSigma
+
+        for (j in 0 until yAxis) {
+            // 最后的功耗数据不需要标准化
+            if (j == yAxis - 1 && hasRealPc) {
+                break
+            }
+
+            // 标准化数据
+            for (i in 0 until xAxis) {
+                val yVal = dataList[i][j] as? String ?: return
+                dataList[i][j] = ((yVal.toFloat() - min[j]) / (max[j] - min[j])).toString()
             }
         }
     }

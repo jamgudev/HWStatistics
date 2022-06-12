@@ -61,6 +61,18 @@ class PartPowerActivity : ViewBindingActivity<ActivityPartPowerBinding>(), IEven
         }.addItem {
             SetItemBuilder()
                     .viewType(VIEW_TYPE_CUSTOM)
+                    .viewBinder(SettingViewBinder(R.layout.part_power_item_checkbox_realpc) { holder, _ ->
+                        val vCbRealPc = holder.itemView.findViewById<CheckBox>(R.id.vCbRealPc)
+                        vCbRealPc.text = "输出为功耗百分比"
+                        vCbRealPc.setOnCheckedChangeListener { _, isChecked ->
+                            mPartPowerExporter.setOutPutFormat(
+                                if (isChecked) OUTPUT_FORMAT_PERCENTAGE else OUTPUT_FORMAT_RAW
+                            )
+                        }
+                    })
+        }.addItem {
+            SetItemBuilder()
+                    .viewType(VIEW_TYPE_CUSTOM)
                     .viewBinder(SettingViewBinder(R.layout.part_power_item_btn_openfile) { holder, _ ->
                         val vBtnOpenFile = holder.itemView.findViewById<AppCompatButton>(R.id.vBtnOpenFile)
                         vBtnOpenFile.setOnClickListener {
