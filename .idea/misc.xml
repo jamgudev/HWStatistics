@@ -1,5 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="DesignSurface">
+    <option name="filePathToZoomLevelMap">
+      <map>
+        <entry key="app/src/main/res/drawable/get_theta_btn_bg.xml" value="0.2625" />
+        <entry key="app/src/main/res/layout/activity_part_power.xml" value="0.25226449275362317" />
+        <entry key="app/src/main/res/layout/part_power_get_theta.xml" value="0.25416666666666665" />
+        <entry key="app/src/main/res/layout/part_power_item_btn_openfile.xml" value="0.25226449275362317" />
+        <entry key="app/src/main/res/layout/part_power_item_checkbox_realpc.xml" value="0.25226449275362317" />
+      </map>
+    </option>
+  </component>
   <component name="ProjectRootManager" version="2" languageLevel="JDK_11" default="true" project-jdk-name="11" project-jdk-type="JavaSDK">
     <output url="file://$PROJECT_DIR$/build/classes" />
   </component>

@@ -13,6 +13,7 @@ import com.jamgu.hwstatistics.cpu.CPUInfoManager
 import com.jamgu.hwstatistics.cpu.model.CPU
 import com.jamgu.hwstatistics.mediastate.MediaStateManager
 import com.jamgu.hwstatistics.memory.MemInfoManager
+import com.jamgu.hwstatistics.network.CpNetEnum
 import com.jamgu.hwstatistics.network.NetWorkManager
 import com.jamgu.hwstatistics.phonestate.PhoneStateManager
 import com.jamgu.hwstatistics.system.SystemManager
@@ -137,16 +138,7 @@ class StatisticsLoader : INeedPermission {
             }
 //            systemOn(systemOnStatus)
             musicOn(musicState)
-            if (networkType >= 0) {
-                // wifi
-                if (networkType == 1) {
-                    wifiNetwork(1)
-                    mobileNetwork(0)
-                } else { // mobile
-                    wifiNetwork(0)
-                    mobileNetwork(1)
-                }
-            }
+            mobileNetwork(networkType)
             networkSpeed(netWorkSpeed)
             totalCpu(cpuTotalUsage)
             cpus(cpuInfo)
@@ -195,7 +187,11 @@ class StatisticsLoader : INeedPermission {
                 "phone_ring",
                 "phone_off_hook",
                 "wifi_network",
-//                "mobile_network",
+                "mobile_2g",
+                "mobile_3g",
+                "mobile_4g",
+                "mobile_5g",
+                "mobile_other",
                 "network_speed",
                 "cpu0",
                 "cpu1",
@@ -328,7 +324,7 @@ class StatisticsLoader : INeedPermission {
     /**
      * 获取网络类型
      */
-    private fun getNetworkType(): Int {
+    private fun getNetworkType(): CpNetEnum? {
         return NetWorkManager.getNetworkType(weakContext.get())
     }
 

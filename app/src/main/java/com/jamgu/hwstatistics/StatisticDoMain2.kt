@@ -2,7 +2,9 @@
 
 package com.jamgu.hwstatistics
 
+import android.net.ConnectivityManager.TYPE_WIFI
 import com.jamgu.hwstatistics.cpu.model.CPU
+import com.jamgu.hwstatistics.network.CpNetEnum
 import com.jamgu.hwstatistics.util.roundToDecimals
 
 /**
@@ -26,9 +28,9 @@ class StatisticDoMain2 internal constructor(private val builder: Builder2){
 
     fun getPhoneOffHook(): Int = builder.isPhoneOffHook
 
-    fun wifiNetwork(): Int = builder.isWifiNetwork
+    fun wifiNetwork(): Int = builder.wifiNetwork
 
-    fun mobileNetwork(): Int = builder.isMobileNetwork
+//    fun mobileNetwork(): Int = builder.mobileNetworkType
 
     fun networkSpeed(): Float = builder.netWorkSpeed
 
@@ -82,10 +84,14 @@ class Builder2 {
     var isMusicOn: Int = 0
 
     // network_wifi
-    var isWifiNetwork: Int = 0
+    var wifiNetwork: Int = 0
 
     // mobile data
-    var isMobileNetwork: Int = 0
+    var mobile2G: Int = 0
+    var mobile3G: Int = 0
+    var mobile4G: Int = 0
+    var mobile5G: Int = 0
+    var mobileOther: Int = 0
 
     // network speed kb
     var netWorkSpeed: Float = 0.0f
@@ -203,15 +209,31 @@ class Builder2 {
         return this
     }
 
-    fun wifiNetwork(isWifi: Int?): Builder2 {
-        isWifi ?: return this
-        this.isWifiNetwork = isWifi
-        return this
-    }
+    fun mobileNetwork(networkType: CpNetEnum?): Builder2 {
+        networkType ?: return this
+        when(networkType) {
+            CpNetEnum.TYPE_NONE -> {
 
-    fun mobileNetwork(isMobile: Int?): Builder2 {
-        isMobile ?: return this
-        this.isMobileNetwork = isMobile
+            }
+            CpNetEnum.TYPE_WIFI -> {
+                wifiNetwork = 1
+            }
+            CpNetEnum.TYPE_2G -> {
+                mobile2G = 1
+            }
+            CpNetEnum.TYPE_3G -> {
+                mobile3G = 1
+            }
+            CpNetEnum.TYPE_4G -> {
+                mobile4G = 1
+            }
+            CpNetEnum.TYPE_5G -> {
+                mobile5G = 1
+            }
+            CpNetEnum.TYPE_OTHER -> {
+                mobileOther = 1
+            }
+        }
         return this
     }
 
@@ -325,7 +347,7 @@ class Builder2 {
         return arrayListOf(
             curTimeMills, /*isSystemOn, *//*isScreenOn, */screenBrightness,
             isMusicOn, isPhoneRinging, isPhoneOffHook,
-            isWifiNetwork, /*isMobileNetwork, */netWorkSpeed,
+            wifiNetwork, mobile2G, mobile3G, mobile4G, mobile5G, mobileOther, netWorkSpeed,
             cpu0, cpu1, cpu2, cpu3, cpu4, cpu5, cpu6, cpu7,
             cpuTemp0, cpuTemp1, cpuTemp2, cpuTemp3, cpuTemp4, cpuTemp5, cpuTemp6, cpuTemp7,
             /*totalCpu,

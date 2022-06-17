@@ -11,6 +11,7 @@ ap(x坐标, y坐标, duration(单位ms))：duration 指的是，按下的持续�
 把脚本文件传到手机上：adb push source_add(脚本文件地址) dest_add(目标文件地址)
 
 执行脚本文件指令：adb shell monkey -p package_name –v 100 –f /sdcard/monkey_script.txt
+不指定包名：adb shell monkey -f .. -v 100
 
 -v  为执行的次数，一定要写，不然不会执行。
 

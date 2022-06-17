@@ -136,6 +136,7 @@ class CpNetUtil {
                 return CpNetEnum.TYPE_3G;
 
             case TelephonyManager.NETWORK_TYPE_LTE:
+            case TelephonyManager.NETWORK_TYPE_IWLAN:
             case 19: // 19 对应的是 NETWORK_TYPE_LTE_CA，被标记为 hide 了，所以直接使用 19 判断
                 return CpNetEnum.TYPE_4G;
 

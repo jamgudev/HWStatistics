@@ -40,8 +40,8 @@ object NetWorkManager: INeedPermission {
     }
 
     @SuppressLint("MissingPermission")
-    fun getNetworkType(context: Context?): Int {
-        return CpNetUtil.getInstance().getNetType(context).value
+    fun getNetworkType(context: Context?): CpNetEnum? {
+        return CpNetUtil.getInstance().getNetType(context)
     }
 
     override fun permission(): Array<String> = arrayOf(android.Manifest.permission.READ_PHONE_STATE)
