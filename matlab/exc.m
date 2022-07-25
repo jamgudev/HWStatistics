@@ -47,8 +47,7 @@ X_v = [ones(size(X_v, 1), 1) X_v];
 H_v = X_v * theta;
 result = H_v - y_v;
 error = abs(result) ./ y_v;
-% 将 error 输出成 excel
-xlswrite('error_result_mat.xlsx', error);
+
 mean_error = mean(error)
 
 figure(2);
@@ -56,5 +55,8 @@ n_x = 1:size(H_v, 1);
 % subplot(1, 2, 2);
 plot(n_x, H_v, 'r-', n_x, y_v, 'g-');
 
-
+% 将 error 输出成 excel
+exportError2excel(error);
+% 将 theta，mu，sigma 参数输出成excel
+exportParams2Excel(theta, mu, sigma)
 
