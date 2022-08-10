@@ -137,14 +137,24 @@ class StatisticsLoader : INeedPermission {
             }
 //            systemOn(systemOnStatus)
             musicOn(musicState)
-            if (networkType >= 0) {
-                // wifi
-                if (networkType == 1) {
-                    wifiNetwork(1)
-                    mobileNetwork(0)
-                } else { // mobile
-                    wifiNetwork(0)
-                    mobileNetwork(1)
+            when(networkType) {
+                0 -> {
+                    isOtherNetwork(1)
+                }
+                1 -> {
+                    isWifiNetwork(1)
+                }
+                2 -> {
+                    is2GNetwork(1)
+                }
+                3 -> {
+                    is3GNetwork(1)
+                }
+                4 -> {
+                    is4GNetwork(1)
+                }
+                5 -> {
+                    is5GNetwork(1)
                 }
             }
             networkSpeed(netWorkSpeed)
@@ -195,7 +205,11 @@ class StatisticsLoader : INeedPermission {
                 "phone_ring",
                 "phone_off_hook",
                 "wifi_network",
-//                "mobile_network",
+                "2g_network",
+                "3g_network",
+                "4g_network",
+                "5g_network",
+                "other_network",
                 "network_speed",
                 "cpu0",
                 "cpu1",

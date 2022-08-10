@@ -28,7 +28,11 @@ class StatisticDoMain2 internal constructor(private val builder: Builder2){
 
     fun wifiNetwork(): Int = builder.isWifiNetwork
 
-    fun mobileNetwork(): Int = builder.isMobileNetwork
+    fun is2GNetwork(): Int = builder.is2GNetwork
+    fun is3GNetwork(): Int = builder.is3GNetwork
+    fun is4GNetwork(): Int = builder.is4GNetwork
+    fun is5GNetwork(): Int = builder.is5GNetwork
+    fun isOtherNetwork(): Int = builder.isOtherNetwork
 
     fun networkSpeed(): Float = builder.netWorkSpeed
 
@@ -85,7 +89,11 @@ class Builder2 {
     var isWifiNetwork: Int = 0
 
     // mobile data
-    var isMobileNetwork: Int = 0
+    var is2GNetwork: Int = 0
+    var is3GNetwork: Int = 0
+    var is4GNetwork: Int = 0
+    var is5GNetwork: Int = 0
+    var isOtherNetwork: Int = 0
 
     // network speed kb
     var netWorkSpeed: Float = 0.0f
@@ -203,15 +211,39 @@ class Builder2 {
         return this
     }
 
-    fun wifiNetwork(isWifi: Int?): Builder2 {
+    fun isWifiNetwork(isWifi: Int?): Builder2 {
         isWifi ?: return this
         this.isWifiNetwork = isWifi
         return this
     }
 
-    fun mobileNetwork(isMobile: Int?): Builder2 {
-        isMobile ?: return this
-        this.isMobileNetwork = isMobile
+    fun is2GNetwork(is2G: Int?): Builder2 {
+        is2G ?: return this
+        this.is2GNetwork = is2G
+        return this
+    }
+
+    fun is3GNetwork(is3G: Int?): Builder2 {
+        is3G ?: return this
+        this.is3GNetwork = is3G
+        return this
+    }
+
+    fun is4GNetwork(is4G: Int?): Builder2 {
+        is4G ?: return this
+        this.is4GNetwork = is4G
+        return this
+    }
+
+    fun is5GNetwork(is5G: Int?): Builder2 {
+        is5G ?: return this
+        this.is5GNetwork = is5G
+        return this
+    }
+
+    fun isOtherNetwork(isOther: Int?): Builder2 {
+        isOther ?: return this
+        this.isOtherNetwork = isOther
         return this
     }
 
@@ -325,7 +357,7 @@ class Builder2 {
         return arrayListOf(
             curTimeMills, /*isSystemOn, *//*isScreenOn, */screenBrightness,
             isMusicOn, isPhoneRinging, isPhoneOffHook,
-            isWifiNetwork, /*isMobileNetwork, */netWorkSpeed,
+            isWifiNetwork, is2GNetwork, is3GNetwork, is4GNetwork, is5GNetwork, isOtherNetwork, netWorkSpeed,
             cpu0, cpu1, cpu2, cpu3, cpu4, cpu5, cpu6, cpu7,
             cpuTemp0, cpuTemp1, cpuTemp2, cpuTemp3, cpuTemp4, cpuTemp5, cpuTemp6, cpuTemp7,
             /*totalCpu,
