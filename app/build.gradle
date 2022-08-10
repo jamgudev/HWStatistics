@@ -38,42 +38,6 @@ android {
     buildFeatures {
         viewBinding true
     }
-
-//    signingConfigs {
-//        release {
-//            storeFile file('../signature/platform.jks')
-//            storePassword '123456'
-//            keyAlias 'platform'
-//            keyPassword '123456'
-//            v1SigningEnabled true
-//            v2SigningEnabled true
-//        }
-//
-//        debug {
-//            storeFile file("../signature/platform.jks")
-//            storePassword '123456'
-//            keyAlias 'platform'
-//            keyPassword '123456'
-//            v1SigningEnabled true
-//            v2SigningEnabled true
-//        }
-//    }
-
-    signingConfigs {
-        release {
-            storeFile file('../signature/platform2.jks')
-            storePassword '123456'
-            keyAlias 'androiddebugkey'
-            keyPassword '123456'
-        }
-
-        debug {
-            storeFile file("../signature/platform2.jks")
-            storePassword '123456'
-            keyAlias 'androiddebugkey'
-            keyPassword '123456'
-        }
-    }
 }
 
 dependencies {
