@@ -1,6 +1,6 @@
 clear;close all;clc;
-filename = 'files/all_new_samsums20_v2.xlsx';
-verifyFile = 'files/test_samsums20_2.xlsx';
+filename = 'files/all_150.xlsx';
+verifyFile = 'files/wifi_has_speed.xlsx';
 alpha = 0.01;
 lambda = 0;
 num_iters = 500;
