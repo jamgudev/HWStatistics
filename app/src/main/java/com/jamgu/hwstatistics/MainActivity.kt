@@ -3,6 +3,7 @@ package com.jamgu.hwstatistics
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.PersistableBundle
 import android.widget.AbsListView.OnScrollListener.SCROLL_STATE_IDLE
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -13,8 +14,9 @@ import com.jamgu.common.page.activity.ViewBindingActivity
 import com.jamgu.common.thread.ThreadPool
 import com.jamgu.common.util.log.JLog
 import com.jamgu.hwstatistics.databinding.ActivityMainBinding
+import com.jamgu.hwstatistics.keeplive.service.AliveStrategy
+import com.jamgu.hwstatistics.keeplive.service.KeepAliveService
 import com.jamgu.hwstatistics.util.ExcelUtil
-import com.jamgu.krouter.core.router.KRouterUriBuilder
 import com.jamgu.krouter.core.router.KRouters
 
 class MainActivity : ViewBindingActivity<ActivityMainBinding>() {
@@ -98,6 +100,16 @@ class MainActivity : ViewBindingActivity<ActivityMainBinding>() {
                 }
             }
         }
+
+    }
+
+    override fun onSaveInstanceState(outState: Bundle, outPersistentState: PersistableBundle) {
+        super.onSaveInstanceState(outState, outPersistentState)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        KeepAliveService.start(this, AliveStrategy.ALL)
     }
 
     override fun onDestroy() {

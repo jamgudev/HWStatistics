@@ -39,6 +39,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name=".keeplive.service.KeepAliveService"
+            android:exported="true"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+
+        <service
+            android:name=".keeplive.service.CancelNotifyervice"
+            android:exported="true"/>
     </application>
 
 </manifest>
