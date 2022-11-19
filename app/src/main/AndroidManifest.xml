@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:tools="http://schemas.android.com/tools"
-        package="com.jamgu.hwstatistics"
-        android:versionCode="20211027"
-        android:versionName="1.0.0">
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.jamgu.hwstatistics"
+    android:versionCode="20211027"
+    android:versionName="1.0.0">
+    <!-- 充電狀態 -->
     <!-- foreground service -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" /> <!-- 忽略电池优化 request api larger than 6.0 -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" /> <!-- 电话信息 -->
@@ -13,41 +14,63 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission
-            android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-            tools:ignore="ScopedStorage" /> <!-- 蓝牙 -->
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        tools:ignore="ScopedStorage" /> <!-- 蓝牙 -->
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
-    <uses-permission android:name="android.permission.LOCAL_MAC_ADDRESS" />
 
     <application
-            android:allowBackup="true"
-            android:icon="@mipmap/ic_launcher"
-            android:label="@string/app_name"
-            android:requestLegacyExternalStorage="true"
-            android:roundIcon="@mipmap/ic_launcher_round"
-            android:supportsRtl="true"
-            android:theme="@style/Theme.HWStatistics">
-        <activity android:name=".pcratio.PartPowerActivity"/>
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:requestLegacyExternalStorage="true"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.HWStatistics">
         <activity
-                android:name=".MainActivity"
-                android:screenOrientation="portrait"
-                android:exported="true">
+            android:name=".AutoMonitorActivity"
+            android:exported="true" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
+        <activity android:name=".pcratio.PartPowerActivity" />
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:screenOrientation="portrait">
+        </activity> <!-- 保活 start -->
         <service
             android:name=".keeplive.service.KeepAliveService"
             android:exported="true"
             android:permission="android.permission.BIND_JOB_SERVICE" />
-
         <service
             android:name=".keeplive.service.CancelNotifyervice"
-            android:exported="true"/>
+            android:exported="true" /> <!-- 保活 end -->
+        <!-- 手机是否充电状态 -->
+        <receiver
+            android:name=".upload.PowerConnectReceiver"
+            android:exported="false">
+            <intent-filter>
+
+                <!-- 连接电源状态 -->
+                <action android:name="android.intent.action.ACTION_POWER_CONNECTED" />
+                <!-- 未连接电源状态 -->
+                <action android:name="android.intent.action.ACTION_POWER_DISCONNECTED" />
+            </intent-filter>
+        </receiver> <!-- 缓存目录 -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.jamgu.hwstatistics"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 
 </manifest>

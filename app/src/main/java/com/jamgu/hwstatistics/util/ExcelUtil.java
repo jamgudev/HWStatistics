@@ -202,15 +202,15 @@ public class ExcelUtil {
             outputStream.flush();
             outputStream.close();
             Log.i(TAG, "writeExcel: export successful");
-            ThreadPool.runUITask(() ->
-                    Toast.makeText(context, "export successful", Toast.LENGTH_SHORT).show()
-            );
+//            ThreadPool.runUITask(() ->
+//                    Toast.makeText(context, "export successful", Toast.LENGTH_SHORT).show()
+//            );
         } catch (Exception e) {
             e.printStackTrace();
             Log.e(TAG, "writeExcel: error" + e);
-            ThreadPool.runUITask(() ->
-                    Toast.makeText(context, "export error" + e, Toast.LENGTH_SHORT).show()
-            );
+//            ThreadPool.runUITask(() ->
+//                    Toast.makeText(context, "export error" + e, Toast.LENGTH_SHORT).show()
+//            );
         }
     }
 

@@ -3,6 +3,8 @@ package com.jamgu.hwstatistics.keeplive.utils;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.BatteryManager;
 import android.os.Build;
 
 import androidx.annotation.NonNull;
@@ -125,5 +127,22 @@ public class PhoneUtils {
         } catch (Exception e) {
             showActivity(context,"com.samsung.android.sm");
         }
+    }
+
+    /**
+     * 是否正在充电
+     * 也是通过广播，系统会发送一个持续的广播
+     * @return
+     */
+    public static boolean isPlugged(Context context){
+        IntentFilter intentFilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
+        //因为是个持续广播，receiver传个null，就会给我们一个intent
+        Intent intent = context.registerReceiver(null, intentFilter);
+        //获取充电状态
+        int inPlugged = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1);
+        boolean acPlugged = inPlugged == BatteryManager.BATTERY_PLUGGED_AC;
+        boolean usbPlugged = inPlugged == BatteryManager.BATTERY_PLUGGED_USB;
+        boolean wireLessPlugged = inPlugged == BatteryManager.BATTERY_PLUGGED_WIRELESS;
+        return acPlugged||usbPlugged||wireLessPlugged ;
     }
 }

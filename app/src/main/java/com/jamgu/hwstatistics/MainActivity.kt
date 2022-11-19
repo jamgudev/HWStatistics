@@ -92,7 +92,7 @@ class MainActivity : ViewBindingActivity<ActivityMainBinding>() {
             JLog.i(TAG, "onActivityResult: " + "filePath：" + uri.path)
             // you can modify readExcelList, then write to excel.
             ThreadPool.runOnNonUIThread {
-                val data = mLoader.getData()
+                val data = mLoader.getDataWithTitle()
                 if (data.isNullOrEmpty()) {
                     showToast("Data Is Empty...")
                 } else {
@@ -109,6 +109,7 @@ class MainActivity : ViewBindingActivity<ActivityMainBinding>() {
 
     override fun onResume() {
         super.onResume()
+        // 保活程序
         KeepAliveService.start(this, AliveStrategy.ALL)
     }
 

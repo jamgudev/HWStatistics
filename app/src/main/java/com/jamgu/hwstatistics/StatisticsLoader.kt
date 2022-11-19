@@ -7,6 +7,7 @@ import androidx.fragment.app.FragmentActivity
 import com.jamgu.common.thread.ThreadPool
 import com.jamgu.common.util.log.JLog
 import com.jamgu.common.util.timer.VATimer
+import com.jamgu.hwstatistics.IOnDataEnough.Companion.THRESH_ONE_HOUR
 import com.jamgu.hwstatistics.bluetooth.BluetoothManager
 import com.jamgu.hwstatistics.brightness.BrightnessManager
 import com.jamgu.hwstatistics.cpu.CPUInfoManager
@@ -20,13 +21,13 @@ import com.jamgu.hwstatistics.util.roundToDecimals
 import com.permissionx.guolindev.PermissionX
 import java.lang.ref.WeakReference
 import java.text.SimpleDateFormat
-import java.util.Date
+import java.util.*
 
 
 /**
  * Created by jamgu on 2021/10/14
  */
-class StatisticsLoader : INeedPermission {
+class StatisticsLoader() : INeedPermission {
 
     private lateinit var weakContext: WeakReference<Context>
 
@@ -39,6 +40,14 @@ class StatisticsLoader : INeedPermission {
 
     private var uiCallback: ((String) -> Unit)? = null
     private val mData: ArrayList<ArrayList<Any>> = ArrayList()
+
+    private var mOnDataEnough: IOnDataEnough? = null
+    private var mDataNumThreshold: Int = THRESH_ONE_HOUR
+
+    fun setOnDataEnoughListener(threshold: Int, onDataEnough: IOnDataEnough) {
+        mDataNumThreshold = threshold
+        mOnDataEnough = onDataEnough
+    }
 
     fun init(ctx: Context, callback: ((String) -> Unit)?): StatisticsLoader {
 
@@ -70,7 +79,7 @@ class StatisticsLoader : INeedPermission {
             val sdf = SimpleDateFormat("yyyy/MM/dd HH:mm:ss")
             val curTimeString: String = sdf.format(Date(currentTimeMillis))
 
-            val newData = getData(curTimeString, currentTimeMillis)
+            val newData = getDataWithTitle(curTimeString, currentTimeMillis)
 
             // 先缓存
             if (curTimeString == lastTimeString) {
@@ -85,6 +94,9 @@ class StatisticsLoader : INeedPermission {
             } else {
                 if (dataTemp.isNotEmpty()) {
                     mData.add(dataTemp.divideBy(tempDataTimes))
+                    if (mData.size >= mDataNumThreshold) {
+                        mOnDataEnough?.onDataEnough()
+                    }
                     JLog.d(TAG, "data belong to: $lastTimeString, data_num = $tempDataTimes")
                 }
                 tempDataTimes = 1f
@@ -99,7 +111,7 @@ class StatisticsLoader : INeedPermission {
         }, 200)
     }
 
-    private fun getData(curTimeString: String, currentTimeMillis: Long): ArrayList<Any> {
+    private fun getDataWithTitle(curTimeString: String, currentTimeMillis: Long): ArrayList<Any> {
 //        val screenOn = getScreenStatus()
         val screenBrightness = getScreenBrightness()
         val phoneState = getPhoneState()
@@ -192,7 +204,11 @@ class StatisticsLoader : INeedPermission {
         weakContext.clear()
     }
 
-    fun getData(): ArrayList<ArrayList<Any>> {
+    fun getRawData(): ArrayList<ArrayList<Any>> {
+        return mData
+    }
+
+    fun getDataWithTitle(): ArrayList<ArrayList<Any>> {
         mData.add(
             0,
             arrayListOf(
@@ -251,6 +267,10 @@ class StatisticsLoader : INeedPermission {
             )
         )
         return mData
+    }
+
+    fun clearData() {
+        mData.clear()
     }
 
     fun requestedPermission(context: FragmentActivity?): Boolean {
@@ -442,4 +462,14 @@ private fun ArrayList<Any>.divideBy(divider: Float): ArrayList<Any> {
     }
 
     return this
+}
+
+interface IOnDataEnough {
+
+    companion object {
+        const val THRESH_ONE_HOUR = 3600
+        const val THRESH_HALF_HOUR = 1800
+    }
+
+    fun onDataEnough()
 }

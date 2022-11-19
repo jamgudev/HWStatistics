@@ -14,10 +14,9 @@ import android.util.Log;
 
 import androidx.annotation.RequiresApi;
 
-import com.jamgu.common.thread.ThreadPool;
 import com.jamgu.hwstatistics.keeplive.forground.ForgroundNF;
 import com.jamgu.hwstatistics.keeplive.utils.PhoneUtils;
-import com.jamgu.hwstatistics.keeplive.utils.Utils;
+import com.jamgu.hwstatistics.keeplive.utils.KeepLiveUtils;
 
 /**
  * 创建一个JobService用于提高应用优先级
@@ -113,12 +112,12 @@ public class KeepAliveService extends JobService {
             return;
         }
         if(strategy == AliveStrategy.BATTERYOPTIMIZATION){
-            Utils.requestIgnoreBatteryOptimizations(this);
+            KeepLiveUtils.requestIgnoreBatteryOptimizations(this);
         }else if (strategy == AliveStrategy.RESTARTACTION){
             PhoneUtils.setReStartAction(this);
         }else {
             // 申请加入电池优化白名单
-            Utils.requestIgnoreBatteryOptimizations(this);
+            KeepLiveUtils.requestIgnoreBatteryOptimizations(this);
             // 跳转至自启动页面
             PhoneUtils.setReStartAction(this);
         }
@@ -133,7 +132,9 @@ public class KeepAliveService extends JobService {
         }else{
             mForgroundNF.startForegroundNotification();
             Intent it = new Intent(this, CancelNotifyervice.class);
-            startService(it);
+            if (!KeepLiveUtils.isBackgroundProcess(getApplicationContext())) {
+                startService(it);
+            }
         }
     }
 
