@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">HWStatistics</string>
+    <string name="working_background">正在后台运行…</string>
+    <string name="click_to_start">点击以启动日志</string>
 </resources>

@@ -4,6 +4,11 @@
     package="com.jamgu.hwstatistics"
     android:versionCode="20211027"
     android:versionName="1.0.0">
+    <!-- 开机广播 -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+
     <!-- 充電狀態 -->
     <!-- foreground service -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" /> <!-- 忽略电池优化 request api larger than 6.0 -->
@@ -30,7 +35,7 @@
         android:theme="@style/Theme.HWStatistics">
         <activity
             android:name=".AutoMonitorActivity"
-            android:exported="true" >
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -41,8 +46,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:screenOrientation="portrait">
-        </activity> <!-- 保活 start -->
+            android:screenOrientation="portrait"></activity> <!-- 保活 start -->
         <service
             android:name=".keeplive.service.KeepAliveService"
             android:exported="true"
@@ -61,7 +65,8 @@
                 <!-- 未连接电源状态 -->
                 <action android:name="android.intent.action.ACTION_POWER_DISCONNECTED" />
             </intent-filter>
-        </receiver> <!-- 缓存目录 -->
+        </receiver>
+        <!-- 数据缓存目录 -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="com.jamgu.hwstatistics"
@@ -71,6 +76,25 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+        <!-- 开机、关机、解锁广播 -->
+        <receiver
+            android:name=".keeplive.service.screen.ActiveBroadcastReceiver"
+            android:enabled="true"
+            android:exported="true"
+            android:priority="99999999">
+            <intent-filter>
+                <!-- 开机广播 -->
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+            <intent-filter>
+                <!-- 关机广播 -->
+                <action android:name="android.intent.action.ACTION_SHUTDOWN" />
+            </intent-filter>
+            <intent-filter>
+                <!-- 解锁广播 -->
+                <action android:name="android.intent.action.USER_PRESENT" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

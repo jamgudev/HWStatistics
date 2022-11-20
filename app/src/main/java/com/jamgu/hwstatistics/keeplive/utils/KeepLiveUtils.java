@@ -50,7 +50,7 @@ public class KeepLiveUtils {
         }
     }
 
-    private static final String TAG = "Utils";
+    private static final String TAG = "KeepLiveUtils";
 
     public static boolean isBackgroundProcess(Context context) {
 
