@@ -19,6 +19,7 @@ import com.jamgu.hwstatistics.keeplive.service.AliveStrategy
 import com.jamgu.hwstatistics.keeplive.service.KeepAliveService
 import com.jamgu.hwstatistics.keeplive.service.screen.ActiveBroadcastReceiver
 import com.jamgu.hwstatistics.keeplive.utils.KeepLiveUtils
+import com.jamgu.hwstatistics.keeplive.utils.PhoneUtils
 import com.jamgu.hwstatistics.upload.DataSaver
 import com.jamgu.krouter.annotation.KRouter
 
@@ -140,7 +141,13 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
 
     override fun onResume() {
         super.onResume()
-        KeepAliveService.start(this, AliveStrategy.ALL)
+        val isIgnore = KeepLiveUtils.isIgnoringBatteryOptimizations(this)
+        if (!isIgnore) {
+            KeepLiveUtils.requestIgnoreBatteryOptimizations(this)
+            // TODO 放进SP中
+            PhoneUtils.setReStartAction(this)
+        }
+        KeepAliveService.start(this)
     }
 
     override fun onSaveInstanceState(outState: Bundle, outPersistentState: PersistableBundle) {

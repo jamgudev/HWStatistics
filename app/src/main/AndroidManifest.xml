@@ -35,7 +35,8 @@
         android:theme="@style/Theme.HWStatistics">
         <activity
             android:name=".AutoMonitorActivity"
-            android:exported="true">
+            android:exported="true"
+            android:launchMode="singleInstance">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

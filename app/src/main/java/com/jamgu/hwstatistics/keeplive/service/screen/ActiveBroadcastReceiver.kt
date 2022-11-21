@@ -11,7 +11,6 @@ import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.getSystemService
 import com.jamgu.common.util.log.JLog
 import com.jamgu.hwstatistics.AUTO_MONITOR_PAGE
 import com.jamgu.hwstatistics.AUTO_MONITOR_START_FROM_BOOT
