@@ -60,13 +60,15 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
         registerReceiver(activeBroadcastReceiver, intentFilter)
 
         isStartFromBoot = intent.extras?.getBoolean(AUTO_MONITOR_START_FROM_BOOT) ?: false
-        if (isStartFromBoot) {
+        if (isStartFromBoot || mDataLoader.isStarted()) {
             ThreadPool.runUITask({
                 if (isStartFromBoot) {
-                    mBinding.vStart.text = "已经启动，请您将App退至后台"
+                    mBinding.vStart.text = getString(R.string.already_started)
                     mBinding.vStart.isEnabled = false
                 }
-                mDataLoader.startNonMainThread()
+                if (!mDataLoader.isStarted()) {
+                    mDataLoader.startNonMainThread()
+                }
             }, 400)
         }
         JLog.d(TAG, "onCreate isStartFromBoot = $isStartFromBoot")
@@ -74,6 +76,8 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
 
     override fun onDestroy() {
         super.onDestroy()
+        saveData()
+        JLog.d(TAG, "onDestroy")
         unregisterReceiver(activeBroadcastReceiver)
     }
 
@@ -99,13 +103,15 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
     }
 
     private fun saveData() {
-        val data = ArrayList(mDataLoader.getRawData())
+        val data = ArrayList(mDataLoader.getDataWithTitle())
         DataSaver.save(this@AutoMonitorActivity, data)
         mDataLoader.clearData()
         if (mShowTime) {
             ThreadPool.runUITask {
-                mData.clear()
-                mAdapter.notifyDataSetChanged()
+                if (!isFinishing && !isDestroyed) {
+                    mData.clear()
+                    mAdapter.notifyDataSetChanged()
+                }
             }
         }
     }
@@ -129,11 +135,8 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
                     mData.clear()
                     mAdapter.notifyDataSetChanged()
                     mDataLoader.startNonMainThread()
-                    mBinding.vStart.text = "Stop"
-                } else {
-                    mDataLoader.stop()
-                    saveData()
-                    mBinding.vStart.text = "Start"
+                    mBinding.vStart.text = getString(R.string.already_started)
+                    mBinding.vStart.isEnabled = false
                 }
             }
         }

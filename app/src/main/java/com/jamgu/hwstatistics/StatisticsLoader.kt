@@ -303,7 +303,6 @@ class StatisticsLoader() : INeedPermission {
                     )
                 }
                 .request { allGranted, _, deniedList ->
-                    JLog.d("NetWorkManager", "permission granted!")
                     if (allGranted) {
                         // do nothing
                     } else {

@@ -1,15 +1,19 @@
 package com.jamgu.hwstatistics.keeplive.forground;
 
+import static com.jamgu.hwstatistics.RouterKt.AUTO_MONITOR_START_FROM_BOOT;
+
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Build;
 
 import androidx.core.app.NotificationCompat;
 
+import com.jamgu.hwstatistics.AutoMonitorActivity;
 import com.jamgu.hwstatistics.R;
 
 public class ForgroundNF {
@@ -34,12 +38,22 @@ public class ForgroundNF {
      */
     private void initCompatBuilder(Context context) {
         if (context == null) return;
+        Intent intent = new Intent(context, AutoMonitorActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                context,
+                0, intent, PendingIntent.FLAG_UPDATE_CURRENT
+        );
         mNotificationCompatBuilder = new NotificationCompat.Builder(service, CHANNEL_ID);
         //标题
+        mNotificationCompatBuilder.setContentTitle("HWStatistic");
         mNotificationCompatBuilder.setContentTitle(context.getString(R.string.app_name));
         //通知内容
+        mNotificationCompatBuilder.setContentText("正在后台运行");
         mNotificationCompatBuilder.setContentText(context.getString(R.string.working_background));
         mNotificationCompatBuilder.setSmallIcon(R.mipmap.ic_launcher_round);
+        mNotificationCompatBuilder.setContentIntent(pendingIntent);
+        mNotificationCompatBuilder.setAutoCancel(true);
     }
 
     /**

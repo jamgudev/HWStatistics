@@ -2,4 +2,5 @@
     <string name="app_name">HWStatistics</string>
     <string name="working_background">正在后台运行…</string>
     <string name="click_to_start">点击以启动日志</string>
+    <string name="already_started">已经启动，请您将App退至后台</string>
 </resources>

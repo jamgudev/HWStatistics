@@ -28,6 +28,8 @@ object NetWorkManager: INeedPermission {
             mLastTimeStamp = currentTimeMillis
             0.0f
         } else {
+            if  (currentTimeMillis - mLastTimeStamp == 0L) return 0.0f
+
             val speed: Long = (curRxBytes - mLastRxBytes) * 1000 / (currentTimeMillis - mLastTimeStamp) //毫秒转换
             val speed2: Long = (curRxBytes - mLastRxBytes) * 1000 % (currentTimeMillis - mLastTimeStamp) //毫秒转换
 

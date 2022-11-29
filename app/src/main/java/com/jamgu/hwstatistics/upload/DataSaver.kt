@@ -3,6 +3,7 @@ package com.jamgu.hwstatistics.upload
 import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Environment
+import android.os.Environment.DIRECTORY_DOWNLOADS
 import androidx.core.content.FileProvider
 import com.jamgu.common.thread.ThreadPool
 import com.jamgu.common.util.log.JLog
@@ -28,7 +29,8 @@ object DataSaver {
         val dirPath = "$sdPath/$DIR_NAME"
         val dirFile = File(dirPath)
         if (!dirFile.exists()) {
-            dirFile.mkdir()
+            val mkdir = dirFile.mkdir()
+            JLog.d(TAG, "dir mkdir = $mkdir")
         }
 
         val timeMillis = getCurrentTimeFormatted()
@@ -51,7 +53,9 @@ object DataSaver {
         var sdDir: File? = null
         val sdCardExist = Environment.getExternalStorageState() == Environment.MEDIA_MOUNTED // 判断sd卡是否存在
         if (sdCardExist) {
-            sdDir = Environment.getExternalStorageDirectory() // 获取跟目录
+            sdDir = Environment.getExternalStoragePublicDirectory(DIRECTORY_DOWNLOADS) // 获取跟目录
+        } else {
+            sdDir = Environment.getDataDirectory()
         }
         return sdDir.toString()
     }
