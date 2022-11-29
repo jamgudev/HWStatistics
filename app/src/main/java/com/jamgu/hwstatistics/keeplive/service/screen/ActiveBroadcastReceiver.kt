@@ -12,11 +12,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.jamgu.common.util.log.JLog
-import com.jamgu.hwstatistics.AUTO_MONITOR_PAGE
-import com.jamgu.hwstatistics.AUTO_MONITOR_START_FROM_BOOT
-import com.jamgu.hwstatistics.AutoMonitorActivity
-import com.jamgu.hwstatistics.R
-import com.jamgu.hwstatistics.keeplive.service.KeepAliveService
+import com.jamgu.hwstatistics.*
 import com.jamgu.krouter.core.router.KRouterUriBuilder
 import com.jamgu.krouter.core.router.KRouters
 
@@ -36,10 +32,6 @@ class ActiveBroadcastReceiver : BroadcastReceiver() {
         val action = intent?.action ?: return
         when (action) {
             Intent.ACTION_BOOT_COMPLETED -> {
-                JLog.d(
-                    TAG, "boot complete, context = $context" +
-                            ", version = ${Build.VERSION.SDK_INT}"
-                )
                 context?.let {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         startActivityVersionHigh(context)
@@ -67,8 +59,7 @@ class ActiveBroadcastReceiver : BroadcastReceiver() {
      * 8.0 以下实现
      */
     private fun startActivityVersionLow(context: Context) {
-        val params = KRouterUriBuilder(AUTO_MONITOR_PAGE)
-            .with(AUTO_MONITOR_START_FROM_BOOT, true)
+        val params = KRouterUriBuilder(TRANSITION_PAGE)
             .build()
         KRouters.open(context, params)
     }
@@ -79,8 +70,8 @@ class ActiveBroadcastReceiver : BroadcastReceiver() {
      */
     @SuppressLint("UnspecifiedImmutableFlag")
     private fun startActivityVersionHigh(context: Context) {
-        val intent = Intent(context, AutoMonitorActivity::class.java).apply {
-            putExtra(AUTO_MONITOR_START_FROM_BOOT, true)
+        val intent = Intent(context, TransitionActivity::class.java).apply {
+            putExtra(AUTO_MONITOR_START_FROM_NOTIFICATION, true)
         }
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         val pendingIntent = PendingIntent.getActivity(

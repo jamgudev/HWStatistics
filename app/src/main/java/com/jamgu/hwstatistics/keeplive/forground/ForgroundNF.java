@@ -1,7 +1,5 @@
 package com.jamgu.hwstatistics.keeplive.forground;
 
-import static com.jamgu.hwstatistics.RouterKt.AUTO_MONITOR_START_FROM_BOOT;
-
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -46,10 +44,8 @@ public class ForgroundNF {
         );
         mNotificationCompatBuilder = new NotificationCompat.Builder(service, CHANNEL_ID);
         //标题
-        mNotificationCompatBuilder.setContentTitle("HWStatistic");
         mNotificationCompatBuilder.setContentTitle(context.getString(R.string.app_name));
         //通知内容
-        mNotificationCompatBuilder.setContentText("正在后台运行");
         mNotificationCompatBuilder.setContentText(context.getString(R.string.working_background));
         mNotificationCompatBuilder.setSmallIcon(R.mipmap.ic_launcher_round);
         mNotificationCompatBuilder.setContentIntent(pendingIntent);

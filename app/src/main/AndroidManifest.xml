@@ -50,14 +50,17 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:screenOrientation="portrait"></activity> <!-- 保活 start -->
+            android:screenOrientation="portrait"/>
+        <activity android:name=".TransitionActivity" />
+        <!-- 保活 start -->
         <service
             android:name=".keeplive.service.KeepAliveService"
             android:exported="true"
             android:permission="android.permission.BIND_JOB_SERVICE" />
         <service
             android:name=".keeplive.service.CancelNotifyervice"
-            android:exported="true" /> <!-- 保活 end -->
+            android:exported="true" />
+        <!-- 保活 end -->
         <!-- 手机是否充电状态 -->
         <receiver
             android:name=".upload.PowerConnectReceiver"

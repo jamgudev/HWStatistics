@@ -15,7 +15,6 @@ import com.jamgu.common.thread.ThreadPool
 import com.jamgu.common.util.log.JLog
 import com.jamgu.hwstatistics.IOnDataEnough.Companion.THRESH_HALF_HOUR
 import com.jamgu.hwstatistics.databinding.ActivityAutoMonitorBinding
-import com.jamgu.hwstatistics.keeplive.service.AliveStrategy
 import com.jamgu.hwstatistics.keeplive.service.KeepAliveService
 import com.jamgu.hwstatistics.keeplive.service.screen.ActiveBroadcastReceiver
 import com.jamgu.hwstatistics.keeplive.utils.KeepLiveUtils
@@ -23,7 +22,7 @@ import com.jamgu.hwstatistics.keeplive.utils.PhoneUtils
 import com.jamgu.hwstatistics.upload.DataSaver
 import com.jamgu.krouter.annotation.KRouter
 
-@KRouter(value = [AUTO_MONITOR_PAGE], booleanParams = [AUTO_MONITOR_START_FROM_BOOT])
+@KRouter(value = [AUTO_MONITOR_PAGE], booleanParams = [AUTO_MONITOR_START_FROM_NOTIFICATION])
 class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
 
     companion object {
@@ -34,7 +33,7 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
     private var mAdapter: StatisticAdapter = StatisticAdapter()
     private var mData: ArrayList<String> = ArrayList()
     private var mShowTime: Boolean = false
-    private var isStartFromBoot: Boolean = false
+    private var isStartFromNotification: Boolean = false
 
     private var activeBroadcastReceiver: ActiveBroadcastReceiver? = null
 
@@ -59,10 +58,10 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
         }
         registerReceiver(activeBroadcastReceiver, intentFilter)
 
-        isStartFromBoot = intent.extras?.getBoolean(AUTO_MONITOR_START_FROM_BOOT) ?: false
-        if (isStartFromBoot || mDataLoader.isStarted()) {
+        isStartFromNotification = intent.extras?.getBoolean(AUTO_MONITOR_START_FROM_NOTIFICATION) ?: false
+        if (isStartFromNotification || mDataLoader.isStarted()) {
             ThreadPool.runUITask({
-                if (isStartFromBoot) {
+                if (isStartFromNotification) {
                     mBinding.vStart.text = getString(R.string.already_started)
                     mBinding.vStart.isEnabled = false
                 }
@@ -71,7 +70,7 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
                 }
             }, 400)
         }
-        JLog.d(TAG, "onCreate isStartFromBoot = $isStartFromBoot")
+        JLog.d(TAG, "onCreate isStartFromBoot = $isStartFromNotification")
     }
 
     override fun onDestroy() {
