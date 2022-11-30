@@ -1,19 +1,12 @@
 package com.jamgu.hwstatistics.keeplive.service.screen
 
-import android.annotation.SuppressLint
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
-import android.content.Context.NOTIFICATION_SERVICE
 import android.content.Intent
 import android.os.Build
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
 import com.jamgu.common.util.log.JLog
-import com.jamgu.common.util.preference.PreferenceUtil
 import com.jamgu.hwstatistics.*
+import com.jamgu.hwstatistics.keeplive.utils.KeepLiveUtils
 import com.jamgu.krouter.core.router.KRouterUriBuilder
 import com.jamgu.krouter.core.router.KRouters
 
@@ -35,7 +28,10 @@ class ActiveBroadcastReceiver : BroadcastReceiver() {
             Intent.ACTION_BOOT_COMPLETED -> {
                 context?.let {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        startActivityVersionHigh(context)
+                        KeepLiveUtils.startCallActivityVersionHigh(
+                            context,
+                            R.string.click_to_start, TransitionActivity::class.java
+                        )
                     } else {
                         startActivityVersionLow(context)
                     }
@@ -65,40 +61,4 @@ class ActiveBroadcastReceiver : BroadcastReceiver() {
         KRouters.open(context, params)
     }
 
-    /***
-     * 高版本的实现
-     * @param context
-     */
-    @SuppressLint("UnspecifiedImmutableFlag")
-    private fun startActivityVersionHigh(context: Context) {
-        val intent = Intent(context, TransitionActivity::class.java).apply {
-            putExtra(AUTO_MONITOR_START_FROM_NOTIFICATION, true)
-        }
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        val pendingIntent = PendingIntent.getActivity(
-            context,
-            0, intent, PendingIntent.FLAG_UPDATE_CURRENT
-        )
-
-        val channelID = "app_reboot_service"
-        val channelNAME = "开机启动服务"
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val level = NotificationManager.IMPORTANCE_HIGH
-            val manager = context.getSystemService(NOTIFICATION_SERVICE) as? NotificationManager
-            val channel = NotificationChannel(channelID, channelNAME, level)
-            manager?.createNotificationChannel(channel);
-        }
-        val builder = NotificationCompat.Builder(context, channelID)
-            .setSmallIcon(R.mipmap.ic_launcher_round)
-            .setContentText(context.getString(R.string.click_to_start))
-            .setContentTitle(context.getString(R.string.app_name))
-            .setPriority(NotificationCompat.PRIORITY_MAX)
-            .setCategory(NotificationCompat.CATEGORY_CALL)
-            .setVibrate(arrayOf(0, 1000L, 1000L, 1000L).toLongArray())
-            .setContentIntent(pendingIntent)    // 点击时的intent
-            .setDeleteIntent(pendingIntent)     // 被用户清除时的intent
-            .setAutoCancel(true)
-        val notificationManager = NotificationManagerCompat.from(context);
-        notificationManager.notify(100, builder.build())
-    }
 }

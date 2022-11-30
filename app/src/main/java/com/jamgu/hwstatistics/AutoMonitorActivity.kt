@@ -159,11 +159,12 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
 
     override fun onSaveInstanceState(outState: Bundle, outPersistentState: PersistableBundle) {
         super.onSaveInstanceState(outState, outPersistentState)
-        val endData = ArrayList<Any>().apply {
-            add(0, "${System.currentTimeMillis()} BEING KILLED")
-        }
-        mDataLoader.getRawData().add(endData)
         saveData()
+        // 打开拉起通知
+        KeepLiveUtils.startCallActivityVersionHigh(
+            this,
+            R.string.app_being_killed_reboot, AutoMonitorActivity::class.java
+        )
     }
 
     override fun getViewBinding(): ActivityAutoMonitorBinding = ActivityAutoMonitorBinding.inflate(layoutInflater)
