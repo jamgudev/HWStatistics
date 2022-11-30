@@ -12,6 +12,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.jamgu.common.util.log.JLog
+import com.jamgu.common.util.preference.PreferenceUtil
 import com.jamgu.hwstatistics.*
 import com.jamgu.krouter.core.router.KRouterUriBuilder
 import com.jamgu.krouter.core.router.KRouters

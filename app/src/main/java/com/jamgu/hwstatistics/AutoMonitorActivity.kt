@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.jamgu.common.page.activity.ViewBindingActivity
 import com.jamgu.common.thread.ThreadPool
 import com.jamgu.common.util.log.JLog
+import com.jamgu.common.util.preference.PreferenceUtil
 import com.jamgu.hwstatistics.IOnDataEnough.Companion.THRESH_HALF_HOUR
 import com.jamgu.hwstatistics.databinding.ActivityAutoMonitorBinding
 import com.jamgu.hwstatistics.keeplive.service.KeepAliveService
@@ -27,6 +28,7 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
 
     companion object {
         private const val TAG = "AutoMonitorActivity"
+        private const val BATTERY_INIT = "battery_init"
     }
 
     private lateinit var mDataLoader: StatisticsLoader
@@ -71,6 +73,9 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
             }, 400)
         }
         JLog.d(TAG, "onCreate isStartFromBoot = $isStartFromNotification")
+
+        // 保活前台服务
+        KeepAliveService.start(this)
     }
 
     override fun onDestroy() {
@@ -143,13 +148,13 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
 
     override fun onResume() {
         super.onResume()
-        val isIgnore = KeepLiveUtils.isIgnoringBatteryOptimizations(this)
-        if (!isIgnore) {
+        val preference = PreferenceUtil.getCachePreference(this, 0)
+        val isBatteryInit = preference.getBoolean(BATTERY_INIT, false)
+        if (!isBatteryInit) {
             KeepLiveUtils.requestIgnoreBatteryOptimizations(this)
-            // TODO 放进SP中
             PhoneUtils.setReStartAction(this)
+            preference.edit().putBoolean(BATTERY_INIT, true).apply()
         }
-        KeepAliveService.start(this)
     }
 
     override fun onSaveInstanceState(outState: Bundle, outPersistentState: PersistableBundle) {

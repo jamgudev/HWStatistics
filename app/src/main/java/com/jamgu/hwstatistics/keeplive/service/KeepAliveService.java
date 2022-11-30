@@ -15,6 +15,7 @@ import android.util.Log;
 
 import androidx.annotation.RequiresApi;
 
+import com.jamgu.common.util.log.JLog;
 import com.jamgu.hwstatistics.keeplive.forground.ForgroundNF;
 import com.jamgu.hwstatistics.keeplive.utils.KeepLiveUtils;
 
@@ -49,6 +50,7 @@ public class KeepAliveService extends JobService {
     @Override
     public void onCreate() {
         super.onCreate();
+        JLog.d(TAG, "onCreate");
         mJobScheduler = (JobScheduler) getSystemService(Context.JOB_SCHEDULER_SERVICE);
         JOB_PG = new ComponentName(getPackageName(), KeepAliveService.class.getName());
         mForgroundNF = new ForgroundNF(this);
@@ -155,6 +157,7 @@ public class KeepAliveService extends JobService {
             mForgroundNF.stopForegroundNotification();
             mContentPendingIntent = null;
         }
+        JLog.d(TAG, "onDestroy");
     }
 
 }
