@@ -11,6 +11,7 @@ import com.jamgu.hwstatistics.keeplive.forground.ForgroundNF;
 
 
 public class CancelNotifyervice extends Service {
+    private static final String TAG = "CancelNotifyervice";
     ForgroundNF _mForgroundNF;
     @Nullable
     @Override
@@ -21,13 +22,13 @@ public class CancelNotifyervice extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.d("TAG","onCreate--");
-        _mForgroundNF = new ForgroundNF(this);
+        Log.d(TAG,"onCreate--");
+        _mForgroundNF = new ForgroundNF(this, CancelNotifyervice.class.getSimpleName());
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.d("TAG","onStartCommand--");
+        Log.d(TAG,"onStartCommand--");
         _mForgroundNF.startForegroundNotification();
         stopSelf();
         return super.onStartCommand(intent, flags, startId);
@@ -35,7 +36,7 @@ public class CancelNotifyervice extends Service {
 
     @Override
     public void onDestroy() {
-        Log.d("TAG","onDestroy--");
+        Log.d(TAG,"onDestroy--");
         super.onDestroy();
         _mForgroundNF.stopForegroundNotification();
     }

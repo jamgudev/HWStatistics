@@ -11,11 +11,15 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
+import android.os.SystemClock;
 import android.util.Log;
 
 import androidx.annotation.RequiresApi;
 
 import com.jamgu.common.util.log.JLog;
+import com.jamgu.hwstatistics.AutoMonitorActivity;
+import com.jamgu.hwstatistics.BaseApplication;
+import com.jamgu.hwstatistics.R;
 import com.jamgu.hwstatistics.keeplive.forground.ForgroundNF;
 import com.jamgu.hwstatistics.keeplive.utils.KeepLiveUtils;
 
@@ -35,13 +39,24 @@ public class KeepAliveService extends JobService {
     private ComponentName JOB_PG;
     private int NOTIFICATION_ID = 10;
     private ForgroundNF mForgroundNF;
-    private static PendingIntent mContentPendingIntent;
 
     private Handler mJobHandler = new Handler(new Handler.Callback() {
 
         @Override
         public boolean handleMessage(Message msg) {
             Log.d(TAG, "pull alive.");
+            if (mForgroundNF == null) {
+                initForeGroundNF();
+            }
+            Context applicationContext = getApplicationContext();
+            if (applicationContext instanceof BaseApplication) {
+                boolean inBackStack = ((BaseApplication) applicationContext)
+                        .isActivityInBackStack(AutoMonitorActivity.class);
+                if (!inBackStack) {
+                    mForgroundNF.updateContent(getString(R.string.app_being_killed_reboot));
+                    mForgroundNF.startForegroundNotification();
+                }
+            }
             jobFinished((JobParameters) msg.obj, true);
             return true;
         }
@@ -50,11 +65,21 @@ public class KeepAliveService extends JobService {
     @Override
     public void onCreate() {
         super.onCreate();
-        JLog.d(TAG, "onCreate");
         mJobScheduler = (JobScheduler) getSystemService(Context.JOB_SCHEDULER_SERVICE);
         JOB_PG = new ComponentName(getPackageName(), KeepAliveService.class.getName());
-        mForgroundNF = new ForgroundNF(this);
-        mForgroundNF.setContentIntent(mContentPendingIntent);
+        initForeGroundNF();
+    }
+
+    private void initForeGroundNF() {
+        mForgroundNF = new ForgroundNF(this, KeepAliveService.class.getSimpleName());
+
+        Intent intent = new Intent(this, AutoMonitorActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                this,
+                0, intent, PendingIntent.FLAG_UPDATE_CURRENT
+        );
+        mForgroundNF.setContentIntent(pendingIntent);
     }
 
     /**
@@ -72,13 +97,6 @@ public class KeepAliveService extends JobService {
      *                  <p>
      *                  AliveStrategy.JOB_SERVICE：只使用JobService进行保活
      */
-    public static void start(Context context, PendingIntent contentPendingIntent) {
-        mContentPendingIntent = contentPendingIntent;
-        Intent intent = new Intent(context, KeepAliveService.class);
-//        intent.putExtra(strategyKey,strategy.ordinal());
-        context.startService(intent);
-    }
-
     public static void start(Context context) {
         Intent intent = new Intent(context, KeepAliveService.class);
 //        intent.putExtra(strategyKey,strategy.ordinal());
@@ -110,6 +128,7 @@ public class KeepAliveService extends JobService {
         JobInfo job = initJob();
         mJobScheduler.cancel(JOB_ID);
         mJobScheduler.schedule(job);
+        JLog.d(TAG, "onStartCommand");
         startNotificationForGround();
         return super.onStartCommand(intent, flags, startId);
     }
@@ -123,9 +142,9 @@ public class KeepAliveService extends JobService {
         } else {
             mForgroundNF.startForegroundNotification();
             Intent it = new Intent(this, CancelNotifyervice.class);
-            if (!KeepLiveUtils.isBackgroundProcess(getApplicationContext())) {
-                startService(it);
-            }
+//            if (!KeepLiveUtils.isBackgroundProcess(getApplicationContext())) {
+//                startService(it);
+//            }
         }
     }
 
@@ -155,7 +174,6 @@ public class KeepAliveService extends JobService {
         super.onDestroy();
         if (mForgroundNF != null) {
             mForgroundNF.stopForegroundNotification();
-            mContentPendingIntent = null;
         }
         JLog.d(TAG, "onDestroy");
     }

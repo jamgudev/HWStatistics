@@ -107,7 +107,7 @@ object CPUInfoManager {
         try {
             val freqStr = readFile(CPU_TEMP.replace("#", cpuIdx.toString(), true))
             temp = String.format("%.1f", freqStr.toInt() / 1000.0).toFloat()
-            Log.d(TAG, "cpu#$cpuIdx's temp --->>> $temp")
+//            Log.d(TAG, "cpu#$cpuIdx's temp --->>> $temp")
         } catch (e: NumberFormatException) {
             Log.d(TAG, e.message.toString())
         }

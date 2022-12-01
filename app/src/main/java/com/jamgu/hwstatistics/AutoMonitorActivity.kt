@@ -1,11 +1,11 @@
 package com.jamgu.hwstatistics
 
 import android.annotation.SuppressLint
+import android.app.PendingIntent
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
 import android.os.Bundle
-import android.os.PersistableBundle
 import android.widget.AbsListView
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -76,6 +76,8 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
 
         // 保活前台服务
         KeepAliveService.start(this)
+
+        (applicationContext as? BaseApplication)?.addThisActivityToRunningActivities(this.javaClass)
     }
 
     override fun onDestroy() {
@@ -83,6 +85,12 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
         saveData()
         JLog.d(TAG, "onDestroy")
         unregisterReceiver(activeBroadcastReceiver)
+        KeepLiveUtils.startCallActivityVersionHigh(
+            this,
+            R.string.app_being_killed_reboot, AutoMonitorActivity::class.java
+        )
+
+        (applicationContext as? BaseApplication)?.removeThisActivityFromRunningActivities(this.javaClass)
     }
 
     override fun initData() {
@@ -157,15 +165,22 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
         }
     }
 
-    override fun onSaveInstanceState(outState: Bundle, outPersistentState: PersistableBundle) {
-        super.onSaveInstanceState(outState, outPersistentState)
-        saveData()
-        // 打开拉起通知
-        KeepLiveUtils.startCallActivityVersionHigh(
-            this,
-            R.string.app_being_killed_reboot, AutoMonitorActivity::class.java
-        )
-    }
+    /**
+     * 当用户按下Home键 app处于后台，此时会调用onSaveInstanceState 方法
+        当用户按下电源键时，会调用onSaveInstanceState 方法
+        当Activity进行横竖屏切换的时候也会调用onSaveInstanceState 方法
+        从BActivity跳转到CActivity的时候 BActivity也会调用onSaveInstanceState 方法
+     */
+//    override fun onSaveInstanceState(outState: Bundle) {
+//        super.onSaveInstanceState(outState)
+//        JLog.d(TAG, "onSaveInstanceState")
+//        saveData()
+//        // 打开拉起通知
+//        KeepLiveUtils.startCallActivityVersionHigh(
+//            this,
+//            R.string.app_being_killed_reboot, AutoMonitorActivity::class.java
+//        )
+//    }
 
     override fun getViewBinding(): ActivityAutoMonitorBinding = ActivityAutoMonitorBinding.inflate(layoutInflater)
 }

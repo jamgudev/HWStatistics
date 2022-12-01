@@ -1,5 +1,7 @@
 package com.jamgu.hwstatistics.keeplive.forground;
 
+import static com.jamgu.hwstatistics.RouterKt.AUTO_MONITOR_START_FROM_NOTIFICATION;
+
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -11,10 +13,12 @@ import android.os.Build;
 
 import androidx.core.app.NotificationCompat;
 
+import com.jamgu.common.util.log.JLog;
 import com.jamgu.hwstatistics.AutoMonitorActivity;
 import com.jamgu.hwstatistics.R;
 
 public class ForgroundNF {
+    private static final String TAG = "ForgroundNF";
     private static final int START_ID = 101;
     private static final String CHANNEL_ID = "app_foreground_service";
     private static final String CHANNEL_NAME = "前台保活服务";
@@ -23,9 +27,11 @@ public class ForgroundNF {
     private NotificationManager notificationManager;
     private NotificationCompat.Builder mNotificationCompatBuilder;
 
-    public ForgroundNF(Service service) {
+    private String mChannelID = "";
+    public ForgroundNF(Service service, String channelID) {
         this.service = service;
-        initNotificationManager();
+        mChannelID = channelID;
+        initNotificationManager(channelID);
         initCompatBuilder(service.getBaseContext());
     }
 
@@ -36,33 +42,32 @@ public class ForgroundNF {
      */
     private void initCompatBuilder(Context context) {
         if (context == null) return;
-        Intent intent = new Intent(context, AutoMonitorActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        PendingIntent pendingIntent = PendingIntent.getActivity(
-                context,
-                0, intent, PendingIntent.FLAG_UPDATE_CURRENT
-        );
-        mNotificationCompatBuilder = new NotificationCompat.Builder(service, CHANNEL_ID);
+        JLog.d(TAG, "initCompatBuilder");
+        mNotificationCompatBuilder = new NotificationCompat.Builder(service, mChannelID);
         //标题
-        mNotificationCompatBuilder.setContentTitle(context.getString(R.string.app_name));
+        mNotificationCompatBuilder.setContentTitle(context.getString(R.string.app_name) + " " + mChannelID);
         //通知内容
         mNotificationCompatBuilder.setContentText(context.getString(R.string.working_background));
         mNotificationCompatBuilder.setSmallIcon(R.mipmap.ic_launcher_round);
-        mNotificationCompatBuilder.setContentIntent(pendingIntent);
-        mNotificationCompatBuilder.setAutoCancel(true);
     }
 
     /**
      * 初始化notificationManager并创建NotificationChannel
      */
-    private void initNotificationManager() {
+    private void initNotificationManager(String channelID) {
         notificationManager = (NotificationManager) service.getSystemService(Context.NOTIFICATION_SERVICE);
         //针对8.0+系统
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_LOW);
+            NotificationChannel channel = new NotificationChannel(channelID, CHANNEL_NAME + " " + channelID, NotificationManager.IMPORTANCE_HIGH);
             channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
             channel.setShowBadge(false);
             notificationManager.createNotificationChannel(channel);
+        }
+    }
+
+    public void updateContent(String content) {
+        if (mNotificationCompatBuilder != null) {
+            mNotificationCompatBuilder.setContentText(content);
         }
     }
 

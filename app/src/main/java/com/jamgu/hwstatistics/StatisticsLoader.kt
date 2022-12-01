@@ -1,7 +1,9 @@
 package com.jamgu.hwstatistics
 
 import android.annotation.SuppressLint
+import android.app.ActivityManager
 import android.content.Context
+import android.content.Context.ACTIVITY_SERVICE
 import android.widget.Toast
 import androidx.fragment.app.FragmentActivity
 import com.jamgu.common.thread.ThreadPool
@@ -97,7 +99,7 @@ class StatisticsLoader() : INeedPermission {
                     if (mData.size >= mDataNumThreshold) {
                         mOnDataEnough?.onDataEnough()
                     }
-                    JLog.d(TAG, "data belong to: $lastTimeString, data_num = $tempDataTimes")
+//                    JLog.d(TAG, "data belong to: $lastTimeString, data_num = $tempDataTimes")
                 }
                 tempDataTimes = 1f
                 dataTemp = newData
@@ -106,7 +108,7 @@ class StatisticsLoader() : INeedPermission {
             uiCallback?.invoke("TS: $curTimeString, TM: $currentTimeMillis")
 
             lastTimeString = curTimeString
-            JLog.d(TAG, "curVal = $it, curRepeat = ${mTimer?.getCurrentRepeatCount()}, info: | ${newData[3]}")
+//            JLog.d(TAG, "curVal = $it, curRepeat = ${mTimer?.getCurrentRepeatCount()}, info: | ${newData[3]}")
 
         }, 200)
     }
@@ -406,7 +408,7 @@ class StatisticsLoader() : INeedPermission {
             }
         }
 
-        JLog.d(TAG, "cpu's number = ${cpus.size}")
+//        JLog.d(TAG, "cpu's number = ${cpus.size}")
 
         return cpus
     }

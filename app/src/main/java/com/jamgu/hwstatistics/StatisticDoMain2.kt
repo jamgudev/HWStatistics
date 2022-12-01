@@ -289,7 +289,7 @@ class Builder2 {
         this.cpuTemp6 = (cpus[6].temp / 10f).roundToDecimals(2)
         this.cpuTemp7 = (cpus[7].temp / 10f).roundToDecimals(2)
 
-        JLog.d(TAG, "cpu freq = ${this.cpu0}, temp = ${this.cpuTemp0}")
+//        JLog.d(TAG, "cpu freq = ${this.cpu0}, temp = ${this.cpuTemp0}")
         this.cpu0 = (this.cpu0.toDouble().pow(3.0) * this.cpuTemp0.toDouble().pow(2.0)).toFloat()
         this.cpu1 = (this.cpu1.toDouble().pow(3.0) * this.cpuTemp1.toDouble().pow(2.0)).toFloat()
         this.cpu2 = (this.cpu2.toDouble().pow(3.0) * this.cpuTemp2.toDouble().pow(2.0)).toFloat()
