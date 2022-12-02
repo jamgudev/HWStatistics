@@ -1,11 +1,12 @@
 package com.jamgu.hwstatistics
 
 import android.annotation.SuppressLint
-import android.app.PendingIntent
+import android.app.NotificationManager
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.widget.AbsListView
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -29,6 +30,7 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
     companion object {
         private const val TAG = "AutoMonitorActivity"
         private const val BATTERY_INIT = "battery_init"
+        private const val USAGE_STATE_PERMISSION = "usage_state_permission"
     }
 
     private lateinit var mDataLoader: StatisticsLoader
@@ -74,10 +76,11 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
         }
         JLog.d(TAG, "onCreate isStartFromBoot = $isStartFromNotification")
 
+        // 加入任务栈
+        (applicationContext as? BaseApplication)?.addThisActivityToRunningActivities(this.javaClass)
+
         // 保活前台服务
         KeepAliveService.start(this)
-
-        (applicationContext as? BaseApplication)?.addThisActivityToRunningActivities(this.javaClass)
     }
 
     override fun onDestroy() {
@@ -85,10 +88,6 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
         saveData()
         JLog.d(TAG, "onDestroy")
         unregisterReceiver(activeBroadcastReceiver)
-        KeepLiveUtils.startCallActivityVersionHigh(
-            this,
-            R.string.app_being_killed_reboot, AutoMonitorActivity::class.java
-        )
 
         (applicationContext as? BaseApplication)?.removeThisActivityFromRunningActivities(this.javaClass)
     }
@@ -158,10 +157,18 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
         super.onResume()
         val preference = PreferenceUtil.getCachePreference(this, 0)
         val isBatteryInit = preference.getBoolean(BATTERY_INIT, false)
-        if (!isBatteryInit) {
+        if (!isBatteryInit || !KeepLiveUtils.isIgnoringBatteryOptimizations(this)) {
             KeepLiveUtils.requestIgnoreBatteryOptimizations(this)
             PhoneUtils.setReStartAction(this)
             preference.edit().putBoolean(BATTERY_INIT, true).apply()
+        }
+
+        val isUsageStatePermissionSet = preference.getBoolean(USAGE_STATE_PERMISSION, false)
+        if (!isUsageStatePermissionSet) {
+            // 打开获取应用信息页面
+            val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
+            startActivityForResult(intent, 0)
+            preference.edit().putBoolean(USAGE_STATE_PERMISSION, true).apply()
         }
     }
 

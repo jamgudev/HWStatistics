@@ -1,9 +1,9 @@
 package com.jamgu.hwstatistics
 
 import android.annotation.SuppressLint
-import android.app.ActivityManager
+import android.app.usage.UsageEvents
+import android.app.usage.UsageStatsManager
 import android.content.Context
-import android.content.Context.ACTIVITY_SERVICE
 import android.widget.Toast
 import androidx.fragment.app.FragmentActivity
 import com.jamgu.common.thread.ThreadPool
@@ -105,12 +105,39 @@ class StatisticsLoader() : INeedPermission {
                 dataTemp = newData
             }
 
+            getTopActivity()
             uiCallback?.invoke("TS: $curTimeString, TM: $currentTimeMillis")
 
             lastTimeString = curTimeString
 //            JLog.d(TAG, "curVal = $it, curRepeat = ${mTimer?.getCurrentRepeatCount()}, info: | ${newData[3]}")
 
         }, 200)
+    }
+
+
+    /**
+     * 获取手机顶层Activity
+     */
+    fun getTopActivity() {
+        val endTime = System.currentTimeMillis()
+        val beginTime = endTime - 2000
+        val sUsageStatsManager = weakContext.get()?.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+        var result = ""
+//        val usages = sUsageStatsManager.queryUsageStats(UsageStatsManager.INTERVAL_BEST, beginTime, endTime)
+//        JLog.d(TAG, "getTopActivity, usageEvents = ${usages?.size}")
+//        usages?.forEach {
+//            JLog.d(TAG, "getTopActivity, result = ${it.packageName}")
+//        }
+
+        val usages = sUsageStatsManager.queryEvents(beginTime, endTime)
+        val event = UsageEvents.Event()
+        while (usages != null && usages.hasNextEvent()) {
+            usages.getNextEvent(event)
+            if (event.eventType == UsageEvents.Event.ACTIVITY_RESUMED) {
+                result = event.packageName + "/" + event.className
+            }
+            JLog.d(TAG, "getTopActivity, result = $result")
+        }
     }
 
     private fun getDataWithTitle(curTimeString: String, currentTimeMillis: Long): ArrayList<Any> {

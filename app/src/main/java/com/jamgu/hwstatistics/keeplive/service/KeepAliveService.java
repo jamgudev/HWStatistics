@@ -1,5 +1,9 @@
 package com.jamgu.hwstatistics.keeplive.service;
 
+import static com.jamgu.hwstatistics.RouterKt.AUTO_MONITOR_START_FROM_NOTIFICATION;
+
+import android.app.Activity;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.job.JobInfo;
 import android.app.job.JobParameters;
@@ -11,7 +15,6 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
-import android.os.SystemClock;
 import android.util.Log;
 
 import androidx.annotation.RequiresApi;
@@ -21,7 +24,6 @@ import com.jamgu.hwstatistics.AutoMonitorActivity;
 import com.jamgu.hwstatistics.BaseApplication;
 import com.jamgu.hwstatistics.R;
 import com.jamgu.hwstatistics.keeplive.forground.ForgroundNF;
-import com.jamgu.hwstatistics.keeplive.utils.KeepLiveUtils;
 
 /**
  * 创建一个JobService用于提高应用优先级
@@ -46,14 +48,23 @@ public class KeepAliveService extends JobService {
         public boolean handleMessage(Message msg) {
             Log.d(TAG, "pull alive.");
             if (mForgroundNF == null) {
-                initForeGroundNF();
+                initForeGroundNF(AutoMonitorActivity.class);
             }
             Context applicationContext = getApplicationContext();
+            // 判断Activity是否存活
             if (applicationContext instanceof BaseApplication) {
                 boolean inBackStack = ((BaseApplication) applicationContext)
                         .isActivityInBackStack(AutoMonitorActivity.class);
+                Log.d(TAG, "isInBackStack = " + inBackStack + ", mForgroundNF = " + mForgroundNF);
+                if (mForgroundNF == null) {
+                    initForeGroundNF(AutoMonitorActivity.class);
+                }
+                String rebootText = getString(R.string.app_being_killed_reboot);
                 if (!inBackStack) {
-                    mForgroundNF.updateContent(getString(R.string.app_being_killed_reboot));
+                    mForgroundNF.updateContent(rebootText);
+                    mForgroundNF.startForegroundNotification();
+                } else if (rebootText.equals(mForgroundNF.getCurrentContent())){
+                    mForgroundNF.updateContent(getString(R.string.working_background));
                     mForgroundNF.startForegroundNotification();
                 }
             }
@@ -67,13 +78,13 @@ public class KeepAliveService extends JobService {
         super.onCreate();
         mJobScheduler = (JobScheduler) getSystemService(Context.JOB_SCHEDULER_SERVICE);
         JOB_PG = new ComponentName(getPackageName(), KeepAliveService.class.getName());
-        initForeGroundNF();
+        initForeGroundNF(AutoMonitorActivity.class);
     }
 
-    private void initForeGroundNF() {
+    private void initForeGroundNF(Class<? extends Activity> activityClass) {
         mForgroundNF = new ForgroundNF(this, KeepAliveService.class.getSimpleName());
-
-        Intent intent = new Intent(this, AutoMonitorActivity.class);
+        Intent intent = new Intent(this, activityClass);
+        intent.putExtra(AUTO_MONITOR_START_FROM_NOTIFICATION, true);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 this,

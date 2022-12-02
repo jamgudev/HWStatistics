@@ -23,7 +23,8 @@ public class CancelNotifyervice extends Service {
     public void onCreate() {
         super.onCreate();
         Log.d(TAG,"onCreate--");
-        _mForgroundNF = new ForgroundNF(this, CancelNotifyervice.class.getSimpleName());
+        _mForgroundNF = new ForgroundNF(this, CancelNotifyervice.class.getSimpleName()
+        );
     }
 
     @Override
