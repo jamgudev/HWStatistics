@@ -23,14 +23,15 @@ import com.jamgu.hwstatistics.keeplive.utils.KeepLiveUtils
 import com.jamgu.hwstatistics.keeplive.utils.PhoneUtils
 import com.jamgu.hwstatistics.upload.DataSaver
 import com.jamgu.krouter.annotation.KRouter
+import com.jamgu.krouter.core.router.KRouterUriBuilder
+import com.jamgu.krouter.core.router.KRouters
 
 @KRouter(value = [AUTO_MONITOR_PAGE], booleanParams = [AUTO_MONITOR_START_FROM_NOTIFICATION])
 class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
 
     companion object {
         private const val TAG = "AutoMonitorActivity"
-        private const val BATTERY_INIT = "battery_init"
-        private const val USAGE_STATE_PERMISSION = "usage_state_permission"
+        private const val MONITOR_INIT = "monitor_init"
     }
 
     private lateinit var mDataLoader: StatisticsLoader
@@ -156,27 +157,20 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
     override fun onResume() {
         super.onResume()
         val preference = PreferenceUtil.getCachePreference(this, 0)
-        val isBatteryInit = preference.getBoolean(BATTERY_INIT, false)
-        if (!isBatteryInit || !KeepLiveUtils.isIgnoringBatteryOptimizations(this)) {
-            KeepLiveUtils.requestIgnoreBatteryOptimizations(this)
-            PhoneUtils.setReStartAction(this)
-            preference.edit().putBoolean(BATTERY_INIT, true).apply()
-        }
-
-        val isUsageStatePermissionSet = preference.getBoolean(USAGE_STATE_PERMISSION, false)
-        if (!isUsageStatePermissionSet) {
-            // 打开获取应用信息页面
-            val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
-            startActivityForResult(intent, 0)
-            preference.edit().putBoolean(USAGE_STATE_PERMISSION, true).apply()
+        val isInit = preference.getBoolean(MONITOR_INIT, false)
+        if (!isInit) {
+            ThreadPool.runUITask({
+                KRouters.open(this, KRouterUriBuilder().appendAuthority(INIT_PAGE).build())
+            }, 400)
+            preference.edit().putBoolean(MONITOR_INIT, true).apply()
         }
     }
 
     /**
      * 当用户按下Home键 app处于后台，此时会调用onSaveInstanceState 方法
-        当用户按下电源键时，会调用onSaveInstanceState 方法
-        当Activity进行横竖屏切换的时候也会调用onSaveInstanceState 方法
-        从BActivity跳转到CActivity的时候 BActivity也会调用onSaveInstanceState 方法
+    当用户按下电源键时，会调用onSaveInstanceState 方法
+    当Activity进行横竖屏切换的时候也会调用onSaveInstanceState 方法
+    从BActivity跳转到CActivity的时候 BActivity也会调用onSaveInstanceState 方法
      */
 //    override fun onSaveInstanceState(outState: Bundle) {
 //        super.onSaveInstanceState(outState)

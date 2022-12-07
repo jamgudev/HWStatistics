@@ -40,6 +40,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.HWStatistics">
+        <activity android:name=".init.InitActivity"
+            android:exported="true">
+        </activity>
         <activity
             android:name=".AutoMonitorActivity"
             android:exported="true"
