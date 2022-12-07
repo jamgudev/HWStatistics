@@ -2,8 +2,7 @@
 
 package com.jamgu.hwstatistics
 
-import com.jamgu.common.util.log.JLog
-import com.jamgu.hwstatistics.cpu.model.CPU
+import com.jamgu.hwstatistics.mobiledata.cpu.model.CPU
 import com.jamgu.hwstatistics.util.roundToDecimals
 import kotlin.math.pow
 

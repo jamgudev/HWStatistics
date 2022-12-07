@@ -1,7 +1,6 @@
 package com.jamgu.hwstatistics.util
 
 import android.util.Log
-import com.jamgu.hwstatistics.cpu.CPUInfoManager
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileNotFoundException

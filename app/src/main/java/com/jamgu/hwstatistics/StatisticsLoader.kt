@@ -10,20 +10,21 @@ import com.jamgu.common.thread.ThreadPool
 import com.jamgu.common.util.log.JLog
 import com.jamgu.common.util.timer.VATimer
 import com.jamgu.hwstatistics.IOnDataEnough.Companion.THRESH_ONE_HOUR
-import com.jamgu.hwstatistics.bluetooth.BluetoothManager
-import com.jamgu.hwstatistics.brightness.BrightnessManager
-import com.jamgu.hwstatistics.cpu.CPUInfoManager
-import com.jamgu.hwstatistics.cpu.model.CPU
-import com.jamgu.hwstatistics.mediastate.MediaStateManager
-import com.jamgu.hwstatistics.memory.MemInfoManager
-import com.jamgu.hwstatistics.network.NetWorkManager
-import com.jamgu.hwstatistics.phonestate.PhoneStateManager
-import com.jamgu.hwstatistics.system.SystemManager
+import com.jamgu.hwstatistics.mobiledata.bluetooth.BluetoothManager
+import com.jamgu.hwstatistics.mobiledata.brightness.BrightnessManager
+import com.jamgu.hwstatistics.mobiledata.cpu.CPUInfoManager
+import com.jamgu.hwstatistics.mobiledata.cpu.model.CPU
+import com.jamgu.hwstatistics.mobiledata.mediastate.MediaStateManager
+import com.jamgu.hwstatistics.mobiledata.memory.MemInfoManager
+import com.jamgu.hwstatistics.mobiledata.network.NetWorkManager
+import com.jamgu.hwstatistics.mobiledata.phonestate.PhoneStateManager
+import com.jamgu.hwstatistics.mobiledata.system.SystemManager
 import com.jamgu.hwstatistics.util.roundToDecimals
 import com.permissionx.guolindev.PermissionX
 import java.lang.ref.WeakReference
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.collections.ArrayList
 
 
 /**
@@ -39,9 +40,10 @@ class StatisticsLoader() : INeedPermission {
     }
 
     private var mTimer: VATimer? = null
-
     private var uiCallback: ((String) -> Unit)? = null
     private val mData: ArrayList<ArrayList<Any>> = ArrayList()
+    // 用来存放用户打开的应用信息
+    private val mAppUsageData: ArrayList<ArrayList<String>> = ArrayList()
 
     private var mOnDataEnough: IOnDataEnough? = null
     private var mDataNumThreshold: Int = THRESH_ONE_HOUR
@@ -52,7 +54,6 @@ class StatisticsLoader() : INeedPermission {
     }
 
     fun init(ctx: Context, callback: ((String) -> Unit)?): StatisticsLoader {
-
         uiCallback = callback
         weakContext = WeakReference(ctx)
         mData.clear()
@@ -60,7 +61,6 @@ class StatisticsLoader() : INeedPermission {
         PhoneStateManager.register(context)
         BrightnessManager.registerReceiver(context)
         SystemManager.registerSystemReceiver(context)
-//        SensorsInfoManager.registerSensorListener(context)
         return this
     }
 
@@ -69,7 +69,6 @@ class StatisticsLoader() : INeedPermission {
         if (mTimer == null) {
             mTimer = VATimer()
         }
-
         mData.clear()
 
         var lastTimeString = ""
@@ -99,7 +98,6 @@ class StatisticsLoader() : INeedPermission {
                     if (mData.size >= mDataNumThreshold) {
                         mOnDataEnough?.onDataEnough()
                     }
-//                    JLog.d(TAG, "data belong to: $lastTimeString, data_num = $tempDataTimes")
                 }
                 tempDataTimes = 1f
                 dataTemp = newData
@@ -123,11 +121,6 @@ class StatisticsLoader() : INeedPermission {
         val beginTime = endTime - 2000
         val sUsageStatsManager = weakContext.get()?.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
         var result = ""
-//        val usages = sUsageStatsManager.queryUsageStats(UsageStatsManager.INTERVAL_BEST, beginTime, endTime)
-//        JLog.d(TAG, "getTopActivity, usageEvents = ${usages?.size}")
-//        usages?.forEach {
-//            JLog.d(TAG, "getTopActivity, result = ${it.packageName}")
-//        }
 
         val usages = sUsageStatsManager.queryEvents(beginTime, endTime)
         val event = UsageEvents.Event()
@@ -141,42 +134,28 @@ class StatisticsLoader() : INeedPermission {
     }
 
     private fun getDataWithTitle(curTimeString: String, currentTimeMillis: Long): ArrayList<Any> {
-//        val screenOn = getScreenStatus()
         val screenBrightness = getScreenBrightness()
         val phoneState = getPhoneState()
-//        val systemOnStatus = getSystemStatus()
         val musicState = getMusicState()
-//        val musicVolume = getMusicVolume()
-//        JLog.d(TAG, "musicVolume = $musicVolume")
         val networkType = getNetworkType()
         val netWorkSpeed = getNetWorkSpeed()
         val cpuInfo = getCpuInfo()
         val cpuTotalUsage = getCpuTotalUsage()
 
-//        val gpu3DCurUtil = GPUManager.getGpuUtilization()
-//        val gpu3DCurFreq = GPUManager.getGpuCurFreq()
-
         val memInfoFromFile = MemInfoManager.getMemInfoFromFile()
-
 
         // 蓝牙
         val bluetoothData = BluetoothManager.getBluetoothData()
         val blEnabled = if (bluetoothData?.enabled == true) 1 else 0
         val blConnectedNum = bluetoothData?.bondedDevices?.size ?: 0
 
-//        GPUManager.getMaxCpuFreq()
-//        GPUManager.getGpuUtilization()
-
-
         return Builder2().apply {
             curTimeMills(curTimeString)
-//            screenOn(screenOn)
             screenBrightness(screenBrightness)
             if (phoneState.size == 2) {
                 phoneRing(phoneState[0])
                 phoneOffHook(phoneState[1])
             }
-//            systemOn(systemOnStatus)
             musicOn(musicState)
             when(networkType) {
                 0 -> {
@@ -204,11 +183,8 @@ class StatisticsLoader() : INeedPermission {
             blEnabled(blEnabled)
             blConnectedNum(blConnectedNum)
             memAllInfo(memInfoFromFile)
-//            gpuCurFreq(gpu3DCurFreq)
-//            gpuCurUtil(gpu3DCurUtil)
         }.buildArray()
     }
-
 
     fun stop() {
         mTimer?.stop()
@@ -228,7 +204,6 @@ class StatisticsLoader() : INeedPermission {
         PhoneStateManager.unregister(context)
         BrightnessManager.unregisterReceiver(context)
         SystemManager.unregisterSystemReceiver(context)
-//        SensorsInfoManager.unregisterSensorListener()
         mData.clear()
         weakContext.clear()
     }
@@ -242,11 +217,8 @@ class StatisticsLoader() : INeedPermission {
             0,
             arrayListOf(
                 "cur_time_mills",
-//                "system_on",
-//                "screen_on",
                 "screen_brightness",
                 "music_on",
-//                "music_volume",
                 "phone_ring",
                 "phone_off_hook",
                 "wifi_network",
@@ -264,34 +236,12 @@ class StatisticsLoader() : INeedPermission {
                 "cpu5",
                 "cpu6",
                 "cpu7",
-//                "cpuTemp0",
-//                "cpuTemp1",
-//                "cpuTemp2",
-//                "cpuTemp3",
-//                "cpuTemp4",
-//                "cpuTemp5",
-//                "cpuTemp6",
-//                "cpuTemp7",
-//                "cpu_total_util",
-//                "cpu0_util",
-//                "cpu1_util",
-//                "cpu2_util",
-//                "cpu3_util",
-//                "cpu4_util",
-//                "cpu5_util",
-//                "cpu6_util",
-//                "cpu7_util",
                 "bluetooth",
-//                "mem_cur_free",
-//                "mem_free",
                 "mem_available",
                 "mem_active",
-//                "mem_inactive",
                 "mem_dirty",
                 "mem_anonPages",
                 "mem_mapped",
-//                "gpu_cur_freq",
-//                "gpu_cur_util",
                 "avg_p",
             )
         )
@@ -308,11 +258,11 @@ class StatisticsLoader() : INeedPermission {
             addAll(NetWorkManager.permission())
         }
         val notGrantedPermission = permissions.filterNot { PermissionX.isGranted(context, it) }
-        if (notGrantedPermission.isEmpty()) {
-            return true
+        return if (notGrantedPermission.isEmpty()) {
+            true
         } else {
             requestPermission(context, notGrantedPermission)
-            return false
+            false
         }
     }
 
@@ -356,7 +306,6 @@ class StatisticsLoader() : INeedPermission {
     private fun getScreenStatus(): Int {
         return BrightnessManager.getScreenStatus()
     }
-
 
     /**
      * 获取手机PhoneCall状态
@@ -407,25 +356,16 @@ class StatisticsLoader() : INeedPermission {
     private fun getCpuInfo(): ArrayList<CPU> {
         val cpuNumb = CPUInfoManager.getCpuCoresNumb()
         val cpus = ArrayList<CPU>()
-//        val cpuUtilization = CPUInfoManager.getCpuUtilization(weakContext.get(), cpuNumb)
-//        val cpuUsageBeforeO = TempCpu().getCpuUsageBeforeO(cpuNumb)
-//        JLog.d(TAG, "cpu = $cpuUsageBeforeO")
-//        val cpuUsage = CpuUtil.getCpuUsage()
-//        JLog.d(TAG, "cpuUsage = $cpuUsage")
-//        val cpuUsageBeforeO = TempCpu().getCpuUsageBeforeO(cpuNumb)
 
         val cpuUtils: List<Float>?
         val cpuInfo = CPUInfoManager.getCpuUtilization()
         cpuUtils = cpuInfo?.getPerCpuUtilisation()
 
         for (i in 0 until cpuNumb) {
-//            val cpuMaxFreq = CPUInfoManager.getCpuMaxFreq(i)
-//            val cpuMinFreq = CPUInfoManager.getCpuMinFreq(i)
             val cpuTemp = CPUInfoManager.getCpuTemp(i)
             val cpuMaxFreq = 0f
             val cpuMinFreq = 0f
             val cpuRunningFreq = CPUInfoManager.getCpuRunningFreq(i)
-//            val cpuTemp = 0f
             if (cpuUtils != null && cpuUtils.isNotEmpty()) {
                 val cpu = CPU(cpuMaxFreq, cpuMinFreq, cpuRunningFreq, cpuTemp, cpuUtils[i.coerceAtMost(cpuUtils.size)])
                 cpus.add(cpu)
@@ -434,8 +374,6 @@ class StatisticsLoader() : INeedPermission {
                 cpus.add(cpu)
             }
         }
-
-//        JLog.d(TAG, "cpu's number = ${cpus.size}")
 
         return cpus
     }
@@ -473,7 +411,7 @@ private fun ArrayList<Any>.plus(newData: ArrayList<Any>?): ArrayList<Any> {
  * 传入分母，会将列表内各元素分别处于它
  */
 private fun ArrayList<Any>.divideBy(divider: Float): ArrayList<Any> {
-    if (this.isNullOrEmpty()) return this
+    if (this.isEmpty()) return this
 
     this.forEachIndexed { i, it ->
         if (i == 0) return@forEachIndexed
