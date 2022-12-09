@@ -1,6 +1,7 @@
 package com.jamgu.hwstatistics.mobiledata.cpu
 
 import android.util.Log
+import com.jamgu.common.util.log.JLog
 import com.jamgu.hwstatistics.mobiledata.cpu.model.CpuData
 import com.jamgu.hwstatistics.util.readFile
 import java.io.File
@@ -32,9 +33,6 @@ object CPUInfoManager {
     private const val CPU_UTILIZATION_PATH = "/proc/stat"
 
     private var cpuUtilReader: CpuUtilisationReader = CpuUtilisationReader()
-
-    init {
-    }
 
     /**
      * 获取cpu核数
@@ -107,9 +105,9 @@ object CPUInfoManager {
         try {
             val freqStr = readFile(CPU_TEMP.replace("#", cpuIdx.toString(), true))
             temp = String.format("%.1f", freqStr.toInt() / 1000.0).toFloat()
-//            Log.d(TAG, "cpu#$cpuIdx's temp --->>> $temp")
+//            JLog.d(TAG, "cpu#$cpuIdx's temp --->>> $temp")
         } catch (e: NumberFormatException) {
-            Log.d(TAG, e.message.toString())
+            JLog.d(TAG, e.message.toString())
         }
         return temp
     }

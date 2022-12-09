@@ -7,6 +7,7 @@ import android.content.IntentFilter
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.view.LayoutInflater
 import android.widget.AbsListView
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -15,7 +16,9 @@ import com.jamgu.common.page.activity.ViewBindingActivity
 import com.jamgu.common.thread.ThreadPool
 import com.jamgu.common.util.log.JLog
 import com.jamgu.common.util.preference.PreferenceUtil
+import com.jamgu.hwstatistics.IOnDataEnough.Companion.THRESH_FOR_TEST
 import com.jamgu.hwstatistics.IOnDataEnough.Companion.THRESH_HALF_HOUR
+import com.jamgu.hwstatistics.appusage.AppUsageDataLoader
 import com.jamgu.hwstatistics.databinding.ActivityAutoMonitorBinding
 import com.jamgu.hwstatistics.keeplive.service.KeepAliveService
 import com.jamgu.hwstatistics.keeplive.service.screen.ActiveBroadcastReceiver
@@ -40,28 +43,13 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
     private var mShowTime: Boolean = false
     private var isStartFromNotification: Boolean = false
 
-    private var activeBroadcastReceiver: ActiveBroadcastReceiver? = null
-
     override fun isBackPressedNeedConfirm(): Boolean {
         return true
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // 注册开机、关机、解锁广播
-        if (activeBroadcastReceiver == null) {
-            activeBroadcastReceiver = ActiveBroadcastReceiver()
-        }
-        val intentFilter = IntentFilter()
-        intentFilter.addAction(Intent.ACTION_SCREEN_ON)
-        intentFilter.addAction(Intent.ACTION_SCREEN_OFF)
-        intentFilter.addAction(Intent.ACTION_USER_PRESENT)
-        // 8.0 后，只能通过动态注册
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            intentFilter.addAction(Intent.ACTION_BOOT_COMPLETED)
-            intentFilter.addAction(Intent.ACTION_SHUTDOWN)
-        }
-        registerReceiver(activeBroadcastReceiver, intentFilter)
+        mDataLoader.onCreate()
 
         isStartFromNotification = intent.extras?.getBoolean(AUTO_MONITOR_START_FROM_NOTIFICATION) ?: false
         if (isStartFromNotification || mDataLoader.isStarted()) {
@@ -88,30 +76,19 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
         super.onDestroy()
         saveData()
         JLog.d(TAG, "onDestroy")
-        unregisterReceiver(activeBroadcastReceiver)
+        mDataLoader.onDestroy()
 
         (applicationContext as? BaseApplication)?.removeThisActivityFromRunningActivities(this.javaClass)
     }
 
     override fun initData() {
         super.initData()
-        mDataLoader = StatisticsLoader()
+        mDataLoader = StatisticsLoader(this)
         mDataLoader.setOnDataEnoughListener(THRESH_HALF_HOUR, object : IOnDataEnough {
             override fun onDataEnough() {
                 saveData()
             }
         })
-        mDataLoader.init(this) {
-            if (mShowTime) {
-                ThreadPool.runUITask {
-                    mData.add(it)
-                    mAdapter.notifyItemInserted(mData.size - 1)
-                    if (mBinding.vRecycler.scrollState == AbsListView.OnScrollListener.SCROLL_STATE_IDLE) {
-                        mBinding.vRecycler.scrollToPosition(mData.size - 1)
-                    }
-                }
-            }
-        }
     }
 
     private fun saveData() {
@@ -143,6 +120,17 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
         }
         mBinding.vStart.setOnClickListener {
             if (mDataLoader.requestedPermission(this)) {
+                mDataLoader.init {
+                    if (mShowTime) {
+                        ThreadPool.runUITask {
+                            mData.add(it)
+                            mAdapter.notifyItemInserted(mData.size - 1)
+                            if (mBinding.vRecycler.scrollState == AbsListView.OnScrollListener.SCROLL_STATE_IDLE) {
+                                mBinding.vRecycler.scrollToPosition(mData.size - 1)
+                            }
+                        }
+                    }
+                }
                 if (!mDataLoader.isStarted()) {
                     mData.clear()
                     mAdapter.notifyDataSetChanged()

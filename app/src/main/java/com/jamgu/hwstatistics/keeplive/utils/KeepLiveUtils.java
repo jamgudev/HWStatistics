@@ -102,7 +102,7 @@ public class KeepLiveUtils {
         intent.putExtra(AUTO_MONITOR_START_FROM_NOTIFICATION, true);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         @SuppressLint("UnspecifiedImmutableFlag") PendingIntent pendingIntent = PendingIntent
-                .getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+                .getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
         String channelID = "app_call_notification";
         String channelName = "日志APP拉起通知";
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

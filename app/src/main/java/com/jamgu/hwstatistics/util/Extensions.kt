@@ -1,10 +1,12 @@
 package com.jamgu.hwstatistics.util
 
 import android.util.Log
+import com.jamgu.common.util.log.JLog
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.FileReader
+import java.lang.Exception
 import java.lang.StringBuilder
 import java.text.DecimalFormat
 
@@ -43,6 +45,8 @@ fun readFile(path: String, tag: String = "Constants"): String {
         }
     } catch (e: FileNotFoundException) {
         Log.d(tag, e.message.toString())
+    } catch (e: Exception) {
+        JLog.e(tag, "path = $path, e = $e")
     }
     return fileString
 }

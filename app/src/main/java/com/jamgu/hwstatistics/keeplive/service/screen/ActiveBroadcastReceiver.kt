@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import com.google.android.material.progressindicator.LinearProgressIndicatorSpec
 import com.jamgu.common.util.log.JLog
 import com.jamgu.hwstatistics.*
 import com.jamgu.hwstatistics.keeplive.utils.KeepLiveUtils
@@ -16,7 +17,7 @@ import com.jamgu.krouter.core.router.KRouters
  *
  * @description 手机开屏、息屏、开机、关机广播接收器
  */
-class ActiveBroadcastReceiver : BroadcastReceiver() {
+class ActiveBroadcastReceiver(val listener: IOnScreenStateChanged) : BroadcastReceiver() {
 
     companion object {
         private const val TAG = "ActiveBroadcastReceiver"
@@ -27,6 +28,7 @@ class ActiveBroadcastReceiver : BroadcastReceiver() {
         when (action) {
             Intent.ACTION_BOOT_COMPLETED -> {
                 context?.let {
+                    listener.onPhoneBootComplete()
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         KeepLiveUtils.startCallActivityVersionHigh(
                             context,
@@ -38,16 +40,16 @@ class ActiveBroadcastReceiver : BroadcastReceiver() {
                 }
             }
             Intent.ACTION_SHUTDOWN -> {
-                JLog.d(TAG, "shutdown")
+                listener.onPhoneShutdown()
             }
             Intent.ACTION_SCREEN_ON -> {
-                JLog.d(TAG, "screen on")
+                listener.onScreenOn()
             }
             Intent.ACTION_SCREEN_OFF -> {
-                JLog.d(TAG, "screen off")
+                listener.onScreenOff()
             }
             Intent.ACTION_USER_PRESENT -> {
-                JLog.d(TAG, "user present")
+                listener.onUserPresent()
             }
         }
     }
@@ -59,6 +61,38 @@ class ActiveBroadcastReceiver : BroadcastReceiver() {
         val params = KRouterUriBuilder(TRANSITION_PAGE)
             .build()
         KRouters.open(context, params)
+    }
+
+    open class SimpleStateChanged: IOnScreenStateChanged {
+        override fun onPhoneBootComplete() {
+        }
+
+        override fun onPhoneShutdown() {
+        }
+
+        override fun onScreenOn() {
+        }
+
+        override fun onScreenOff() {
+        }
+
+        override fun onUserPresent() {
+        }
+
+    }
+
+    interface IOnScreenStateChanged {
+
+        fun onPhoneBootComplete()
+
+        fun onPhoneShutdown()
+
+        fun onScreenOn()
+
+        fun onScreenOff()
+
+        fun onUserPresent()
+
     }
 
 }

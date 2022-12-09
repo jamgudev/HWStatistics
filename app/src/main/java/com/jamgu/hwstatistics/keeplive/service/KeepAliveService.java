@@ -68,7 +68,9 @@ public class KeepAliveService extends JobService {
                     mForgroundNF.startForegroundNotification();
                 }
             }
-            jobFinished((JobParameters) msg.obj, true);
+            if (msg != null && msg.obj instanceof JobParameters) {
+                jobFinished((JobParameters) msg.obj, true);
+            }
             return true;
         }
     });
@@ -88,7 +90,7 @@ public class KeepAliveService extends JobService {
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 this,
-                0, intent, PendingIntent.FLAG_UPDATE_CURRENT
+                0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
         mForgroundNF.setContentIntent(pendingIntent);
     }

@@ -4,12 +4,15 @@ import android.annotation.SuppressLint
 import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.content.Context
+import android.os.HardwarePropertiesManager
 import android.widget.Toast
+import androidx.core.content.getSystemService
 import androidx.fragment.app.FragmentActivity
 import com.jamgu.common.thread.ThreadPool
 import com.jamgu.common.util.log.JLog
 import com.jamgu.common.util.timer.VATimer
 import com.jamgu.hwstatistics.IOnDataEnough.Companion.THRESH_ONE_HOUR
+import com.jamgu.hwstatistics.appusage.AppUsageDataLoader
 import com.jamgu.hwstatistics.mobiledata.bluetooth.BluetoothManager
 import com.jamgu.hwstatistics.mobiledata.brightness.BrightnessManager
 import com.jamgu.hwstatistics.mobiledata.cpu.CPUInfoManager
@@ -30,9 +33,7 @@ import kotlin.collections.ArrayList
 /**
  * Created by jamgu on 2021/10/14
  */
-class StatisticsLoader() : INeedPermission {
-
-    private lateinit var weakContext: WeakReference<Context>
+class StatisticsLoader(val mContext: Context) : INeedPermission {
 
     companion object {
         private const val TAG = "StatisticsLoader"
@@ -42,25 +43,22 @@ class StatisticsLoader() : INeedPermission {
     private var mTimer: VATimer? = null
     private var uiCallback: ((String) -> Unit)? = null
     private val mData: ArrayList<ArrayList<Any>> = ArrayList()
-    // 用来存放用户打开的应用信息
-    private val mAppUsageData: ArrayList<ArrayList<String>> = ArrayList()
 
     private var mOnDataEnough: IOnDataEnough? = null
     private var mDataNumThreshold: Int = THRESH_ONE_HOUR
+    private val mUsageLoader: AppUsageDataLoader = AppUsageDataLoader(mContext)
 
     fun setOnDataEnoughListener(threshold: Int, onDataEnough: IOnDataEnough) {
         mDataNumThreshold = threshold
         mOnDataEnough = onDataEnough
     }
 
-    fun init(ctx: Context, callback: ((String) -> Unit)?): StatisticsLoader {
+    fun init(callback: ((String) -> Unit)?): StatisticsLoader {
         uiCallback = callback
-        weakContext = WeakReference(ctx)
         mData.clear()
-        val context = weakContext.get()
-        PhoneStateManager.register(context)
-        BrightnessManager.registerReceiver(context)
-        SystemManager.registerSystemReceiver(context)
+        PhoneStateManager.register(mContext)
+        BrightnessManager.registerReceiver(mContext)
+        SystemManager.registerSystemReceiver(mContext)
         return this
     }
 
@@ -93,6 +91,7 @@ class StatisticsLoader() : INeedPermission {
                     tempDataTimes += 1f
                 }
             } else {
+                mUsageLoader.getCurrentUsedApp()
                 if (dataTemp.isNotEmpty()) {
                     mData.add(dataTemp.divideBy(tempDataTimes))
                     if (mData.size >= mDataNumThreshold) {
@@ -103,34 +102,27 @@ class StatisticsLoader() : INeedPermission {
                 dataTemp = newData
             }
 
-            getTopActivity()
+//            val hardware = mContext.getSystemService(Context.HARDWARE_PROPERTIES_SERVICE)
+//            if (hardware is HardwarePropertiesManager) {
+//                hardware.cpuUsages.forEach {
+//                    JLog.d(TAG, "usage = ${it.active}, total = ${it.total}")
+//                }
+//                hardware.fanSpeeds.forEach {
+//                    JLog.d(TAG, "fanSpeeds = $it")
+//                }
+//                hardware.getDeviceTemperatures(
+//                    HardwarePropertiesManager.DEVICE_TEMPERATURE_CPU,
+//                    HardwarePropertiesManager.TEMPERATURE_CURRENT
+//                ).forEachIndexed { temp, idx ->
+//                    JLog.d(TAG, "idx = $idx, temp = $temp")
+//                }
+//            }
             uiCallback?.invoke("TS: $curTimeString, TM: $currentTimeMillis")
 
             lastTimeString = curTimeString
 //            JLog.d(TAG, "curVal = $it, curRepeat = ${mTimer?.getCurrentRepeatCount()}, info: | ${newData[3]}")
 
         }, 200)
-    }
-
-
-    /**
-     * 获取手机顶层Activity
-     */
-    fun getTopActivity() {
-        val endTime = System.currentTimeMillis()
-        val beginTime = endTime - 2000
-        val sUsageStatsManager = weakContext.get()?.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
-        var result = ""
-
-        val usages = sUsageStatsManager.queryEvents(beginTime, endTime)
-        val event = UsageEvents.Event()
-        while (usages != null && usages.hasNextEvent()) {
-            usages.getNextEvent(event)
-            if (event.eventType == UsageEvents.Event.ACTIVITY_RESUMED) {
-                result = event.packageName + "/" + event.className
-            }
-            JLog.d(TAG, "getTopActivity, result = $result")
-        }
     }
 
     private fun getDataWithTitle(curTimeString: String, currentTimeMillis: Long): ArrayList<Any> {
@@ -157,7 +149,7 @@ class StatisticsLoader() : INeedPermission {
                 phoneOffHook(phoneState[1])
             }
             musicOn(musicState)
-            when(networkType) {
+            when (networkType) {
                 0 -> {
                     isOtherNetwork(1)
                 }
@@ -200,12 +192,10 @@ class StatisticsLoader() : INeedPermission {
 
     fun release() {
         mTimer?.release()
-        val context = weakContext.get()
-        PhoneStateManager.unregister(context)
-        BrightnessManager.unregisterReceiver(context)
-        SystemManager.unregisterSystemReceiver(context)
+        PhoneStateManager.unregister(mContext)
+        BrightnessManager.unregisterReceiver(mContext)
+        SystemManager.unregisterSystemReceiver(mContext)
         mData.clear()
-        weakContext.clear()
     }
 
     fun getRawData(): ArrayList<ArrayList<Any>> {
@@ -256,6 +246,7 @@ class StatisticsLoader() : INeedPermission {
         val permissions = ArrayList<String>().apply {
             addAll(permission())
             addAll(NetWorkManager.permission())
+            addAll(BluetoothManager.permission())
         }
         val notGrantedPermission = permissions.filterNot { PermissionX.isGranted(context, it) }
         return if (notGrantedPermission.isEmpty()) {
@@ -268,36 +259,36 @@ class StatisticsLoader() : INeedPermission {
 
     private fun requestPermission(context: FragmentActivity?, notGrantedPermission: List<String>) {
         PermissionX.init(context)
-                .permissions(notGrantedPermission)
-                .onExplainRequestReason { scope, deniedList ->
-                    scope.showRequestReasonDialog(
-                        deniedList, "获取网络类型需要申请读取手机状态权限",
-                        "好的", "拒绝"
-                    )
-                }
-                .onForwardToSettings { scope, deniedList ->
-                    scope.showForwardToSettingsDialog(
-                        deniedList, "You need to allow necessary permissions in Settings manually",
-                        "OK", "Cancel"
-                    )
-                }
-                .request { allGranted, _, deniedList ->
-                    if (allGranted) {
-                        // do nothing
-                    } else {
-                        ThreadPool.runUITask {
-                            Toast.makeText(context, "These permissions are denied: $deniedList", Toast.LENGTH_LONG)
-                                    .show()
-                        }
+            .permissions(notGrantedPermission)
+            .onExplainRequestReason { scope, deniedList ->
+                scope.showRequestReasonDialog(
+                    deniedList, "获取网络类型需要申请读取手机状态权限",
+                    "好的", "拒绝"
+                )
+            }
+            .onForwardToSettings { scope, deniedList ->
+                scope.showForwardToSettingsDialog(
+                    deniedList, "You need to allow necessary permissions in Settings manually",
+                    "OK", "Cancel"
+                )
+            }
+            .request { allGranted, _, deniedList ->
+                if (allGranted) {
+                    // do nothing
+                } else {
+                    ThreadPool.runUITask {
+                        Toast.makeText(context, "These permissions are denied: $deniedList", Toast.LENGTH_LONG)
+                            .show()
                     }
                 }
+            }
     }
 
     /**
      * 获取系统亮度信息
      */
     private fun getScreenBrightness(): Int {
-        return BrightnessManager.getBrightness(weakContext.get())
+        return BrightnessManager.getBrightness(mContext)
     }
 
     /**
@@ -319,35 +310,35 @@ class StatisticsLoader() : INeedPermission {
      * 获取system_on信息
      */
     private fun getSystemStatus(): Int {
-        return SystemManager.getSystemOnStatus(weakContext.get())
+        return SystemManager.getSystemOnStatus(mContext)
     }
 
     /**
      * 获取手机Music状态
      */
     private fun getMusicState(): Int {
-        return MediaStateManager.getMusicState(weakContext.get())
+        return MediaStateManager.getMusicState(mContext)
     }
 
     /**
      * 获取手机音乐音量
      */
     private fun getMusicVolume(): Int {
-        return MediaStateManager.getMusicVolume(weakContext.get())
+        return MediaStateManager.getMusicVolume(mContext)
     }
 
     /**
      * 获取网络类型
      */
     private fun getNetworkType(): Int {
-        return NetWorkManager.getNetworkType(weakContext.get())
+        return NetWorkManager.getNetworkType(mContext)
     }
 
     /**
      * 获取网速
      */
     private fun getNetWorkSpeed(): Float {
-        return NetWorkManager.getNetWorkSpeed(weakContext.get())
+        return NetWorkManager.getNetWorkSpeed(mContext)
     }
 
     /**
@@ -383,6 +374,14 @@ class StatisticsLoader() : INeedPermission {
     }
 
     override fun permission(): Array<String> = arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+
+    fun onCreate() {
+        mUsageLoader.onCreate()
+    }
+
+    fun onDestroy() {
+        mUsageLoader.onDestroy()
+    }
 }
 
 /**
@@ -435,6 +434,7 @@ interface IOnDataEnough {
     companion object {
         const val THRESH_ONE_HOUR = 3600
         const val THRESH_HALF_HOUR = 1800
+        const val THRESH_FOR_TEST = 10
     }
 
     fun onDataEnough()

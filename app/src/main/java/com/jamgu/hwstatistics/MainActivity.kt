@@ -26,7 +26,7 @@ class MainActivity : ViewBindingActivity<ActivityMainBinding>() {
     }
 
     private var mShowTime: Boolean = false
-    private val mLoader = StatisticsLoader()
+    private val mLoader = StatisticsLoader(this)
 
     private var mAdapter: StatisticAdapter = StatisticAdapter()
     private var mData: ArrayList<String> = ArrayList()
@@ -75,7 +75,7 @@ class MainActivity : ViewBindingActivity<ActivityMainBinding>() {
     }
 
     override fun initData() {
-        mLoader.init(this) {
+        mLoader.init {
             if (mShowTime) {
                 ThreadPool.runUITask {
                     mData.add(it)
