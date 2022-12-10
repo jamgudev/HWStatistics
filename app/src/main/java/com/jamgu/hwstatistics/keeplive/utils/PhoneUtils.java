@@ -11,7 +11,6 @@ import androidx.annotation.NonNull;
 
 public class PhoneUtils {
 
-
     /**
      * 跳转到指定应用的首页
      */
@@ -85,8 +84,9 @@ public class PhoneUtils {
             showActivity(context,"com.huawei.systemmanager",
                     "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity");
         } catch (Exception e) {
-            showActivity(context,"com.huawei.systemmanager",
-                    "com.huawei.systemmanager.optimize.bootstart.BootStartActivity");
+            // 华为暂时不支持
+//            showActivity(context,"com.huawei.systemmanager",
+//                    "com.huawei.systemmanager.appcontrol.activity.StartupAppControlActivity");
         }
     }
    // 小米：

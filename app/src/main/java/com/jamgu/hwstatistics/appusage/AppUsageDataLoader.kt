@@ -19,10 +19,10 @@ class AppUsageDataLoader(private val mContext: Context): ActiveBroadcastReceiver
 
     // 用来存放用户打开的应用信息
     // --- 时间 --- 活动名 --- 详细包名 --- 开始访问时间 --- 结束访问时间 --- 访问时长
-    private val mAppUsageData: ArrayList<ArrayList<String>> = ArrayList()
+    private val mAppUsageData: ArrayList<AppUsageRecord> = ArrayList()
 
     private var activeBroadcastReceiver: ActiveBroadcastReceiver? = null
-    private var mLastAppRecordName: String = ""
+    private var mLastResumeRecord: AppUsageRecord.ActivityResumeRecord? = null
 
     companion object {
         private const val TAG = "AppUsageDataLoader"
@@ -46,32 +46,93 @@ class AppUsageDataLoader(private val mContext: Context): ActiveBroadcastReceiver
 
         val usages = sUsageStatsManager.queryEvents(beginTime, endTime)
         val event = UsageEvents.Event()
+        JLog.d(TAG, "----------------- new ---------------")
+        var firstActivityResumeRecord: AppUsageRecord.ActivityResumeRecord? = null
         while (usages != null && usages.hasNextEvent()) {
             usages.getNextEvent(event)
-            if (event.eventType == UsageEvents.Event.ACTIVITY_RESUMED) {
-                val packageName = event.packageName ?: continue
-                // 最新的APP使用记录与上一个相同，跳过
-                if (isRecordSameWithLast(packageName)) {
-                    return
-                } else {
-                    // 不同，记录上一个APP的使用时长，并更新下一个APP的开始使用时间
-                    // TODO FINISH THIS
+            val packageName = event.packageName ?: continue
+            val className = event.className
+            val timeStamp = event.timeStamp
 
+            when (event.eventType) {
+                UsageEvents.Event.DEVICE_SHUTDOWN -> {
+                    JLog.d(TAG, "DEVICE_SHUTDOWN")
                 }
-                val className = event.className
+                UsageEvents.Event.DEVICE_STARTUP -> {
+                    JLog.d(TAG, "DEVICE_STARTUP")
+                }
+                UsageEvents.Event.SCREEN_INTERACTIVE -> {
+                    JLog.d(TAG, "SCREEN_INTERACTIVE")
+                }
+                UsageEvents.Event.SCREEN_NON_INTERACTIVE -> {
+                    JLog.d(TAG, "SCREEN_NON_INTERACTIVE")
+                }
+                UsageEvents.Event.ACTIVITY_RESUMED -> {
+                    val resumeRecord = AppUsageRecord.ActivityResumeRecord(packageName,
+                        className, timeStamp.timeStamp2DateString())
+
+                    if (firstActivityResumeRecord == null) {
+                        firstActivityResumeRecord = resumeRecord
+                    }
+
+                    // 最新的APP使用记录与上一个相同，说明已经遍历完新事件了
+                    if (isResumeRecordSameWithLast(resumeRecord)) {
+                        updateLastResumeRecord(firstActivityResumeRecord)
+                        return
+                    }
+                    // 不同，说明是新事件，更新
+                    else {
+                        val dataSize = mAppUsageData.size
+                        if (dataSize == 0) {
+                            mAppUsageData.add(resumeRecord)
+                        } else {
+                            // 1. 先记录上一个record的停留时间
+                            val lastResumeRecord = mAppUsageData[dataSize - 1]
+                            // 上一個记录是resume record，更新
+                            if (lastResumeRecord is AppUsageRecord.ActivityResumeRecord) {
+                                replaceLastResumeRecord2UsageRecord(lastResumeRecord)
+                            }
+                            // 2. 新增一条 resume record记录
+                            mAppUsageData.add(resumeRecord)
+                        }
+                    }
+                    JLog.d(TAG, "getTopActivity, packageName = $packageName，className = $className, tm = $timeStamp")
+                }
+                UsageEvents.Event.USER_INTERACTION -> {
+                    JLog.d(TAG, "USER_INTERACTION")
+                }
             }
-//            JLog.d(TAG, "getTopActivity, result = $result，tm = $endTime")
         }
+    }
+
+    /**
+     * 更新上一个 resume record 记录为 usage record 记录：补充使用时长
+     */
+    private fun replaceLastResumeRecord2UsageRecord(lastResumeRecord: AppUsageRecord.ActivityResumeRecord) {
+        val startTime = lastResumeRecord.mTimeStamp
+        val curTime = getCurrentDateString()
+        val duration = curTime.timeMillsBetween(startTime)
+        val usageRecord = AppUsageRecord.UsageRecord(lastResumeRecord.mPackageName,
+            lastResumeRecord.mClassName, startTime,
+            curTime, duration.timeStamp2SimpleDateString(), duration
+        )
+        // 替换记录
+        mAppUsageData.remove(lastResumeRecord)
+        mAppUsageData.add(usageRecord)
     }
 
     /**
      * 当前活动记录是否与上一个活动记录相同
      */
-    private fun isRecordSameWithLast(curRecord: String?): Boolean {
-        if (curRecord.isNullOrEmpty()) return false
+    private fun isResumeRecordSameWithLast(curRecord: AppUsageRecord.ActivityResumeRecord?): Boolean {
+        curRecord ?: return false
 
 //        return curRecord == getLatestSavedAppUsage()
-        return curRecord == mLastAppRecordName
+        return curRecord == mLastResumeRecord
+    }
+
+    private fun updateLastResumeRecord(firstRecord: AppUsageRecord.ActivityResumeRecord?) {
+        mLastResumeRecord = firstRecord
     }
 
     /**
@@ -82,17 +143,18 @@ class AppUsageDataLoader(private val mContext: Context): ActiveBroadcastReceiver
         if (ySize <= 0) return ""
 
         val lastAppUsageRecord = mAppUsageData[ySize - 1]
-        val xSize = lastAppUsageRecord.size
-        if (xSize <= 4) return ""
-
-        return lastAppUsageRecord[1]
+//        val xSize = lastAppUsageRecord.size
+//        if (xSize <= 4) return ""
+//
+//        return lastAppUsageRecord[1]
+        return ""
     }
 
     /**
      * 向数据中添加空行
      */
     private fun addEmptyLine() {
-        mAppUsageData.add(arrayListOf())
+//        mAppUsageData.add(arrayListOf())
     }
 
     fun onCreate() {

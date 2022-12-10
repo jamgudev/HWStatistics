@@ -1,12 +1,9 @@
 package com.jamgu.hwstatistics
 
 import android.annotation.SuppressLint
-import android.app.usage.UsageEvents
-import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.os.HardwarePropertiesManager
 import android.widget.Toast
-import androidx.core.content.getSystemService
 import androidx.fragment.app.FragmentActivity
 import com.jamgu.common.thread.ThreadPool
 import com.jamgu.common.util.log.JLog
@@ -24,10 +21,8 @@ import com.jamgu.hwstatistics.mobiledata.phonestate.PhoneStateManager
 import com.jamgu.hwstatistics.mobiledata.system.SystemManager
 import com.jamgu.hwstatistics.util.roundToDecimals
 import com.permissionx.guolindev.PermissionX
-import java.lang.ref.WeakReference
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.collections.ArrayList
 
 
 /**
@@ -102,21 +97,6 @@ class StatisticsLoader(val mContext: Context) : INeedPermission {
                 dataTemp = newData
             }
 
-//            val hardware = mContext.getSystemService(Context.HARDWARE_PROPERTIES_SERVICE)
-//            if (hardware is HardwarePropertiesManager) {
-//                hardware.cpuUsages.forEach {
-//                    JLog.d(TAG, "usage = ${it.active}, total = ${it.total}")
-//                }
-//                hardware.fanSpeeds.forEach {
-//                    JLog.d(TAG, "fanSpeeds = $it")
-//                }
-//                hardware.getDeviceTemperatures(
-//                    HardwarePropertiesManager.DEVICE_TEMPERATURE_CPU,
-//                    HardwarePropertiesManager.TEMPERATURE_CURRENT
-//                ).forEachIndexed { temp, idx ->
-//                    JLog.d(TAG, "idx = $idx, temp = $temp")
-//                }
-//            }
             uiCallback?.invoke("TS: $curTimeString, TM: $currentTimeMillis")
 
             lastTimeString = curTimeString
