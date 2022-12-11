@@ -20,12 +20,11 @@ fun Long.timeStamp2SimpleDateString(): String {
 }
 
 fun String.timeMillsBetween(fromTimeStr: String): Long {
+    if (fromTimeStr.isEmpty()) return 0L
+
     val fromDate = getSdf().parse(fromTimeStr) ?: return 0L
     val toDate = getSdf().parse(this) ?: return 0L
 
-    val simpleDateFormat = SimpleDateFormat("HH:mm:ss", Locale.CHINA).apply {
-        timeZone = TimeZone.getTimeZone("GMT+00:00")
-    }
     return toDate.time - fromDate.time
 }
 
@@ -33,10 +32,10 @@ fun getCurrentDateString(): String {
     return System.currentTimeMillis().timeStamp2DateString()
 }
 
-private fun getSdf() = SimpleDateFormat("yyyy/MM/dd HH:mm:ss", Locale.CHINA).apply {
-    timeZone = TimeZone.getTimeZone("GMT+00:00")
+private fun getSdf() = SimpleDateFormat("yyyyMMdd(HH_mm_ss)", Locale.CHINA).apply {
+//    timeZone = TimeZone.getTimeZone("GMT+00:00")
 }
 
-private fun getSimpleSdf() = SimpleDateFormat("HH:mm:ss", Locale.CHINA).apply {
+private fun getSimpleSdf() = SimpleDateFormat("HH_mm_ss", Locale.CHINA).apply {
     timeZone = TimeZone.getTimeZone("GMT+00:00")
 }

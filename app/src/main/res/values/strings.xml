@@ -7,4 +7,12 @@
     <string name="app_battery_save_init">电量白名单初始化</string>
     <string name="app_usage_state_perm">获取应用信息白名单</string>
     <string name="app_start_monitor">启动活动监控日志</string>
+    <string name="usage_screen_on">屏幕亮起</string>
+    <string name="usage_screen_off">屏幕熄灭</string>
+    <string name="usage_user_present">用户解锁</string>
+    <string name="usage_session">Session</string>
+    <string name="usage_shut_down">手机关机</string>
+    <string name="permission_not_allowed">相应权限未获取成功，启动失败，请重试</string>
+    <string name="app_un_present">用户未解锁</string>
+    <string name="err_activity_usage_record_failed">有Activity活动未记录完整</string>
 </resources>

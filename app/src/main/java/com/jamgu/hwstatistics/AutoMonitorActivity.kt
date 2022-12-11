@@ -1,13 +1,7 @@
 package com.jamgu.hwstatistics
 
 import android.annotation.SuppressLint
-import android.app.NotificationManager
-import android.content.Intent
-import android.content.IntentFilter
-import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
-import android.view.LayoutInflater
 import android.widget.AbsListView
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -16,15 +10,10 @@ import com.jamgu.common.page.activity.ViewBindingActivity
 import com.jamgu.common.thread.ThreadPool
 import com.jamgu.common.util.log.JLog
 import com.jamgu.common.util.preference.PreferenceUtil
-import com.jamgu.hwstatistics.IOnDataEnough.Companion.THRESH_FOR_TEST
-import com.jamgu.hwstatistics.IOnDataEnough.Companion.THRESH_HALF_HOUR
 import com.jamgu.hwstatistics.appusage.AppUsageDataLoader
+import com.jamgu.hwstatistics.appusage.AppUsageRecord
 import com.jamgu.hwstatistics.databinding.ActivityAutoMonitorBinding
 import com.jamgu.hwstatistics.keeplive.service.KeepAliveService
-import com.jamgu.hwstatistics.keeplive.service.screen.ActiveBroadcastReceiver
-import com.jamgu.hwstatistics.keeplive.utils.KeepLiveUtils
-import com.jamgu.hwstatistics.keeplive.utils.PhoneUtils
-import com.jamgu.hwstatistics.upload.DataSaver
 import com.jamgu.krouter.annotation.KRouter
 import com.jamgu.krouter.core.router.KRouterUriBuilder
 import com.jamgu.krouter.core.router.KRouters
@@ -37,7 +26,7 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
         private const val MONITOR_INIT = "monitor_init"
     }
 
-    private lateinit var mDataLoader: StatisticsLoader
+    private val mAppUsageDataLoader: AppUsageDataLoader = AppUsageDataLoader(this)
     private var mAdapter: StatisticAdapter = StatisticAdapter()
     private var mData: ArrayList<String> = ArrayList()
     private var mShowTime: Boolean = false
@@ -49,17 +38,18 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        mDataLoader.onCreate()
+        mAppUsageDataLoader.onCreate()
 
-        isStartFromNotification = intent.extras?.getBoolean(AUTO_MONITOR_START_FROM_NOTIFICATION) ?: false
-        if (isStartFromNotification || mDataLoader.isStarted()) {
+        isStartFromNotification =
+            intent.extras?.getBoolean(AUTO_MONITOR_START_FROM_NOTIFICATION) ?: false
+        if (isStartFromNotification || mAppUsageDataLoader.isStarted()) {
             ThreadPool.runUITask({
                 if (isStartFromNotification) {
                     mBinding.vStart.text = getString(R.string.already_started)
                     mBinding.vStart.isEnabled = false
                 }
-                if (!mDataLoader.isStarted()) {
-                    mDataLoader.startNonMainThread()
+                if (!mAppUsageDataLoader.isStarted()) {
+                    mAppUsageDataLoader.start()
                 }
             }, 400)
         }
@@ -74,35 +64,10 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
 
     override fun onDestroy() {
         super.onDestroy()
-        saveData()
         JLog.d(TAG, "onDestroy")
-        mDataLoader.onDestroy()
+        mAppUsageDataLoader.onDestroy()
 
         (applicationContext as? BaseApplication)?.removeThisActivityFromRunningActivities(this.javaClass)
-    }
-
-    override fun initData() {
-        super.initData()
-        mDataLoader = StatisticsLoader(this)
-        mDataLoader.setOnDataEnoughListener(THRESH_HALF_HOUR, object : IOnDataEnough {
-            override fun onDataEnough() {
-                saveData()
-            }
-        })
-    }
-
-    private fun saveData() {
-        val data = ArrayList(mDataLoader.getDataWithTitle())
-        DataSaver.save(this@AutoMonitorActivity, data)
-        mDataLoader.clearData()
-        if (mShowTime) {
-            ThreadPool.runUITask {
-                if (!isFinishing && !isDestroyed) {
-                    mData.clear()
-                    mAdapter.notifyDataSetChanged()
-                }
-            }
-        }
     }
 
     @SuppressLint("NotifyDataSetChanged")
@@ -119,25 +84,12 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
             mBinding.vShowTime.text = if (mShowTime) "不显示时间戳" else "显示时间戳"
         }
         mBinding.vStart.setOnClickListener {
-            if (mDataLoader.requestedPermission(this)) {
-                mDataLoader.init {
-                    if (mShowTime) {
-                        ThreadPool.runUITask {
-                            mData.add(it)
-                            mAdapter.notifyItemInserted(mData.size - 1)
-                            if (mBinding.vRecycler.scrollState == AbsListView.OnScrollListener.SCROLL_STATE_IDLE) {
-                                mBinding.vRecycler.scrollToPosition(mData.size - 1)
-                            }
-                        }
-                    }
-                }
-                if (!mDataLoader.isStarted()) {
-                    mData.clear()
-                    mAdapter.notifyDataSetChanged()
-                    mDataLoader.startNonMainThread()
-                    mBinding.vStart.text = getString(R.string.already_started)
-                    mBinding.vStart.isEnabled = false
-                }
+            if (!mAppUsageDataLoader.isStarted()) {
+                mData.clear()
+                mAdapter.notifyDataSetChanged()
+                mAppUsageDataLoader.start()
+                mBinding.vStart.text = getString(R.string.already_started)
+                mBinding.vStart.isEnabled = false
             }
         }
     }
@@ -171,5 +123,6 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
 //        )
 //    }
 
-    override fun getViewBinding(): ActivityAutoMonitorBinding = ActivityAutoMonitorBinding.inflate(layoutInflater)
+    override fun getViewBinding(): ActivityAutoMonitorBinding =
+        ActivityAutoMonitorBinding.inflate(layoutInflater)
 }

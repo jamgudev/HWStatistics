@@ -2,15 +2,19 @@ package com.jamgu.hwstatistics.upload
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.net.Uri
 import android.os.Environment
 import android.os.Environment.DIRECTORY_DOWNLOADS
 import androidx.core.content.FileProvider
 import com.jamgu.common.thread.ThreadPool
 import com.jamgu.common.util.log.JLog
+import com.jamgu.hwstatistics.R
+import com.jamgu.hwstatistics.appusage.AppUsageRecord
 import com.jamgu.hwstatistics.util.ExcelUtil
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.collections.ArrayList
 
 
 /**
@@ -22,36 +26,122 @@ import java.util.*
 object DataSaver {
 
     private const val TAG = "DataSaver"
-    const val DIR_NAME = "HWStatistics"
+    private const val CACHE_ROOT_DIR = "HWStatistics"
+    private const val ACTIVE_DIR = "active"
+    private const val APP_USAGE_FILE = "app_usage_file"
+    private const val POWER_USAGE_FILE = "power_usage_file.xlsx"
+    private const val EXCEL_SUFFIX = ".xlsx"
 
-    fun save(context: Context, data: ArrayList<ArrayList<Any>>) {
-        val sdPath = getSDPath()
-        val dirPath = "$sdPath/$DIR_NAME"
-        val dirFile = File(dirPath)
-        if (!dirFile.exists()) {
-            val mkdir = dirFile.mkdir()
-            JLog.d(TAG, "dir mkdir = $mkdir")
-        }
-
-        val timeMillis = getCurrentTimeFormatted()
-        val filePath = "${dirFile.path}/$timeMillis.xlsx"
-        val destFile = File(filePath)
-        val uri = FileProvider.getUriForFile(context, "com.jamgu.hwstatistics", destFile)
+    /**
+     * 保存功耗模型数据
+     */
+    fun savePowerData(context: Context, data: ArrayList<ArrayList<Any>>) {
         ThreadPool.runOnNonUIThread {
+            val dirPath = getCacheRootPath()
+            val dirFile = File(dirPath)
+            if (!dirFile.exists()) {
+                val mkdir = dirFile.mkdir()
+                JLog.d(TAG, "dir mkdir = $mkdir")
+            }
+
+            val timeMillis = getCurrentTimeFormatted()
+            val filePath = "${dirFile.path}/$timeMillis.xlsx"
+            val destFile = File(filePath)
+            val uri = FileProvider.getUriForFile(context, "com.jamgu.hwstatistics", destFile)
             JLog.d(TAG, "uri = $uri")
             ExcelUtil.writeExcelNew(context, data, uri)
         }
     }
 
+    /**
+     * 保存用户行为数据
+     */
+    fun saveAppUsageDataSync(
+        context: Context,
+        usageData: ArrayList<AppUsageRecord>,
+        powerData: ArrayList<ArrayList<Any>>,
+        dirName: String
+    ) {
+        ThreadPool.runIOTask {
+            val usageAnyData = ArrayList<ArrayList<Any>>()
+            usageData.forEach { usageRecord ->
+                val singleData = ArrayList<Any>()
+                when (usageRecord) {
+                    is AppUsageRecord.UsageRecord -> {
+                        singleData.add(usageRecord.mUsageName)
+                        singleData.add(usageRecord.mDetailUsage ?: "")
+                        singleData.add(usageRecord.mStartTime)
+                        singleData.add(usageRecord.mEndTime)
+                        singleData.add(usageRecord.mDuration)
+                        singleData.add(usageRecord.mDurationLong)
+                    }
+                    is AppUsageRecord.PhoneLifeCycleRecord -> {
+                        singleData.add(usageRecord.mLifeCycleName)
+                        singleData.add(usageRecord.mOccTime)
+                    }
+                    is AppUsageRecord.SingleSessionRecord -> {
+                        singleData.add(usageRecord.mUsageName)
+                        singleData.add(usageRecord.mScreenOnTime)
+                        singleData.add(
+                            usageRecord.mUserPresentTime
+                                ?: context.getString(R.string.app_un_present)
+                        )
+                        singleData.add(usageRecord.mScreenOfTime)
+                        singleData.add(usageRecord.mScreenSession)
+                        singleData.add(usageRecord.mPresentSession)
+                    }
+                    is AppUsageRecord.EmptyUsageRecord -> {
+                        singleData.add("")
+                    }
+                    is AppUsageRecord.ActivityResumeRecord -> {
+                        singleData.add(context.getString(R.string.err_activity_usage_record_failed))
+                    }
+                    else -> {}
+                }
+                usageAnyData.add(singleData)
+            }
+
+            val dirFile = File("${getActiveCachePath()}/$dirName")
+            if (!dirFile.exists()) {
+                dirFile.mkdirs()
+            }
+            val timeMillis = System.currentTimeMillis()
+            val appUsageFile = File("${dirFile.path}/${APP_USAGE_FILE}_$timeMillis$EXCEL_SUFFIX")
+            val appUsageUri =
+                FileProvider.getUriForFile(context, "com.jamgu.hwstatistics", appUsageFile)
+            saveData2DestFile(context, usageAnyData, appUsageUri)
+
+            val powerUsageFile =
+                File("${dirFile.path}/${POWER_USAGE_FILE}_$timeMillis$EXCEL_SUFFIX")
+            val powerUsageUri =
+                FileProvider.getUriForFile(context, "com.jamgu.hwstatistics", powerUsageFile)
+            saveData2DestFile(context, powerData, powerUsageUri)
+        }
+    }
+
+
+    private fun saveData2DestFile(
+        context: Context,
+        data: ArrayList<ArrayList<Any>>,
+        destFileUri: Uri
+    ) {
+        ExcelUtil.writeExcelNew(context, data, destFileUri)
+    }
+
     @SuppressLint("SimpleDateFormat")
-    fun getCurrentTimeFormatted(): String {
+    private fun getCurrentTimeFormatted(): String {
         val sdf = SimpleDateFormat("yyyy_MM_dd_HH_mm_ss")
         return sdf.format(Date(System.currentTimeMillis())).toString()
     }
 
-    fun getSDPath(): String {
+    private fun getCacheRootPath() = "${getSDPath()}/$CACHE_ROOT_DIR"
+
+    private fun getActiveCachePath() = "${getCacheRootPath()}/$ACTIVE_DIR"
+
+    private fun getSDPath(): String {
         var sdDir: File? = null
-        val sdCardExist = Environment.getExternalStorageState() == Environment.MEDIA_MOUNTED // 判断sd卡是否存在
+        val sdCardExist =
+            Environment.getExternalStorageState() == Environment.MEDIA_MOUNTED // 判断sd卡是否存在
         if (sdCardExist) {
             sdDir = Environment.getExternalStoragePublicDirectory(DIRECTORY_DOWNLOADS) // 获取跟目录
         } else {

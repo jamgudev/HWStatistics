@@ -1,15 +1,12 @@
 package com.jamgu.hwstatistics
 
-import android.annotation.SuppressLint
 import android.content.Context
-import android.os.HardwarePropertiesManager
 import android.widget.Toast
 import androidx.fragment.app.FragmentActivity
 import com.jamgu.common.thread.ThreadPool
-import com.jamgu.common.util.log.JLog
 import com.jamgu.common.util.timer.VATimer
 import com.jamgu.hwstatistics.IOnDataEnough.Companion.THRESH_ONE_HOUR
-import com.jamgu.hwstatistics.appusage.AppUsageDataLoader
+import com.jamgu.hwstatistics.appusage.timeStamp2DateString
 import com.jamgu.hwstatistics.mobiledata.bluetooth.BluetoothManager
 import com.jamgu.hwstatistics.mobiledata.brightness.BrightnessManager
 import com.jamgu.hwstatistics.mobiledata.cpu.CPUInfoManager
@@ -19,16 +16,14 @@ import com.jamgu.hwstatistics.mobiledata.memory.MemInfoManager
 import com.jamgu.hwstatistics.mobiledata.network.NetWorkManager
 import com.jamgu.hwstatistics.mobiledata.phonestate.PhoneStateManager
 import com.jamgu.hwstatistics.mobiledata.system.SystemManager
-import com.jamgu.hwstatistics.util.roundToDecimals
+import com.jamgu.hwstatistics.util.divideBy
+import com.jamgu.hwstatistics.util.plus
 import com.permissionx.guolindev.PermissionX
-import java.text.SimpleDateFormat
-import java.util.*
-
 
 /**
  * Created by jamgu on 2021/10/14
  */
-class StatisticsLoader(val mContext: Context) : INeedPermission {
+class StatisticsLoader(private val mContext: Context) : INeedPermission {
 
     companion object {
         private const val TAG = "StatisticsLoader"
@@ -37,41 +32,38 @@ class StatisticsLoader(val mContext: Context) : INeedPermission {
 
     private var mTimer: VATimer? = null
     private var uiCallback: ((String) -> Unit)? = null
-    private val mData: ArrayList<ArrayList<Any>> = ArrayList()
+    private val mPowerData: ArrayList<ArrayList<Any>> = ArrayList()
 
     private var mOnDataEnough: IOnDataEnough? = null
     private var mDataNumThreshold: Int = THRESH_ONE_HOUR
-    private val mUsageLoader: AppUsageDataLoader = AppUsageDataLoader(mContext)
 
     fun setOnDataEnoughListener(threshold: Int, onDataEnough: IOnDataEnough) {
         mDataNumThreshold = threshold
         mOnDataEnough = onDataEnough
     }
 
-    fun init(callback: ((String) -> Unit)?): StatisticsLoader {
+    fun initOnCreate(callback: ((String) -> Unit)?): StatisticsLoader {
         uiCallback = callback
-        mData.clear()
+        mPowerData.clear()
         PhoneStateManager.register(mContext)
         BrightnessManager.registerReceiver(mContext)
         SystemManager.registerSystemReceiver(mContext)
         return this
     }
 
-    @SuppressLint("SimpleDateFormat")
     private fun start() {
         if (mTimer == null) {
             mTimer = VATimer()
         }
-        mData.clear()
+        mPowerData.clear()
 
         var lastTimeString = ""
         var dataTemp = ArrayList<Any>()
         var tempDataTimes = 1f
-        mTimer?.run({
+        mTimer?.run({ executeTimes ->
             // do something
             val currentTimeMillis = System.currentTimeMillis()
-            val sdf = SimpleDateFormat("yyyy/MM/dd HH:mm:ss")
-            val curTimeString: String = sdf.format(Date(currentTimeMillis))
+            val curTimeString: String = currentTimeMillis.timeStamp2DateString()
 
             val newData = getDataWithTitle(curTimeString, currentTimeMillis)
 
@@ -86,10 +78,9 @@ class StatisticsLoader(val mContext: Context) : INeedPermission {
                     tempDataTimes += 1f
                 }
             } else {
-                mUsageLoader.getCurrentUsedApp()
                 if (dataTemp.isNotEmpty()) {
-                    mData.add(dataTemp.divideBy(tempDataTimes))
-                    if (mData.size >= mDataNumThreshold) {
+                    mPowerData.add(dataTemp.divideBy(tempDataTimes))
+                    if (mPowerData.size >= mDataNumThreshold) {
                         mOnDataEnough?.onDataEnough()
                     }
                 }
@@ -167,7 +158,16 @@ class StatisticsLoader(val mContext: Context) : INeedPermission {
     }
 
     fun startNonMainThread() {
-        start()
+        // TODO 优化权限请求时机
+        if (mContext is FragmentActivity && requestedPermission(mContext)) {
+            start()
+        } else {
+            Toast.makeText(
+                mContext,
+                mContext.getString(R.string.permission_not_allowed),
+                Toast.LENGTH_SHORT
+            ).show()
+        }
     }
 
     fun release() {
@@ -175,15 +175,15 @@ class StatisticsLoader(val mContext: Context) : INeedPermission {
         PhoneStateManager.unregister(mContext)
         BrightnessManager.unregisterReceiver(mContext)
         SystemManager.unregisterSystemReceiver(mContext)
-        mData.clear()
+        mPowerData.clear()
     }
 
     fun getRawData(): ArrayList<ArrayList<Any>> {
-        return mData
+        return mPowerData
     }
 
     fun getDataWithTitle(): ArrayList<ArrayList<Any>> {
-        mData.add(
+        mPowerData.add(
             0,
             arrayListOf(
                 "cur_time_mills",
@@ -215,11 +215,11 @@ class StatisticsLoader(val mContext: Context) : INeedPermission {
                 "avg_p",
             )
         )
-        return mData
+        return mPowerData
     }
 
     fun clearData() {
-        mData.clear()
+        mPowerData.clear()
     }
 
     fun requestedPermission(context: FragmentActivity?): Boolean {
@@ -254,10 +254,14 @@ class StatisticsLoader(val mContext: Context) : INeedPermission {
             }
             .request { allGranted, _, deniedList ->
                 if (allGranted) {
-                    // do nothing
+                    start()
                 } else {
                     ThreadPool.runUITask {
-                        Toast.makeText(context, "These permissions are denied: $deniedList", Toast.LENGTH_LONG)
+                        Toast.makeText(
+                            context,
+                            "These permissions are denied: $deniedList",
+                            Toast.LENGTH_LONG
+                        )
                             .show()
                     }
                 }
@@ -265,17 +269,17 @@ class StatisticsLoader(val mContext: Context) : INeedPermission {
     }
 
     /**
-     * 获取系统亮度信息
-     */
-    private fun getScreenBrightness(): Int {
-        return BrightnessManager.getBrightness(mContext)
-    }
-
-    /**
      * 获取屏幕状态
      */
     private fun getScreenStatus(): Int {
         return BrightnessManager.getScreenStatus()
+    }
+
+    /**
+     * 获取系统亮度信息
+     */
+    private fun getScreenBrightness(): Int {
+        return BrightnessManager.getBrightness(mContext)
     }
 
     /**
@@ -338,7 +342,13 @@ class StatisticsLoader(val mContext: Context) : INeedPermission {
             val cpuMinFreq = 0f
             val cpuRunningFreq = CPUInfoManager.getCpuRunningFreq(i)
             if (cpuUtils != null && cpuUtils.isNotEmpty()) {
-                val cpu = CPU(cpuMaxFreq, cpuMinFreq, cpuRunningFreq, cpuTemp, cpuUtils[i.coerceAtMost(cpuUtils.size)])
+                val cpu = CPU(
+                    cpuMaxFreq,
+                    cpuMinFreq,
+                    cpuRunningFreq,
+                    cpuTemp,
+                    cpuUtils[i.coerceAtMost(cpuUtils.size)]
+                )
                 cpus.add(cpu)
             } else {
                 val cpu = CPU(cpuMaxFreq, cpuMinFreq, cpuRunningFreq, cpuTemp, 0f)
@@ -353,60 +363,16 @@ class StatisticsLoader(val mContext: Context) : INeedPermission {
         return CPUInfoManager.getCpuUtilization()?.overallCpu ?: 0f
     }
 
-    override fun permission(): Array<String> = arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+    override fun permission(): Array<String> =
+        arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
 
-    fun onCreate() {
-        mUsageLoader.onCreate()
-    }
-
-    fun onDestroy() {
-        mUsageLoader.onDestroy()
-    }
-}
-
-/**
- * 传入newData，会将两者相加
- */
-private fun ArrayList<Any>.plus(newData: ArrayList<Any>?): ArrayList<Any> {
-    if (newData.isNullOrEmpty() || this.isNullOrEmpty()) return this
-
-    this.forEachIndexed { i, it ->
-        if (i == 0) return@forEachIndexed
-        if (it is Number) {
-            if (it is Float) {
-                val newVal = it.plus(newData[i].toString().toFloat())
-                this[i] = newVal
-            } else if (it is Int) {
-                val newVal = it.plus(newData[i].toString().toInt())
-                this[i] = newVal
-            }
-        }
-    }
-
-    return this
-}
-
-/**
- * 传入分母，会将列表内各元素分别处于它
- */
-private fun ArrayList<Any>.divideBy(divider: Float): ArrayList<Any> {
-    if (this.isEmpty()) return this
-
-    this.forEachIndexed { i, it ->
-        if (i == 0) return@forEachIndexed
-
-        if (it is Number) {
-            if (it is Float) {
-                val newVal = it / divider
-                this[i] = newVal.roundToDecimals(2)
-            } else if (it is Int) {
-                val newVal = it / divider
-                this[i] = newVal.roundToDecimals(2)
-            }
-        }
-    }
-
-    return this
+//    fun onCreate() {
+//        mUsageLoader.onCreate()
+//    }
+//
+//    fun onDestroy() {
+//        mUsageLoader.onDestroy()
+//    }
 }
 
 interface IOnDataEnough {

@@ -14,7 +14,6 @@ import com.jamgu.common.page.activity.ViewBindingActivity
 import com.jamgu.common.thread.ThreadPool
 import com.jamgu.common.util.log.JLog
 import com.jamgu.hwstatistics.databinding.ActivityMainBinding
-import com.jamgu.hwstatistics.keeplive.service.AliveStrategy
 import com.jamgu.hwstatistics.keeplive.service.KeepAliveService
 import com.jamgu.hwstatistics.util.ExcelUtil
 import com.jamgu.krouter.core.router.KRouters
@@ -75,7 +74,7 @@ class MainActivity : ViewBindingActivity<ActivityMainBinding>() {
     }
 
     override fun initData() {
-        mLoader.init {
+        mLoader.initOnCreate {
             if (mShowTime) {
                 ThreadPool.runUITask {
                     mData.add(it)

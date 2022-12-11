@@ -17,7 +17,7 @@ import com.jamgu.krouter.core.router.KRouters
  *
  * @description 手机开屏、息屏、开机、关机广播接收器
  */
-class ActiveBroadcastReceiver(val listener: IOnScreenStateChanged) : BroadcastReceiver() {
+class ActiveBroadcastReceiver(private val listener: IOnScreenStateChanged) : BroadcastReceiver() {
 
     companion object {
         private const val TAG = "ActiveBroadcastReceiver"
