@@ -1,9 +1,8 @@
 package com.jamgu.hwstatistics.keeplive.service;
 
-import static com.jamgu.hwstatistics.RouterKt.AUTO_MONITOR_START_FROM_NOTIFICATION;
+import static com.jamgu.hwstatistics.page.PageRouterKt.AUTO_MONITOR_START_FROM_NOTIFICATION;
 
 import android.app.Activity;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.job.JobInfo;
 import android.app.job.JobParameters;
@@ -20,7 +19,7 @@ import android.util.Log;
 import androidx.annotation.RequiresApi;
 
 import com.jamgu.common.util.log.JLog;
-import com.jamgu.hwstatistics.AutoMonitorActivity;
+import com.jamgu.hwstatistics.page.AutoMonitorActivity;
 import com.jamgu.hwstatistics.BaseApplication;
 import com.jamgu.hwstatistics.R;
 import com.jamgu.hwstatistics.keeplive.forground.ForgroundNF;

@@ -1,0 +1,13 @@
+package com.jamgu.hwstatistics.page
+
+/**
+ * Created by jamgu on 2022/04/06
+ */
+
+const val PART_POWER_PAGE = "PART_POWER_PAGE"
+
+const val AUTO_MONITOR_PAGE = "AUTO_MONITOR_PAGE"
+const val AUTO_MONITOR_START_FROM_NOTIFICATION = "AUTO_MONITOR_START_FROM_NOTIFICATION"
+
+const val TRANSITION_PAGE = "TRANSITION_PAGE"
+const val INIT_PAGE = "INIT_PAGE"

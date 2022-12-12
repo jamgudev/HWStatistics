@@ -49,11 +49,11 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.HWStatistics">
-        <activity android:name=".init.InitActivity"
+        <activity android:name=".page.InitActivity"
             android:exported="true">
         </activity>
         <activity
-            android:name=".AutoMonitorActivity"
+            android:name=".page.AutoMonitorActivity"
             android:exported="true"
             android:launchMode="singleInstance">
             <intent-filter>
@@ -62,12 +62,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".pcratio.PartPowerActivity" />
+        <activity android:name=".page.PartPowerActivity" />
         <activity
-            android:name=".MainActivity"
+            android:name=".page.MainActivity"
             android:exported="true"
             android:screenOrientation="portrait"/>
-        <activity android:name=".TransitionActivity" />
+        <activity android:name=".page.TransitionActivity" />
         <!-- 保活 start -->
         <service
             android:name=".keeplive.service.KeepAliveService"
@@ -104,7 +104,8 @@
             android:name=".keeplive.service.screen.ActiveBroadcastReceiver"
             android:enabled="true"
             android:exported="true"
-            android:priority="99999999">
+            android:priority="99999999"
+            tools:ignore="Instantiatable">
             <intent-filter>
                 <!-- 开机广播 -->
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

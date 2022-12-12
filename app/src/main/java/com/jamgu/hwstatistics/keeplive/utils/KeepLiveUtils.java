@@ -1,6 +1,6 @@
 package com.jamgu.hwstatistics.keeplive.utils;
 
-import static com.jamgu.hwstatistics.RouterKt.AUTO_MONITOR_START_FROM_NOTIFICATION;
+import static com.jamgu.hwstatistics.page.PageRouterKt.AUTO_MONITOR_START_FROM_NOTIFICATION;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -20,7 +20,6 @@ import androidx.core.app.NotificationManagerCompat;
 
 import com.jamgu.common.util.log.JLog;
 import com.jamgu.hwstatistics.R;
-import com.jamgu.hwstatistics.TransitionActivity;
 
 import java.util.List;
 

@@ -4,10 +4,10 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import com.google.android.material.progressindicator.LinearProgressIndicatorSpec
-import com.jamgu.common.util.log.JLog
 import com.jamgu.hwstatistics.*
 import com.jamgu.hwstatistics.keeplive.utils.KeepLiveUtils
+import com.jamgu.hwstatistics.page.TRANSITION_PAGE
+import com.jamgu.hwstatistics.page.TransitionActivity
 import com.jamgu.krouter.core.router.KRouterUriBuilder
 import com.jamgu.krouter.core.router.KRouters
 
@@ -18,6 +18,7 @@ import com.jamgu.krouter.core.router.KRouters
  * @description 手机开屏、息屏、开机、关机广播接收器
  */
 class ActiveBroadcastReceiver(private val listener: IOnScreenStateChanged) : BroadcastReceiver() {
+
 
     companion object {
         private const val TAG = "ActiveBroadcastReceiver"

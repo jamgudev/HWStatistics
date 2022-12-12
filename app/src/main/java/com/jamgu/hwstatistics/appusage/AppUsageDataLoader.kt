@@ -9,7 +9,7 @@ import android.os.Build
 import com.jamgu.common.util.log.JLog
 import com.jamgu.common.util.timer.VATimer
 import com.jamgu.hwstatistics.R
-import com.jamgu.hwstatistics.StatisticsLoader
+import com.jamgu.hwstatistics.power.StatisticsLoader
 import com.jamgu.hwstatistics.keeplive.service.screen.ActiveBroadcastReceiver
 import com.jamgu.hwstatistics.upload.DataSaver
 import java.util.concurrent.atomic.AtomicBoolean
