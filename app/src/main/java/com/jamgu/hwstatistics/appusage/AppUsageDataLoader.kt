@@ -31,7 +31,7 @@ class AppUsageDataLoader(private val mContext: Context) :
 
     private var activeBroadcastReceiver: ActiveBroadcastReceiver? = null
 
-    // 上一个 activity resumes 事件
+    // 上一个事件轮询的最后一个 activity resumes 事件
     private var mLastResumeRecord: UsageRecord.ActivityResumeRecord? = null
 
     // 屏幕亮起事件
@@ -88,14 +88,13 @@ class AppUsageDataLoader(private val mContext: Context) :
             return
         }
         val endTime = System.currentTimeMillis()
-        val beginTime = endTime - 1000
+        val beginTime = endTime - 1500
         val sUsageStatsManager =
             mContext.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
 
         val usages = sUsageStatsManager.queryEvents(beginTime, endTime)
         val event = UsageEvents.Event()
         JLog.d(TAG, "----------------- new ---------------")
-        var firstActivityResumeRecord: UsageRecord.ActivityResumeRecord? = null
         while (usages != null && usages.hasNextEvent()) {
             usages.getNextEvent(event)
             val packageName = event.packageName ?: continue
@@ -109,16 +108,11 @@ class AppUsageDataLoader(private val mContext: Context) :
                         className, timeStamp.timeStamp2DateStringWithMills()
                     )
 
-                    if (firstActivityResumeRecord == null) {
-                        firstActivityResumeRecord = resumeRecord
-                    }
-
-                    // 最新的APP使用记录与上一个相同，说明已经遍历完新事件了
-                    if (isResumeRecordSameWithLast(resumeRecord)) {
-                        updateLastResumeRecord(firstActivityResumeRecord)
+                    // 当前事件是否是新事件
+                    if (!isNewResumeRecord(resumeRecord)) {
                         return
                     }
-                    // 不同，说明是新事件，更新
+                    // 说明是新事件，更新
                     else {
                         val dataSize = mAppUsageData.size
                         if (dataSize == 0) {
@@ -129,6 +123,8 @@ class AppUsageDataLoader(private val mContext: Context) :
                             // 2. 新增一条 resume record记录
                             mAppUsageData.add(resumeRecord)
                         }
+
+                        updateLatestResumeRecord(resumeRecord)
                     }
                     JLog.d(
                         TAG,
@@ -165,13 +161,13 @@ class AppUsageDataLoader(private val mContext: Context) :
     /**
      * 当前活动记录是否与上一个活动记录相同
      */
-    private fun isResumeRecordSameWithLast(curRecord: UsageRecord.ActivityResumeRecord?): Boolean {
+    private fun isNewResumeRecord(curRecord: UsageRecord.ActivityResumeRecord?): Boolean {
         curRecord ?: return false
 
-        return curRecord == mLastResumeRecord
+        return curRecord.mTimeStamp > (mLastResumeRecord?.mTimeStamp ?: "0")
     }
 
-    private fun updateLastResumeRecord(firstRecord: UsageRecord.ActivityResumeRecord?) {
+    private fun updateLatestResumeRecord(firstRecord: UsageRecord.ActivityResumeRecord?) {
         mLastResumeRecord = firstRecord
     }
 
