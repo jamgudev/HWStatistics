@@ -12,6 +12,7 @@ import com.jamgu.hwstatistics.R
 import com.jamgu.hwstatistics.StatisticsLoader
 import com.jamgu.hwstatistics.keeplive.service.screen.ActiveBroadcastReceiver
 import com.jamgu.hwstatistics.upload.DataSaver
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * @author gujiaming.dev@bytedance.com
@@ -23,7 +24,7 @@ class AppUsageDataLoader(private val mContext: Context) :
     ActiveBroadcastReceiver.IOnScreenStateChanged {
 
     @Volatile
-    private var mScreenOn: Boolean = false
+    private var mScreenOn: AtomicBoolean = AtomicBoolean(false)
 
     // 用来存放用户打开的应用信息
     // --- 时间 --- 活动名 --- 详细包名 --- 开始访问时间 --- 结束访问时间 --- 访问时长
@@ -84,7 +85,7 @@ class AppUsageDataLoader(private val mContext: Context) :
      * 获取手机顶层Activity
      */
     private fun queryCurrentUsedApp() {
-        if (!mScreenOn) {
+        if (!mScreenOn.get()) {
             return
         }
         val endTime = System.currentTimeMillis()
@@ -175,6 +176,8 @@ class AppUsageDataLoader(private val mContext: Context) :
      * 记录一次用户解锁
      */
     private fun addUserPresentRecord() {
+        replaceLastResumeRecord2UsageRecord()
+
         val usageName = mContext.getString(R.string.usage_user_present)
         val occurrenceTime = System.currentTimeMillis().timeStamp2DateStringWithMills()
         val cycleRecord = UsageRecord.PhoneLifeCycleRecord(usageName, occurrenceTime)
@@ -312,7 +315,7 @@ class AppUsageDataLoader(private val mContext: Context) :
         mScreenOnRecord = null
         mUserPresentRecord = null
         mLastResumeRecord = null
-        mScreenOn = false
+        mScreenOn.set(false)
         clearUsageData()
         mPowerDataLoader.clearData()
     }
@@ -322,7 +325,7 @@ class AppUsageDataLoader(private val mContext: Context) :
     }
 
     override fun onPhoneShutdown() {
-        if (!mScreenOn) {
+        if (!mScreenOn.get()) {
             return
         }
 
@@ -331,7 +334,7 @@ class AppUsageDataLoader(private val mContext: Context) :
     }
 
     override fun onScreenOn() {
-        mScreenOn = true
+        mScreenOn.set(true)
         if (mPowerDataLoader.isStarted()) {
             mPowerDataLoader.stop()
         }
@@ -341,7 +344,7 @@ class AppUsageDataLoader(private val mContext: Context) :
     }
 
     override fun onScreenOff() {
-        if (!mScreenOn) {
+        if (!mScreenOn.get()) {
             return
         }
         val screenOffRecord = addOnScreenOffRecord()
@@ -349,7 +352,7 @@ class AppUsageDataLoader(private val mContext: Context) :
     }
 
     override fun onUserPresent() {
-        if (!mScreenOn) {
+        if (!mScreenOn.get()) {
             return
         }
         addUserPresentRecord()
