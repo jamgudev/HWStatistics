@@ -15,7 +15,6 @@ import com.jamgu.hwstatistics.util.ExcelUtil
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.collections.ArrayList
 
 
 /**
@@ -110,11 +109,18 @@ object DataSaver {
                         singleData.add(usageRecord.mDuration)
                         singleData.add(usageRecord.mDurationLong)
                     }
+                    else -> {}
                 }
                 usageAnyData.add(singleData)
             }
 
-            val dirFile = File("${getActiveCachePath()}/${getDateOfTodayString()}/$dirName")
+            val nameSplits = dirName.split("(")
+            val subDirName = if (nameSplits.isNotEmpty()) {
+                nameSplits[0]
+            } else {
+                getDateOfTodayString()
+            }
+            val dirFile = File("${getActiveCachePath()}/$subDirName/$dirName")
             if (!dirFile.exists()) {
                 dirFile.mkdirs()
             }
@@ -152,13 +158,13 @@ object DataSaver {
     private fun getActiveCachePath() = "${getCacheRootPath()}/$ACTIVE_DIR"
 
     private fun getSDPath(): String {
-        var sdDir: File? = null
+        val sdDir: File?
         val sdCardExist =
             Environment.getExternalStorageState() == Environment.MEDIA_MOUNTED // 判断sd卡是否存在
-        if (sdCardExist) {
-            sdDir = Environment.getExternalStoragePublicDirectory(DIRECTORY_DOWNLOADS) // 获取跟目录
+        sdDir = if (sdCardExist) {
+            Environment.getExternalStoragePublicDirectory(DIRECTORY_DOWNLOADS) // 获取跟目录
         } else {
-            sdDir = Environment.getDataDirectory()
+            Environment.getDataDirectory()
         }
         return sdDir.toString()
     }
