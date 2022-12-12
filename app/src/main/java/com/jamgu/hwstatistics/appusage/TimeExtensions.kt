@@ -32,10 +32,10 @@ fun getCurrentDateString(): String {
     return System.currentTimeMillis().timeStamp2DateString()
 }
 
-private fun getSdf() = SimpleDateFormat("yyyyMMdd(HH_mm_ss)", Locale.CHINA).apply {
+private fun getSdf() = SimpleDateFormat("yyyyMMdd(HH_mm_ss_SSS)", Locale.CHINA).apply {
 //    timeZone = TimeZone.getTimeZone("GMT+00:00")
 }
 
-private fun getSimpleSdf() = SimpleDateFormat("HH_mm_ss", Locale.CHINA).apply {
+private fun getSimpleSdf() = SimpleDateFormat("HH_mm_ss_SSS", Locale.CHINA).apply {
     timeZone = TimeZone.getTimeZone("GMT+00:00")
 }
