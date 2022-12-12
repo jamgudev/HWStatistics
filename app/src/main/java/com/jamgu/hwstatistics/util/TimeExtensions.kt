@@ -10,6 +10,10 @@ import java.util.*
  *
  * @description
  */
+fun Long.timeStamp2DateStringWithMills(): String {
+    return getSdfWithMills().format(Date(this))
+}
+
 fun Long.timeStamp2DateString(): String {
     return getSdf().format(Date(this))
 }
@@ -22,17 +26,21 @@ fun Long.timeStamp2SimpleDateString(): String {
 fun String.timeMillsBetween(fromTimeStr: String): Long {
     if (fromTimeStr.isEmpty()) return 0L
 
-    val fromDate = getSdf().parse(fromTimeStr) ?: return 0L
-    val toDate = getSdf().parse(this) ?: return 0L
+    val fromDate = getSdfWithMills().parse(fromTimeStr) ?: return 0L
+    val toDate = getSdfWithMills().parse(this) ?: return 0L
 
     return toDate.time - fromDate.time
 }
 
 fun getCurrentDateString(): String {
-    return System.currentTimeMillis().timeStamp2DateString()
+    return System.currentTimeMillis().timeStamp2DateStringWithMills()
 }
 
-private fun getSdf() = SimpleDateFormat("yyyyMMdd(HH_mm_ss_SSS)", Locale.CHINA).apply {
+private fun getSdfWithMills() = SimpleDateFormat("yyyyMMdd(HH_mm_ss_SSS)", Locale.CHINA).apply {
+//    timeZone = TimeZone.getTimeZone("GMT+00:00")
+}
+
+private fun getSdf() = SimpleDateFormat("yyyyMMdd(HH_mm_ss)", Locale.CHINA).apply {
 //    timeZone = TimeZone.getTimeZone("GMT+00:00")
 }
 

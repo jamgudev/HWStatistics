@@ -10,7 +10,7 @@ import com.jamgu.common.thread.ThreadPool
 import com.jamgu.common.util.log.JLog
 import com.jamgu.common.util.preference.PreferenceUtil
 import com.jamgu.hwstatistics.appusage.AppUsageDataLoader
-import com.jamgu.hwstatistics.appusage.AppUsageRecord
+import com.jamgu.hwstatistics.appusage.UsageRecord
 import com.jamgu.hwstatistics.appusage.timeStamp2SimpleDateString
 import com.jamgu.hwstatistics.databinding.ActivityAutoMonitorBinding
 import com.jamgu.hwstatistics.keeplive.service.KeepAliveService
@@ -31,7 +31,7 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
             override fun onSessionBegin() {
             }
 
-            override fun onSessionEnd(session: AppUsageRecord.SingleSessionRecord) {
+            override fun onSessionEnd(session: UsageRecord.SingleSessionRecord) {
             }
         })
     }
@@ -118,7 +118,7 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
 
         mStartTime?.let { startTime ->
             val duration = System.currentTimeMillis() - startTime
-            mData.add(duration.timeStamp2SimpleDateString())
+            mData.add("Session Duration:" + duration.timeStamp2SimpleDateString())
             mAdapter.notifyItemInserted(mData.size - 1)
         }
     }

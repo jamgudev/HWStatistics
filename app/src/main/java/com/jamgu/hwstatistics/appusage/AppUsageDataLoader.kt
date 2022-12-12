@@ -27,18 +27,18 @@ class AppUsageDataLoader(private val mContext: Context) :
 
     // 用来存放用户打开的应用信息
     // --- 时间 --- 活动名 --- 详细包名 --- 开始访问时间 --- 结束访问时间 --- 访问时长
-    private val mAppUsageData: ArrayList<AppUsageRecord> = ArrayList()
+    private val mAppUsageData: ArrayList<UsageRecord> = ArrayList()
 
     private var activeBroadcastReceiver: ActiveBroadcastReceiver? = null
 
     // 上一个 activity resumes 事件
-    private var mLastResumeRecord: AppUsageRecord.ActivityResumeRecord? = null
+    private var mLastResumeRecord: UsageRecord.ActivityResumeRecord? = null
 
     // 屏幕亮起事件
-    private var mScreenOnRecord: AppUsageRecord.PhoneLifeCycleRecord? = null
+    private var mScreenOnRecord: UsageRecord.PhoneLifeCycleRecord? = null
 
     // 用户解锁事件
-    private var mUserPresentRecord: AppUsageRecord.PhoneLifeCycleRecord? = null
+    private var mUserPresentRecord: UsageRecord.PhoneLifeCycleRecord? = null
 
     private var mSessionListener: IOnUserSessionListener? = null
 
@@ -48,6 +48,7 @@ class AppUsageDataLoader(private val mContext: Context) :
 
     companion object {
         private const val TAG = "AppUsageDataLoader"
+        const val TEXT_SESSION_SUMMARIZE = "Session Summarize"
     }
 
     init {
@@ -71,7 +72,7 @@ class AppUsageDataLoader(private val mContext: Context) :
         mSessionListener = listener
     }
 
-    fun getUsageData(): ArrayList<AppUsageRecord> {
+    fun getUsageData(): ArrayList<UsageRecord> {
         return mAppUsageData
     }
 
@@ -94,7 +95,7 @@ class AppUsageDataLoader(private val mContext: Context) :
         val usages = sUsageStatsManager.queryEvents(beginTime, endTime)
         val event = UsageEvents.Event()
         JLog.d(TAG, "----------------- new ---------------")
-        var firstActivityResumeRecord: AppUsageRecord.ActivityResumeRecord? = null
+        var firstActivityResumeRecord: UsageRecord.ActivityResumeRecord? = null
         while (usages != null && usages.hasNextEvent()) {
             usages.getNextEvent(event)
             val packageName = event.packageName ?: continue
@@ -103,9 +104,9 @@ class AppUsageDataLoader(private val mContext: Context) :
 
             when (event.eventType) {
                 UsageEvents.Event.ACTIVITY_RESUMED -> {
-                    val resumeRecord = AppUsageRecord.ActivityResumeRecord(
+                    val resumeRecord = UsageRecord.ActivityResumeRecord(
                         packageName,
-                        className, timeStamp.timeStamp2DateString()
+                        className, timeStamp.timeStamp2DateStringWithMills()
                     )
 
                     if (firstActivityResumeRecord == null) {
@@ -146,11 +147,11 @@ class AppUsageDataLoader(private val mContext: Context) :
         if (dataSize <= 0) return
 
         val lastResumeRecord = mAppUsageData[dataSize - 1]
-        if (lastResumeRecord is AppUsageRecord.ActivityResumeRecord) {
+        if (lastResumeRecord is UsageRecord.ActivityResumeRecord) {
             val startTime = lastResumeRecord.mTimeStamp
             val curTime = getCurrentDateString()
             val duration = curTime.timeMillsBetween(startTime)
-            val usageRecord = AppUsageRecord.UsageRecord(
+            val usageRecord = UsageRecord.AppUsageRecord(
                 lastResumeRecord.mPackageName,
                 lastResumeRecord.mClassName, startTime,
                 curTime, duration.timeStamp2SimpleDateString(), duration
@@ -164,13 +165,13 @@ class AppUsageDataLoader(private val mContext: Context) :
     /**
      * 当前活动记录是否与上一个活动记录相同
      */
-    private fun isResumeRecordSameWithLast(curRecord: AppUsageRecord.ActivityResumeRecord?): Boolean {
+    private fun isResumeRecordSameWithLast(curRecord: UsageRecord.ActivityResumeRecord?): Boolean {
         curRecord ?: return false
 
         return curRecord == mLastResumeRecord
     }
 
-    private fun updateLastResumeRecord(firstRecord: AppUsageRecord.ActivityResumeRecord?) {
+    private fun updateLastResumeRecord(firstRecord: UsageRecord.ActivityResumeRecord?) {
         mLastResumeRecord = firstRecord
     }
 
@@ -179,8 +180,8 @@ class AppUsageDataLoader(private val mContext: Context) :
      */
     private fun addUserPresentRecord() {
         val usageName = mContext.getString(R.string.usage_user_present)
-        val occurrenceTime = System.currentTimeMillis().timeStamp2DateString()
-        val cycleRecord = AppUsageRecord.PhoneLifeCycleRecord(usageName, occurrenceTime)
+        val occurrenceTime = System.currentTimeMillis().timeStamp2DateStringWithMills()
+        val cycleRecord = UsageRecord.PhoneLifeCycleRecord(usageName, occurrenceTime)
         mAppUsageData.add(cycleRecord)
         mUserPresentRecord = cycleRecord
     }
@@ -190,8 +191,8 @@ class AppUsageDataLoader(private val mContext: Context) :
      */
     private fun addOnScreenOnRecord() {
         val usageName = mContext.getString(R.string.usage_screen_on)
-        val occurrenceTime = System.currentTimeMillis().timeStamp2DateString()
-        val cycleRecord = AppUsageRecord.PhoneLifeCycleRecord(usageName, occurrenceTime)
+        val occurrenceTime = System.currentTimeMillis().timeStamp2DateStringWithMills()
+        val cycleRecord = UsageRecord.PhoneLifeCycleRecord(usageName, occurrenceTime)
         mAppUsageData.add(cycleRecord)
         mScreenOnRecord = cycleRecord
     }
@@ -199,13 +200,13 @@ class AppUsageDataLoader(private val mContext: Context) :
     /**
      * 记录一次屏幕熄灭
      */
-    private fun addOnScreenOffRecord(): AppUsageRecord.SingleSessionRecord {
+    private fun addOnScreenOffRecord(): UsageRecord.SingleSessionRecord {
         // 先记录上一个record的停留时间
         replaceLastResumeRecord2UsageRecord()
 
         val usageName = mContext.getString(R.string.usage_screen_off)
-        val occurrenceTime = System.currentTimeMillis().timeStamp2DateString()
-        val cycleRecord = AppUsageRecord.PhoneLifeCycleRecord(usageName, occurrenceTime)
+        val occurrenceTime = System.currentTimeMillis().timeStamp2DateStringWithMills()
+        val cycleRecord = UsageRecord.PhoneLifeCycleRecord(usageName, occurrenceTime)
         mAppUsageData.add(cycleRecord)
 
         // 记录一次session
@@ -215,12 +216,12 @@ class AppUsageDataLoader(private val mContext: Context) :
     /**
      * 记录一次手机关机，也算一次屏幕熄灭事件，记录session
      */
-    private fun addOnShutdownRecord(): AppUsageRecord.SingleSessionRecord {
+    private fun addOnShutdownRecord(): UsageRecord.SingleSessionRecord {
         replaceLastResumeRecord2UsageRecord()
 
         val usageName = mContext.getString(R.string.usage_shut_down)
-        val occurrenceTime = System.currentTimeMillis().timeStamp2DateString()
-        val cycleRecord = AppUsageRecord.PhoneLifeCycleRecord(usageName, occurrenceTime)
+        val occurrenceTime = System.currentTimeMillis().timeStamp2DateStringWithMills()
+        val cycleRecord = UsageRecord.PhoneLifeCycleRecord(usageName, occurrenceTime)
         mAppUsageData.add(cycleRecord)
 
         return addSessionRecord(cycleRecord)
@@ -229,29 +230,63 @@ class AppUsageDataLoader(private val mContext: Context) :
     /**
      * 经历完屏幕亮起和熄灭后，记录一次session
      */
-    private fun addSessionRecord(screenOfRecord: AppUsageRecord.PhoneLifeCycleRecord): AppUsageRecord.SingleSessionRecord {
+    private fun addSessionRecord(screenOfRecord: UsageRecord.PhoneLifeCycleRecord): UsageRecord.SingleSessionRecord {
+        addEmptyLine()
+        addTextTitle(arrayOf(TEXT_SESSION_SUMMARIZE))
+
+        summarizeActivityUsageRecords()
         val screenOfTime = screenOfRecord.mOccTime
         val screenOnTime = mScreenOnRecord?.mOccTime ?: ""
         val presentTime = mUserPresentRecord?.mOccTime ?: ""
         val screenSession = screenOfTime.timeMillsBetween(screenOnTime)
         val presentSession = screenOfTime.timeMillsBetween(presentTime)
         val sessionName = mContext.getString(R.string.usage_session)
-        val sessionRecord = AppUsageRecord.SingleSessionRecord(
+        val sessionRecord = UsageRecord.SingleSessionRecord(
             sessionName, screenOnTime, presentTime,
             screenOfTime, screenSession, presentSession
         )
         mAppUsageData.add(sessionRecord)
-        addEmptyLine()
 
         saveData2File("${screenOnTime}_${screenOfTime}")
         return sessionRecord
     }
 
     /**
+     * 一次session完成后，总结一次activity使用记录
+     */
+    private fun summarizeActivityUsageRecords() {
+        val appUsageRecordMap = HashMap<String, UsageRecord.SingleAppUsageRecord>()
+        mAppUsageData.forEach { appUsageRecord ->
+            if (appUsageRecord is UsageRecord.AppUsageRecord) {
+                val packageName = appUsageRecord.mUsageName
+                if (appUsageRecordMap.contains(packageName)) {
+                    val singleUsageRecord = appUsageRecordMap[packageName] ?: return@forEach
+                    singleUsageRecord.mDurationLong += appUsageRecord.mDurationLong
+                    singleUsageRecord.mDuration = singleUsageRecord.mDurationLong
+                        .timeStamp2SimpleDateString()
+                } else {
+                    appUsageRecordMap[packageName] = UsageRecord.SingleAppUsageRecord(
+                        packageName,
+                        appUsageRecord.mDuration, appUsageRecord.mDurationLong
+                    )
+                }
+            }
+        }
+
+        appUsageRecordMap.values.forEach { singleAppRecord ->
+            mAppUsageData.add(singleAppRecord)
+        }
+    }
+
+    /**
      * 向数据中添加空行
      */
     private fun addEmptyLine() {
-        mAppUsageData.add(AppUsageRecord.EmptyUsageRecord())
+        mAppUsageData.add(UsageRecord.EmptyUsageRecord())
+    }
+
+    private fun addTextTitle(titles: Array<String>) {
+        mAppUsageData.add(UsageRecord.TextTitleRecord(titles))
     }
 
     fun onCreate() {
@@ -342,6 +377,6 @@ class AppUsageDataLoader(private val mContext: Context) :
      */
     interface IOnUserSessionListener {
         fun onSessionBegin()
-        fun onSessionEnd(session: AppUsageRecord.SingleSessionRecord)
+        fun onSessionEnd(session: UsageRecord.SingleSessionRecord)
     }
 }
