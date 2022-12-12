@@ -11,6 +11,7 @@ import com.jamgu.common.util.timer.VATimer
 import com.jamgu.hwstatistics.R
 import com.jamgu.hwstatistics.power.StatisticsLoader
 import com.jamgu.hwstatistics.keeplive.service.screen.ActiveBroadcastReceiver
+import com.jamgu.hwstatistics.keeplive.utils.KeepLiveUtils
 import com.jamgu.hwstatistics.upload.DataSaver
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -32,8 +33,11 @@ class AppUsageDataLoader(private val mContext: Context) :
 
     private var activeBroadcastReceiver: ActiveBroadcastReceiver? = null
 
-    // 上一个事件轮询的最后一个 activity resumes 事件
+    // 上一个事件轮询的最后一个 activity resume 事件
     private var mLastResumeRecord: UsageRecord.ActivityResumeRecord? = null
+
+    // 上一个事件轮询的最后一个 activity pause 事件
+    private var mLastPauseRecord: UsageRecord.ActivityPauseRecord? = null
 
     // 屏幕亮起事件
     private var mScreenOnRecord: UsageRecord.PhoneLifeCycleRecord? = null
@@ -119,8 +123,6 @@ class AppUsageDataLoader(private val mContext: Context) :
                         if (dataSize == 0) {
                             mAppUsageData.add(resumeRecord)
                         } else {
-                            // 1. 先记录上一个record的停留时间
-                            replaceLastResumeRecord2UsageRecord()
                             // 2. 新增一条 resume record记录
                             mAppUsageData.add(resumeRecord)
                         }
@@ -129,7 +131,28 @@ class AppUsageDataLoader(private val mContext: Context) :
                     }
                     JLog.d(
                         TAG,
-                        "getTopActivity, packageName = $packageName，className = $className, tm = $timeStamp"
+                        "activity resume, packageName = $packageName，className = $className, tm = $timeStamp"
+                    )
+                }
+                UsageEvents.Event.ACTIVITY_PAUSED -> {
+                    val pauseRecord = UsageRecord.ActivityPauseRecord(
+                        packageName,
+                        className, timeStamp.timeStamp2DateStringWithMills()
+                    )
+
+                    if (!isNewPauseRecord(pauseRecord)) {
+                        return
+                    }
+                    // 新的pause事件
+                    else {
+                        // 因为 resume 和 pause 事件是顺序到来的，
+                        // 所以当 pause 事件到来时，上一个事件一定是resume事件
+                        replaceLastResumeRecord2UsageRecord(pauseRecord.mTimeStamp)
+                        updateLatestPauseRecord(pauseRecord)
+                    }
+                    JLog.d(
+                        TAG,
+                        "activity pause, packageName = $packageName，className = $className, tm = $timeStamp"
                     )
                 }
             }
@@ -139,19 +162,18 @@ class AppUsageDataLoader(private val mContext: Context) :
     /**
      * 更新上一个 resume record 记录为 usage record 记录：补充使用时长
      */
-    private fun replaceLastResumeRecord2UsageRecord() {
+    private fun replaceLastResumeRecord2UsageRecord(endDateString: String) {
         val dataSize = mAppUsageData.size
         if (dataSize <= 0) return
 
         val lastResumeRecord = mAppUsageData[dataSize - 1]
         if (lastResumeRecord is UsageRecord.ActivityResumeRecord) {
             val startTime = lastResumeRecord.mTimeStamp
-            val curTime = getCurrentDateString()
-            val duration = curTime.timeMillsBetween(startTime)
+            val duration = endDateString.timeMillsBetween(startTime)
             val usageRecord = UsageRecord.AppUsageRecord(
                 lastResumeRecord.mPackageName,
                 lastResumeRecord.mClassName, startTime,
-                curTime, duration.timeStamp2SimpleDateString(), duration
+                endDateString, duration.timeStamp2SimpleDateString(), duration
             )
             // 替换记录
             mAppUsageData.remove(lastResumeRecord)
@@ -160,7 +182,7 @@ class AppUsageDataLoader(private val mContext: Context) :
     }
 
     /**
-     * 当前活动记录是否与上一个活动记录相同
+     * 当前活动RESUME记录是否与上一个活动记录相同
      */
     private fun isNewResumeRecord(curRecord: UsageRecord.ActivityResumeRecord?): Boolean {
         curRecord ?: return false
@@ -173,10 +195,22 @@ class AppUsageDataLoader(private val mContext: Context) :
     }
 
     /**
+     * 当前活动PAUSE记录是否与上一个活动记录相同
+     */
+    private fun isNewPauseRecord(curRecord: UsageRecord.ActivityPauseRecord?): Boolean {
+        curRecord ?: return false
+
+        return curRecord.mTimeStamp > (mLastPauseRecord?.mTimeStamp ?: "0")
+    }
+
+    private fun updateLatestPauseRecord(firstRecord: UsageRecord.ActivityPauseRecord?) {
+        mLastPauseRecord = firstRecord
+    }
+
+    /**
      * 记录一次用户解锁
      */
     private fun addUserPresentRecord() {
-        replaceLastResumeRecord2UsageRecord()
 
         val usageName = mContext.getString(R.string.usage_user_present)
         val occurrenceTime = System.currentTimeMillis().timeStamp2DateStringWithMills()
@@ -200,8 +234,7 @@ class AppUsageDataLoader(private val mContext: Context) :
      * 记录一次屏幕熄灭
      */
     private fun addOnScreenOffRecord(): UsageRecord.SingleSessionRecord {
-        // 先记录上一个record的停留时间
-        replaceLastResumeRecord2UsageRecord()
+        replaceLastResumeRecord2UsageRecord(getCurrentDateString())
 
         val usageName = mContext.getString(R.string.usage_screen_off)
         val occurrenceTime = System.currentTimeMillis().timeStamp2DateStringWithMills()
@@ -216,10 +249,10 @@ class AppUsageDataLoader(private val mContext: Context) :
      * 记录一次手机关机，也算一次屏幕熄灭事件，记录session
      */
     private fun addOnShutdownRecord(): UsageRecord.SingleSessionRecord {
-        replaceLastResumeRecord2UsageRecord()
+        replaceLastResumeRecord2UsageRecord(getCurrentDateString())
 
         val usageName = mContext.getString(R.string.usage_shut_down)
-        val occurrenceTime = System.currentTimeMillis().timeStamp2DateStringWithMills()
+        val occurrenceTime = getCurrentDateString()
         val cycleRecord = UsageRecord.PhoneLifeCycleRecord(usageName, occurrenceTime)
         mAppUsageData.add(cycleRecord)
 
@@ -318,6 +351,7 @@ class AppUsageDataLoader(private val mContext: Context) :
         mScreenOnRecord = null
         mUserPresentRecord = null
         mLastResumeRecord = null
+        mLastPauseRecord = null
         mScreenOn.set(false)
         clearUsageData()
         mPowerDataLoader.clearData()

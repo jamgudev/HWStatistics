@@ -10,6 +10,7 @@ import com.jamgu.common.thread.ThreadPool
 import com.jamgu.common.util.log.JLog
 import com.jamgu.hwstatistics.R
 import com.jamgu.hwstatistics.appusage.UsageRecord
+import com.jamgu.hwstatistics.appusage.getDateOfTodayString
 import com.jamgu.hwstatistics.util.ExcelUtil
 import java.io.File
 import java.text.SimpleDateFormat
@@ -83,8 +84,7 @@ object DataSaver {
                         singleData.add(usageRecord.mUsageName)
                         singleData.add(usageRecord.mScreenOnTime)
                         singleData.add(
-                            usageRecord.mUserPresentTime
-                                ?: context.getString(R.string.app_un_present)
+                            usageRecord.mUserPresentTime.ifEmpty { context.getString(R.string.usage_un_present) }
                         )
                         singleData.add(usageRecord.mScreenOfTime)
                         singleData.add(usageRecord.mScreenSession)
@@ -114,7 +114,7 @@ object DataSaver {
                 usageAnyData.add(singleData)
             }
 
-            val dirFile = File("${getActiveCachePath()}/$dirName")
+            val dirFile = File("${getActiveCachePath()}/${getDateOfTodayString()}/$dirName")
             if (!dirFile.exists()) {
                 dirFile.mkdirs()
             }

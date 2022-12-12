@@ -104,8 +104,7 @@
             android:name=".keeplive.service.screen.ActiveBroadcastReceiver"
             android:enabled="true"
             android:exported="true"
-            android:priority="99999999"
-            tools:ignore="Instantiatable">
+            android:priority="99999999">
             <intent-filter>
                 <!-- 开机广播 -->
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

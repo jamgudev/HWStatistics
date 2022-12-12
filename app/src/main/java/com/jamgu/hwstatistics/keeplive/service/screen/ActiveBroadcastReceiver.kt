@@ -4,7 +4,8 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import com.jamgu.hwstatistics.*
+import com.jamgu.common.util.log.JLog
+import com.jamgu.hwstatistics.R
 import com.jamgu.hwstatistics.keeplive.utils.KeepLiveUtils
 import com.jamgu.hwstatistics.page.TRANSITION_PAGE
 import com.jamgu.hwstatistics.page.TransitionActivity
@@ -17,8 +18,12 @@ import com.jamgu.krouter.core.router.KRouters
  *
  * @description 手机开屏、息屏、开机、关机广播接收器
  */
-class ActiveBroadcastReceiver(private val listener: IOnScreenStateChanged) : BroadcastReceiver() {
+class ActiveBroadcastReceiver(private val listener: IOnScreenStateChanged? = null) : BroadcastReceiver() {
 
+    /**
+     * 关机重启时获取开机通知，系统会调用该无参构造方法
+     */
+    constructor(): this(null)
 
     companion object {
         private const val TAG = "ActiveBroadcastReceiver"
@@ -29,7 +34,8 @@ class ActiveBroadcastReceiver(private val listener: IOnScreenStateChanged) : Bro
         when (action) {
             Intent.ACTION_BOOT_COMPLETED -> {
                 context?.let {
-                    listener.onPhoneBootComplete()
+                    listener?.onPhoneBootComplete()
+                    JLog.d(TAG, "ACTION_BOOT_COMPLETED")
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         KeepLiveUtils.startCallActivityVersionHigh(
                             context,
@@ -41,16 +47,17 @@ class ActiveBroadcastReceiver(private val listener: IOnScreenStateChanged) : Bro
                 }
             }
             Intent.ACTION_SHUTDOWN -> {
-                listener.onPhoneShutdown()
+                JLog.d(TAG, "ACTION_SHUTDOWN")
+                listener?.onPhoneShutdown()
             }
             Intent.ACTION_SCREEN_ON -> {
-                listener.onScreenOn()
+                listener?.onScreenOn()
             }
             Intent.ACTION_SCREEN_OFF -> {
-                listener.onScreenOff()
+                listener?.onScreenOff()
             }
             Intent.ACTION_USER_PRESENT -> {
-                listener.onUserPresent()
+                listener?.onUserPresent()
             }
         }
     }

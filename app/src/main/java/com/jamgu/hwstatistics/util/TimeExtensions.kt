@@ -36,6 +36,10 @@ fun getCurrentDateString(): String {
     return System.currentTimeMillis().timeStamp2DateStringWithMills()
 }
 
+fun getDateOfTodayString(): String {
+    return getTodaySdf().format(Date(System.currentTimeMillis()))
+}
+
 private fun getSdfWithMills() = SimpleDateFormat("yyyyMMdd(HH_mm_ss_SSS)", Locale.CHINA).apply {
 //    timeZone = TimeZone.getTimeZone("GMT+00:00")
 }
@@ -47,3 +51,5 @@ private fun getSdf() = SimpleDateFormat("yyyyMMdd(HH_mm_ss)", Locale.CHINA).appl
 private fun getSimpleSdf() = SimpleDateFormat("HH_mm_ss_SSS", Locale.CHINA).apply {
     timeZone = TimeZone.getTimeZone("GMT+00:00")
 }
+
+private fun getTodaySdf() = SimpleDateFormat("yyyyMMdd", Locale.CHINA)

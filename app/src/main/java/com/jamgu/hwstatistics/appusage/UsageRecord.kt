@@ -20,6 +20,12 @@ sealed class UsageRecord {
         val mTimeStamp: String
     ) : UsageRecord()
 
+    data class ActivityPauseRecord(
+        val mPackageName: String,
+        val mClassName: String,
+        val mTimeStamp: String
+    ) : UsageRecord()
+
     /**
      * 用户使用手机的整体记录
      * @param mUsageName 用户行为名称
@@ -59,7 +65,7 @@ sealed class UsageRecord {
      */
     data class SingleSessionRecord(
         val mUsageName: String, val mScreenOnTime: String,
-        val mUserPresentTime: String? = "", val mScreenOfTime: String,
+        val mUserPresentTime: String = "", val mScreenOfTime: String,
         val mScreenSession: Long, val mPresentSession: Long = 0,
         val mActivitySession: Long = 0
     ) : UsageRecord()
