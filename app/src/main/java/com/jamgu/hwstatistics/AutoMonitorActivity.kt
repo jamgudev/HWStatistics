@@ -2,7 +2,6 @@ package com.jamgu.hwstatistics
 
 import android.annotation.SuppressLint
 import android.os.Bundle
-import android.widget.AbsListView
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -12,6 +11,7 @@ import com.jamgu.common.util.log.JLog
 import com.jamgu.common.util.preference.PreferenceUtil
 import com.jamgu.hwstatistics.appusage.AppUsageDataLoader
 import com.jamgu.hwstatistics.appusage.AppUsageRecord
+import com.jamgu.hwstatistics.appusage.timeStamp2SimpleDateString
 import com.jamgu.hwstatistics.databinding.ActivityAutoMonitorBinding
 import com.jamgu.hwstatistics.keeplive.service.KeepAliveService
 import com.jamgu.krouter.annotation.KRouter
@@ -26,7 +26,16 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
         private const val MONITOR_INIT = "monitor_init"
     }
 
-    private val mAppUsageDataLoader: AppUsageDataLoader = AppUsageDataLoader(this)
+    private val mAppUsageDataLoader: AppUsageDataLoader = AppUsageDataLoader(this).apply {
+        setOnSessionListener(object : AppUsageDataLoader.IOnUserSessionListener {
+            override fun onSessionBegin() {
+            }
+
+            override fun onSessionEnd(session: AppUsageRecord.SingleSessionRecord) {
+            }
+        })
+    }
+    private var mStartTime: Long? = null
     private var mAdapter: StatisticAdapter = StatisticAdapter()
     private var mData: ArrayList<String> = ArrayList()
     private var mShowTime: Boolean = false
@@ -50,6 +59,7 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
                 }
                 if (!mAppUsageDataLoader.isStarted()) {
                     mAppUsageDataLoader.start()
+                    mStartTime = System.currentTimeMillis()
                 }
             }, 400)
         }
@@ -88,6 +98,7 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
                 mData.clear()
                 mAdapter.notifyDataSetChanged()
                 mAppUsageDataLoader.start()
+                mStartTime = System.currentTimeMillis()
                 mBinding.vStart.text = getString(R.string.already_started)
                 mBinding.vStart.isEnabled = false
             }
@@ -103,6 +114,12 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
                 KRouters.open(this, KRouterUriBuilder().appendAuthority(INIT_PAGE).build())
             }, 400)
             preference.edit().putBoolean(MONITOR_INIT, true).apply()
+        }
+
+        mStartTime?.let { startTime ->
+            val duration = System.currentTimeMillis() - startTime
+            mData.add(duration.timeStamp2SimpleDateString())
+            mAdapter.notifyItemInserted(mData.size - 1)
         }
     }
 

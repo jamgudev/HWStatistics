@@ -94,6 +94,9 @@ object DataSaver {
                         singleData.add("")
                     }
                     is AppUsageRecord.ActivityResumeRecord -> {
+                        singleData.add(usageRecord.mPackageName)
+                        singleData.add(usageRecord.mClassName)
+                        singleData.add(usageRecord.mTimeStamp)
                         singleData.add(context.getString(R.string.err_activity_usage_record_failed))
                     }
                     else -> {}

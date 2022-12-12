@@ -295,7 +295,8 @@ class AppUsageDataLoader(private val mContext: Context) :
             return
         }
 
-        mSessionListener?.onSessionEnd(addOnShutdownRecord())
+        val shutdownRecord = addOnShutdownRecord()
+        mSessionListener?.onSessionEnd(shutdownRecord)
     }
 
     override fun onScreenOn() {
@@ -312,7 +313,8 @@ class AppUsageDataLoader(private val mContext: Context) :
         if (!mScreenOn) {
             return
         }
-        mSessionListener?.onSessionEnd(addOnScreenOffRecord())
+        val screenOffRecord = addOnScreenOffRecord()
+        mSessionListener?.onSessionEnd(screenOffRecord)
     }
 
     override fun onUserPresent() {
