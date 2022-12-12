@@ -89,6 +89,7 @@ object DataSaver {
                         singleData.add(usageRecord.mScreenOfTime)
                         singleData.add(usageRecord.mScreenSession)
                         singleData.add(usageRecord.mPresentSession)
+                        singleData.add(usageRecord.mActivitySession)
                     }
                     is UsageRecord.EmptyUsageRecord -> {
                         singleData.add("")

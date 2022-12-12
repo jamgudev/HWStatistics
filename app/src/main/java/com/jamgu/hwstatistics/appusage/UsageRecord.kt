@@ -60,7 +60,8 @@ sealed class UsageRecord {
     data class SingleSessionRecord(
         val mUsageName: String, val mScreenOnTime: String,
         val mUserPresentTime: String? = "", val mScreenOfTime: String,
-        val mScreenSession: Long, val mPresentSession: Long = 0L
+        val mScreenSession: Long, val mPresentSession: Long = 0,
+        val mActivitySession: Long = 0
     ) : UsageRecord()
 
     /**

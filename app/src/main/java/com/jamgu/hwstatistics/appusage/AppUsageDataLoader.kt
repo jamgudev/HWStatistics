@@ -233,7 +233,7 @@ class AppUsageDataLoader(private val mContext: Context) :
         addEmptyLine()
         addTextTitle(arrayOf(TEXT_SESSION_SUMMARIZE))
 
-        summarizeActivityUsageRecords()
+        val activitySession = summarizeActivityUsageRecords()
         val screenOfTime = screenOfRecord.mOccTime
         val screenOnTime = mScreenOnRecord?.mOccTime ?: ""
         val presentTime = mUserPresentRecord?.mOccTime ?: ""
@@ -242,7 +242,7 @@ class AppUsageDataLoader(private val mContext: Context) :
         val sessionName = mContext.getString(R.string.usage_session)
         val sessionRecord = UsageRecord.SingleSessionRecord(
             sessionName, screenOnTime, presentTime,
-            screenOfTime, screenSession, presentSession
+            screenOfTime, screenSession, presentSession, activitySession
         )
         mAppUsageData.add(sessionRecord)
 
@@ -253,7 +253,7 @@ class AppUsageDataLoader(private val mContext: Context) :
     /**
      * 一次session完成后，总结一次activity使用记录
      */
-    private fun summarizeActivityUsageRecords() {
+    private fun summarizeActivityUsageRecords(): Long {
         val appUsageRecordMap = HashMap<String, UsageRecord.SingleAppUsageRecord>()
         mAppUsageData.forEach { appUsageRecord ->
             if (appUsageRecord is UsageRecord.AppUsageRecord) {
@@ -272,9 +272,12 @@ class AppUsageDataLoader(private val mContext: Context) :
             }
         }
 
+        var totalActivityResumeDuration = 0L
         appUsageRecordMap.values.forEach { singleAppRecord ->
+            totalActivityResumeDuration += singleAppRecord.mDurationLong
             mAppUsageData.add(singleAppRecord)
         }
+        return totalActivityResumeDuration
     }
 
     /**
