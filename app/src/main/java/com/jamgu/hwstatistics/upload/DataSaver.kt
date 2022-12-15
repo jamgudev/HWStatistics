@@ -56,15 +56,17 @@ object DataSaver {
     /**
      * 保存用户行为数据
      */
-    fun saveAppUsageDataSync(
+    fun saveAppUsageDataASync(
         context: Context,
-        usageData: ArrayList<UsageRecord>,
-        powerData: ArrayList<ArrayList<Any>>,
-        dirName: String
+        usageData: ArrayList<UsageRecord>?,
+        powerData: ArrayList<ArrayList<Any>>?,
+        startTime: String,
+        endTime: String? = "",
+        isSessionFinish: Boolean
     ) {
         ThreadPool.runIOTask {
             val usageAnyData = ArrayList<ArrayList<Any>>()
-            usageData.forEach { usageRecord ->
+            usageData?.forEach { usageRecord ->
                 val singleData = ArrayList<Any>()
                 when (usageRecord) {
                     is UsageRecord.AppUsageRecord -> {
@@ -114,27 +116,58 @@ object DataSaver {
                 usageAnyData.add(singleData)
             }
 
-            val nameSplits = dirName.split("(")
+            val nameSplits = startTime.split("(")
+            // date of today
             val subDirName = if (nameSplits.isNotEmpty()) {
                 nameSplits[0]
             } else {
                 getDateOfTodayString()
             }
-            val dirFile = File("${getActiveCachePath()}/$subDirName/$dirName")
-            if (!dirFile.exists()) {
-                dirFile.mkdirs()
+            val dirName = "${startTime}_"
+            var dirFile = File("${getActiveCachePath()}/$subDirName/$dirName")
+            if (isSessionFinish) {
+                val finishFileName = "${dirFile.path}$endTime"
+                val finishFile = File(finishFileName)
+                // 之前已经上传了部分power data，rename
+                if (dirFile.exists()) {
+                    if (!dirFile.renameTo(finishFile)) {
+                        JLog.e(TAG, "file = ${dirFile.path} rename to path{$finishFileName} failed.")
+                        return@runIOTask
+                    } else {
+                        // rename 成功，更改目录File
+                        dirFile = finishFile
+                    }
+                }
+                else {
+                    // session时长低于power data分段保存的阈值，直接保存
+                    dirFile = finishFile
+                    if (!dirFile.exists()) {
+                        dirFile.mkdirs()
+                    }
+                }
+            } else {
+                // 创建临时保存目录
+                if (!dirFile.exists()) {
+                    dirFile.mkdirs()
+                }
             }
-            val timeMillis = System.currentTimeMillis()
-            val appUsageFile = File("${dirFile.path}/${APP_USAGE_FILE}_$timeMillis$EXCEL_SUFFIX")
-            val appUsageUri =
-                FileProvider.getUriForFile(context, "com.jamgu.hwstatistics", appUsageFile)
-            saveData2DestFile(context, usageAnyData, appUsageUri)
 
-            val powerUsageFile =
-                File("${dirFile.path}/${POWER_USAGE_FILE}_$timeMillis$EXCEL_SUFFIX")
-            val powerUsageUri =
-                FileProvider.getUriForFile(context, "com.jamgu.hwstatistics", powerUsageFile)
-            saveData2DestFile(context, powerData, powerUsageUri)
+            JLog.d(TAG, "dirFile.path = ${dirFile.path}")
+            val timeMillis = System.currentTimeMillis()
+            if (usageAnyData.isNotEmpty()) {
+                val appUsageFile = File("${dirFile.path}/${APP_USAGE_FILE}_$timeMillis$EXCEL_SUFFIX")
+                val appUsageUri =
+                    FileProvider.getUriForFile(context, "com.jamgu.hwstatistics", appUsageFile)
+                saveData2DestFile(context, usageAnyData, appUsageUri)
+            }
+
+            if (!powerData.isNullOrEmpty()) {
+                val powerUsageFile =
+                    File("${dirFile.path}/${POWER_USAGE_FILE}_$timeMillis$EXCEL_SUFFIX")
+                val powerUsageUri =
+                    FileProvider.getUriForFile(context, "com.jamgu.hwstatistics", powerUsageFile)
+                saveData2DestFile(context, powerData, powerUsageUri)
+            }
         }
     }
 

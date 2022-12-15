@@ -16,10 +16,11 @@ import com.jamgu.hwstatistics.power.mobiledata.memory.MemInfoManager
 import com.jamgu.hwstatistics.power.mobiledata.network.NetWorkManager
 import com.jamgu.hwstatistics.power.mobiledata.phonestate.PhoneStateManager
 import com.jamgu.hwstatistics.power.mobiledata.system.SystemManager
-import com.jamgu.hwstatistics.power.IOnDataEnough.Companion.THRESH_ONE_HOUR
 import com.jamgu.hwstatistics.util.divideBy
 import com.jamgu.hwstatistics.util.plus
 import com.permissionx.guolindev.PermissionX
+import java.util.*
+import kotlin.collections.ArrayList
 
 /**
  * Created by jamgu on 2021/10/14
@@ -33,12 +34,12 @@ class StatisticsLoader(private val mContext: Context) : INeedPermission {
 
     private var mTimer: VATimer? = null
     private var uiCallback: ((String) -> Unit)? = null
-    private val mPowerData: ArrayList<ArrayList<Any>> = ArrayList()
+    private val mPowerData: MutableList<ArrayList<Any>> = Collections.synchronizedList(ArrayList<ArrayList<Any>>())
 
     private var mOnDataEnough: IOnDataEnough? = null
-    private var mDataNumThreshold: Int = THRESH_ONE_HOUR
+    private var mDataNumThreshold: IOnDataEnough.ThreshLength = IOnDataEnough.ThreshLength.THRESH_FOR_TEST
 
-    fun setOnDataEnoughListener(threshold: Int, onDataEnough: IOnDataEnough) {
+    fun setOnDataEnoughListener(threshold: IOnDataEnough.ThreshLength, onDataEnough: IOnDataEnough) {
         mDataNumThreshold = threshold
         mOnDataEnough = onDataEnough
     }
@@ -81,7 +82,7 @@ class StatisticsLoader(private val mContext: Context) : INeedPermission {
             } else {
                 if (dataTemp.isNotEmpty()) {
                     mPowerData.add(dataTemp.divideBy(tempDataTimes))
-                    if (mPowerData.size >= mDataNumThreshold) {
+                    if (mPowerData.size >= mDataNumThreshold.length) {
                         mOnDataEnough?.onDataEnough()
                     }
                 }
@@ -180,7 +181,7 @@ class StatisticsLoader(private val mContext: Context) : INeedPermission {
     }
 
     fun getRawData(): ArrayList<ArrayList<Any>> {
-        return mPowerData
+        return ArrayList(mPowerData)
     }
 
     fun getDataWithTitle(): ArrayList<ArrayList<Any>> {
@@ -216,7 +217,7 @@ class StatisticsLoader(private val mContext: Context) : INeedPermission {
                 "avg_p",
             )
         )
-        return mPowerData
+        return ArrayList(mPowerData)
     }
 
     fun clearData() {
@@ -378,10 +379,11 @@ class StatisticsLoader(private val mContext: Context) : INeedPermission {
 
 interface IOnDataEnough {
 
-    companion object {
-        const val THRESH_ONE_HOUR = 3600
-        const val THRESH_HALF_HOUR = 1800
-        const val THRESH_FOR_TEST = 10
+    enum class ThreshLength(val length: Long) {
+        THRESH_ONE_HOUR(3600),
+        THRESH_HALF_HOUR(1800),
+        THRESH_FOR_TEST(10),
+        THRESH_FIVE_MINS(300),
     }
 
     fun onDataEnough()

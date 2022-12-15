@@ -42,6 +42,7 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
     private var mData: ArrayList<String> = ArrayList()
     private var mShowTime: Boolean = false
     private var isStartFromNotification: Boolean = false
+    private var mKeepLiveServiceOpen: Boolean = false
 
     override fun isBackPressedNeedConfirm(): Boolean {
         return true
@@ -70,8 +71,6 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
         // 加入任务栈
         (applicationContext as? BaseApplication)?.addThisActivityToRunningActivities(this.javaClass)
 
-        // 保活前台服务
-        KeepAliveService.start(this)
     }
 
     override fun onDestroy() {
@@ -122,6 +121,12 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
             val duration = System.currentTimeMillis() - startTime
             mData.add("Session Duration:" + duration.timeStamp2SimpleDateString())
             mAdapter.notifyItemInserted(mData.size - 1)
+        }
+
+        // 保活前台服务
+        if (!mKeepLiveServiceOpen) {
+            mKeepLiveServiceOpen = true
+            KeepAliveService.start(this)
         }
     }
 

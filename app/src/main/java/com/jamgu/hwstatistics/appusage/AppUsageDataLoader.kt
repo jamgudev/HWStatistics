@@ -11,7 +11,7 @@ import com.jamgu.common.util.timer.VATimer
 import com.jamgu.hwstatistics.R
 import com.jamgu.hwstatistics.power.StatisticsLoader
 import com.jamgu.hwstatistics.keeplive.service.screen.ActiveBroadcastReceiver
-import com.jamgu.hwstatistics.keeplive.utils.KeepLiveUtils
+import com.jamgu.hwstatistics.power.IOnDataEnough
 import com.jamgu.hwstatistics.upload.DataSaver
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -279,7 +279,7 @@ class AppUsageDataLoader(private val mContext: Context) :
         )
         mAppUsageData.add(sessionRecord)
 
-        saveData2File("${screenOnTime}_${screenOfTime}")
+        saveData2File(screenOnTime, screenOfTime, true)
         return sessionRecord
     }
 
@@ -335,7 +335,16 @@ class AppUsageDataLoader(private val mContext: Context) :
             intentFilter.addAction(Intent.ACTION_SHUTDOWN)
         }
         mContext.registerReceiver(activeBroadcastReceiver, intentFilter)
-        mPowerDataLoader = StatisticsLoader(mContext).initOnCreate {}
+        mPowerDataLoader = StatisticsLoader(mContext).initOnCreate {}.apply {
+            setOnDataEnoughListener(IOnDataEnough.ThreshLength.THRESH_FOR_TEST, object : IOnDataEnough {
+                override fun onDataEnough() {
+                    val screenOnTime = mScreenOnRecord?.mOccTime ?: ""
+                    val powerDataWithTitle = ArrayList(mPowerDataLoader.getDataWithTitle())
+                    mPowerDataLoader.clearData()
+                    DataSaver.saveAppUsageDataASync(mContext, null, powerDataWithTitle, screenOnTime, "", false)
+                }
+            })
+        }
     }
 
     fun onDestroy() {
@@ -398,13 +407,13 @@ class AppUsageDataLoader(private val mContext: Context) :
     /**
      * 将数据保存到缓存目录
      */
-    private fun saveData2File(fileName: String) {
+    private fun saveData2File(startTime: String, endTime: String, isFinish: Boolean) {
         if (mPowerDataLoader.isStarted()) {
             mPowerDataLoader.stop()
         }
         val powerDataWithTitle = ArrayList(mPowerDataLoader.getDataWithTitle())
         val appUsageData = ArrayList(mAppUsageData)
-        DataSaver.saveAppUsageDataSync(mContext, appUsageData, powerDataWithTitle, fileName)
+        DataSaver.saveAppUsageDataASync(mContext, appUsageData, powerDataWithTitle, startTime, endTime, isFinish)
         resetAfterDataSaved()
     }
 
