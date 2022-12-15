@@ -9,13 +9,14 @@ import com.jamgu.common.page.activity.ViewBindingActivity
 import com.jamgu.common.thread.ThreadPool
 import com.jamgu.common.util.log.JLog
 import com.jamgu.common.util.preference.PreferenceUtil
-import com.jamgu.hwstatistics.*
+import com.jamgu.hwstatistics.BaseApplication
+import com.jamgu.hwstatistics.R
 import com.jamgu.hwstatistics.appusage.AppUsageDataLoader
 import com.jamgu.hwstatistics.appusage.UsageRecord
-import com.jamgu.hwstatistics.appusage.timeStamp2SimpleDateString
 import com.jamgu.hwstatistics.databinding.ActivityAutoMonitorBinding
 import com.jamgu.hwstatistics.keeplive.service.KeepAliveService
 import com.jamgu.hwstatistics.power.StatisticAdapter
+import com.jamgu.hwstatistics.util.timeStamp2SimpleDateString
 import com.jamgu.krouter.annotation.KRouter
 import com.jamgu.krouter.core.router.KRouterUriBuilder
 import com.jamgu.krouter.core.router.KRouters

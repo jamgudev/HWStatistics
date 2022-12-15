@@ -9,10 +9,14 @@ import android.os.Build
 import com.jamgu.common.util.log.JLog
 import com.jamgu.common.util.timer.VATimer
 import com.jamgu.hwstatistics.R
-import com.jamgu.hwstatistics.power.StatisticsLoader
 import com.jamgu.hwstatistics.keeplive.service.screen.ActiveBroadcastReceiver
 import com.jamgu.hwstatistics.power.IOnDataEnough
+import com.jamgu.hwstatistics.power.StatisticsLoader
 import com.jamgu.hwstatistics.upload.DataSaver
+import com.jamgu.hwstatistics.util.getCurrentDateString
+import com.jamgu.hwstatistics.util.timeMillsBetween
+import com.jamgu.hwstatistics.util.timeStamp2DateStringWithMills
+import com.jamgu.hwstatistics.util.timeStamp2SimpleDateString
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -336,7 +340,7 @@ class AppUsageDataLoader(private val mContext: Context) :
         }
         mContext.registerReceiver(activeBroadcastReceiver, intentFilter)
         mPowerDataLoader = StatisticsLoader(mContext).initOnCreate {}.apply {
-            setOnDataEnoughListener(IOnDataEnough.ThreshLength.THRESH_FOR_TEST, object : IOnDataEnough {
+            setOnDataEnoughListener(IOnDataEnough.ThreshLength.THRESH_FIVE_MINS, object : IOnDataEnough {
                 override fun onDataEnough() {
                     val screenOnTime = mScreenOnRecord?.mOccTime ?: ""
                     val powerDataWithTitle = ArrayList(mPowerDataLoader.getDataWithTitle())

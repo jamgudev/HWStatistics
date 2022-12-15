@@ -10,8 +10,8 @@ import com.jamgu.common.thread.ThreadPool
 import com.jamgu.common.util.log.JLog
 import com.jamgu.hwstatistics.R
 import com.jamgu.hwstatistics.appusage.UsageRecord
-import com.jamgu.hwstatistics.appusage.getDateOfTodayString
 import com.jamgu.hwstatistics.util.ExcelUtil
+import com.jamgu.hwstatistics.util.getDateOfTodayString
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*

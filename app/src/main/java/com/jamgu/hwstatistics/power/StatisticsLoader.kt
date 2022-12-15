@@ -6,7 +6,6 @@ import androidx.fragment.app.FragmentActivity
 import com.jamgu.common.thread.ThreadPool
 import com.jamgu.common.util.timer.VATimer
 import com.jamgu.hwstatistics.R
-import com.jamgu.hwstatistics.appusage.timeStamp2DateString
 import com.jamgu.hwstatistics.power.mobiledata.bluetooth.BluetoothManager
 import com.jamgu.hwstatistics.power.mobiledata.brightness.BrightnessManager
 import com.jamgu.hwstatistics.power.mobiledata.cpu.CPUInfoManager
@@ -18,6 +17,7 @@ import com.jamgu.hwstatistics.power.mobiledata.phonestate.PhoneStateManager
 import com.jamgu.hwstatistics.power.mobiledata.system.SystemManager
 import com.jamgu.hwstatistics.util.divideBy
 import com.jamgu.hwstatistics.util.plus
+import com.jamgu.hwstatistics.util.timeStamp2DateString
 import com.permissionx.guolindev.PermissionX
 import java.util.*
 import kotlin.collections.ArrayList

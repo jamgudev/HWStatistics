@@ -1,4 +1,4 @@
-package com.jamgu.hwstatistics.appusage
+package com.jamgu.hwstatistics.util
 
 import android.annotation.SuppressLint
 import java.text.SimpleDateFormat
