@@ -1,15 +1,14 @@
 package com.jamgu.hwstatistics.appusage
 
+import android.app.Activity
 import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
-import android.os.Build
 import com.jamgu.common.util.log.JLog
 import com.jamgu.common.util.timer.VATimer
 import com.jamgu.hwstatistics.R
-import com.jamgu.hwstatistics.keeplive.service.screen.ActiveBroadcastReceiver
+import com.jamgu.hwstatistics.appusage.broadcast.ActiveBroadcastReceiver
+import com.jamgu.hwstatistics.appusage.broadcast.PowerConnectReceiver
 import com.jamgu.hwstatistics.power.IOnDataEnough
 import com.jamgu.hwstatistics.power.StatisticsLoader
 import com.jamgu.hwstatistics.upload.DataSaver
@@ -17,6 +16,7 @@ import com.jamgu.hwstatistics.util.getCurrentDateString
 import com.jamgu.hwstatistics.util.timeMillsBetween
 import com.jamgu.hwstatistics.util.timeStamp2DateStringWithMills
 import com.jamgu.hwstatistics.util.timeStamp2SimpleDateString
+import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -26,16 +26,23 @@ import java.util.concurrent.atomic.AtomicBoolean
  * @description 用户打开app信息收集器
  */
 class AppUsageDataLoader(private val mContext: Context) :
-    ActiveBroadcastReceiver.IOnScreenStateChanged {
+    ActiveBroadcastReceiver.IOnScreenStateChanged, PowerConnectReceiver.IOnPhoneChargeStateChanged {
 
     @Volatile
     private var mScreenOn: AtomicBoolean = AtomicBoolean(false)
 
-    // 用来存放用户打开的应用信息
+    // 用来存放一次Session用户行为
     // --- 时间 --- 活动名 --- 详细包名 --- 开始访问时间 --- 结束访问时间 --- 访问时长
-    private val mAppUsageData: ArrayList<UsageRecord> = ArrayList()
+    private val mUserUsageData: MutableList<UsageRecord> = Collections.synchronizedList(ArrayList())
 
-    private var activeBroadcastReceiver: ActiveBroadcastReceiver? = null
+    // 用户充电记录是跨Session的，所以单独存储
+    private val mChargeData: MutableList<UsageRecord> = Collections.synchronizedList(ArrayList())
+
+    // 监听手机Session生命周期
+    private var mActiveBroadcastReceiver: ActiveBroadcastReceiver? = null
+
+    // 监听手机充电状态
+    private var mPowerConnectReceiver: PowerConnectReceiver? = null
 
     // 上一个事件轮询的最后一个 activity resume 事件
     private var mLastResumeRecord: UsageRecord.ActivityResumeRecord? = null
@@ -62,8 +69,11 @@ class AppUsageDataLoader(private val mContext: Context) :
 
     init {
         // 注册开机、关机、解锁广播
-        if (activeBroadcastReceiver == null) {
-            activeBroadcastReceiver = ActiveBroadcastReceiver(this)
+        if (mActiveBroadcastReceiver == null) {
+            mActiveBroadcastReceiver = ActiveBroadcastReceiver(this)
+        }
+        if (mPowerConnectReceiver == null) {
+            mPowerConnectReceiver = PowerConnectReceiver(this)
         }
     }
 
@@ -81,18 +91,20 @@ class AppUsageDataLoader(private val mContext: Context) :
         mSessionListener = listener
     }
 
-    fun getUsageData(): ArrayList<UsageRecord> {
-        return mAppUsageData
+    fun getUserUsageData(): ArrayList<UsageRecord> {
+        return ArrayList(mUserUsageData)
     }
 
     private fun clearUsageData() {
-        return mAppUsageData.clear()
+        return mUserUsageData.clear()
     }
 
     /**
      * 获取手机顶层Activity
      */
     private fun queryCurrentUsedApp() {
+        checkIfSavePhoneChargeData2File(if (mContext is Activity) mContext.isDestroyed else false)
+
         if (!mScreenOn.get()) {
             return
         }
@@ -123,12 +135,12 @@ class AppUsageDataLoader(private val mContext: Context) :
                     }
                     // 说明是新事件，更新
                     else {
-                        val dataSize = mAppUsageData.size
+                        val dataSize = mUserUsageData.size
                         if (dataSize == 0) {
-                            mAppUsageData.add(resumeRecord)
+                            mUserUsageData.add(resumeRecord)
                         } else {
                             // 2. 新增一条 resume record记录
-                            mAppUsageData.add(resumeRecord)
+                            mUserUsageData.add(resumeRecord)
                         }
 
                         updateLatestResumeRecord(resumeRecord)
@@ -167,10 +179,10 @@ class AppUsageDataLoader(private val mContext: Context) :
      * 更新上一个 resume record 记录为 usage record 记录：补充使用时长
      */
     private fun replaceLastResumeRecord2UsageRecord(endDateString: String) {
-        val dataSize = mAppUsageData.size
+        val dataSize = mUserUsageData.size
         if (dataSize <= 0) return
 
-        val lastResumeRecord = mAppUsageData[dataSize - 1]
+        val lastResumeRecord = mUserUsageData[dataSize - 1]
         if (lastResumeRecord is UsageRecord.ActivityResumeRecord) {
             val startTime = lastResumeRecord.mTimeStamp
             val duration = endDateString.timeMillsBetween(startTime)
@@ -180,8 +192,8 @@ class AppUsageDataLoader(private val mContext: Context) :
                 endDateString, duration.timeStamp2SimpleDateString(), duration
             )
             // 替换记录
-            mAppUsageData.remove(lastResumeRecord)
-            mAppUsageData.add(usageRecord)
+            mUserUsageData.remove(lastResumeRecord)
+            mUserUsageData.add(usageRecord)
         }
     }
 
@@ -219,7 +231,7 @@ class AppUsageDataLoader(private val mContext: Context) :
         val usageName = mContext.getString(R.string.usage_user_present)
         val occurrenceTime = System.currentTimeMillis().timeStamp2DateStringWithMills()
         val cycleRecord = UsageRecord.PhoneLifeCycleRecord(usageName, occurrenceTime)
-        mAppUsageData.add(cycleRecord)
+        mUserUsageData.add(cycleRecord)
         mUserPresentRecord = cycleRecord
     }
 
@@ -230,7 +242,7 @@ class AppUsageDataLoader(private val mContext: Context) :
         val usageName = mContext.getString(R.string.usage_screen_on)
         val occurrenceTime = System.currentTimeMillis().timeStamp2DateStringWithMills()
         val cycleRecord = UsageRecord.PhoneLifeCycleRecord(usageName, occurrenceTime)
-        mAppUsageData.add(cycleRecord)
+        mUserUsageData.add(cycleRecord)
         mScreenOnRecord = cycleRecord
     }
 
@@ -243,10 +255,31 @@ class AppUsageDataLoader(private val mContext: Context) :
         val usageName = mContext.getString(R.string.usage_screen_off)
         val occurrenceTime = System.currentTimeMillis().timeStamp2DateStringWithMills()
         val cycleRecord = UsageRecord.PhoneLifeCycleRecord(usageName, occurrenceTime)
-        mAppUsageData.add(cycleRecord)
+        mUserUsageData.add(cycleRecord)
 
         // 记录一次session
         return addSessionRecord(cycleRecord)
+    }
+
+
+    /**
+     * 记录一次电池充电状态
+     */
+    private fun addOnPowerCharge(curBatteryState: Float) {
+        val usageName = mContext.getString(R.string.usage_phone_charging)
+        val occurrenceTime = System.currentTimeMillis().timeStamp2DateStringWithMills()
+        val cycleRecord = UsageRecord.PhoneChargeRecord(usageName, occurrenceTime, curBatteryState.toString())
+        mChargeData.add(cycleRecord)
+    }
+
+    /**
+     * 记录一次电池取消充电状态
+     */
+    private fun addOnPowerCancelCharge(curBatteryState: Float) {
+        val usageName = mContext.getString(R.string.usage_phone_cancel_charge)
+        val occurrenceTime = System.currentTimeMillis().timeStamp2DateStringWithMills()
+        val cycleRecord = UsageRecord.PhoneChargeRecord(usageName, occurrenceTime, curBatteryState.toString())
+        mChargeData.add(cycleRecord)
     }
 
     /**
@@ -258,7 +291,7 @@ class AppUsageDataLoader(private val mContext: Context) :
         val usageName = mContext.getString(R.string.usage_shut_down)
         val occurrenceTime = getCurrentDateString()
         val cycleRecord = UsageRecord.PhoneLifeCycleRecord(usageName, occurrenceTime)
-        mAppUsageData.add(cycleRecord)
+        mUserUsageData.add(cycleRecord)
 
         return addSessionRecord(cycleRecord)
     }
@@ -281,9 +314,9 @@ class AppUsageDataLoader(private val mContext: Context) :
             sessionName, screenOnTime, presentTime,
             screenOfTime, screenSession, presentSession, activitySession
         )
-        mAppUsageData.add(sessionRecord)
+        mUserUsageData.add(sessionRecord)
 
-        saveData2File(screenOnTime, screenOfTime, true)
+        saveUserUsageData2File(screenOnTime, screenOfTime)
         return sessionRecord
     }
 
@@ -292,7 +325,7 @@ class AppUsageDataLoader(private val mContext: Context) :
      */
     private fun summarizeActivityUsageRecords(): Long {
         val appUsageRecordMap = HashMap<String, UsageRecord.SingleAppUsageRecord>()
-        mAppUsageData.forEach { appUsageRecord ->
+        mUserUsageData.forEach { appUsageRecord ->
             if (appUsageRecord is UsageRecord.AppUsageRecord) {
                 val packageName = appUsageRecord.mUsageName
                 if (appUsageRecordMap.contains(packageName)) {
@@ -312,7 +345,7 @@ class AppUsageDataLoader(private val mContext: Context) :
         var totalActivityResumeDuration = 0L
         appUsageRecordMap.values.forEach { singleAppRecord ->
             totalActivityResumeDuration += singleAppRecord.mDurationLong
-            mAppUsageData.add(singleAppRecord)
+            mUserUsageData.add(singleAppRecord)
         }
         return totalActivityResumeDuration
     }
@@ -321,40 +354,33 @@ class AppUsageDataLoader(private val mContext: Context) :
      * 向数据中添加空行
      */
     private fun addEmptyLine() {
-        mAppUsageData.add(UsageRecord.EmptyUsageRecord())
+        mUserUsageData.add(UsageRecord.EmptyUsageRecord())
     }
 
     private fun addTextTitle(titles: Array<String>) {
-        mAppUsageData.add(UsageRecord.TextTitleRecord(titles))
+        mUserUsageData.add(UsageRecord.TextTitleRecord(titles))
     }
 
     fun onCreate() {
-        val intentFilter = IntentFilter()
-        intentFilter.addAction(Intent.ACTION_SCREEN_ON)
-        intentFilter.addAction(Intent.ACTION_SCREEN_OFF)
-        intentFilter.addAction(Intent.ACTION_USER_PRESENT)
-        // 8.0 后，只能通过动态注册
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            intentFilter.addAction(Intent.ACTION_BOOT_COMPLETED)
-            intentFilter.addAction(Intent.ACTION_SHUTDOWN)
-        }
-        mContext.registerReceiver(activeBroadcastReceiver, intentFilter)
+        mActiveBroadcastReceiver?.registerReceiver(mContext)
+        mPowerConnectReceiver?.registerReceiver(mContext)
         mPowerDataLoader = StatisticsLoader(mContext).initOnCreate {}.apply {
             setOnDataEnoughListener(IOnDataEnough.ThreshLength.THRESH_FIVE_MINS, object : IOnDataEnough {
                 override fun onDataEnough() {
-                    val screenOnTime = mScreenOnRecord?.mOccTime ?: ""
-                    val powerDataWithTitle = ArrayList(mPowerDataLoader.getDataWithTitle())
-                    mPowerDataLoader.clearData()
-                    DataSaver.saveAppUsageDataASync(mContext, null, powerDataWithTitle, screenOnTime, "", false)
+                    saveTempUserUsageData2File()
                 }
             })
         }
     }
 
     fun onDestroy() {
-        mContext.unregisterReceiver(activeBroadcastReceiver)
+        val screenOnTime = mScreenOnRecord?.mOccTime ?: ""
+        saveUserUsageData2File(screenOnTime, System.currentTimeMillis().timeStamp2DateStringWithMills())
+        checkIfSavePhoneChargeData2File(true)
+
+        mActiveBroadcastReceiver?.unRegisterReceiver(mContext)
+        mPowerConnectReceiver?.unRegisterReceiver(mContext)
         mPowerDataLoader.release()
-        resetAfterDataSaved()
     }
 
     /**
@@ -381,6 +407,8 @@ class AppUsageDataLoader(private val mContext: Context) :
 
         val shutdownRecord = addOnShutdownRecord()
         mSessionListener?.onSessionEnd(shutdownRecord)
+
+        onDestroy()
     }
 
     override fun onScreenOn() {
@@ -401,6 +429,15 @@ class AppUsageDataLoader(private val mContext: Context) :
         mSessionListener?.onSessionEnd(screenOffRecord)
     }
 
+    override fun onChargeState(curBatteryState: Float) {
+        addOnPowerCharge(curBatteryState)
+
+    }
+
+    override fun onCancelChargeState(curBatteryState: Float) {
+        addOnPowerCancelCharge(curBatteryState)
+    }
+
     override fun onUserPresent() {
         if (!mScreenOn.get()) {
             return
@@ -411,14 +448,38 @@ class AppUsageDataLoader(private val mContext: Context) :
     /**
      * 将数据保存到缓存目录
      */
-    private fun saveData2File(startTime: String, endTime: String, isFinish: Boolean) {
+    private fun saveUserUsageData2File(startTime: String, endTime: String) {
         if (mPowerDataLoader.isStarted()) {
             mPowerDataLoader.stop()
         }
         val powerDataWithTitle = ArrayList(mPowerDataLoader.getDataWithTitle())
-        val appUsageData = ArrayList(mAppUsageData)
-        DataSaver.saveAppUsageDataASync(mContext, appUsageData, powerDataWithTitle, startTime, endTime, isFinish)
+        val appUsageData = ArrayList(mUserUsageData)
+        DataSaver.saveAppUsageDataASync(mContext, appUsageData, powerDataWithTitle, startTime, endTime, true)
         resetAfterDataSaved()
+    }
+
+    /**
+     * 单次 Session 未结束，但 PowerData 缓存已经超出阈值，
+     * 先刷新一次内存到文件中，释放内存。
+     */
+    private fun saveTempUserUsageData2File() {
+        val screenOnTime = mScreenOnRecord?.mOccTime ?: ""
+        val powerDataWithTitle = ArrayList(mPowerDataLoader.getDataWithTitle())
+        mPowerDataLoader.clearData()
+        DataSaver.saveAppUsageDataASync(mContext, null, powerDataWithTitle, screenOnTime, "", false)
+    }
+
+    /**
+     * 检查是否将手机充电记录保存到文件中，满足下面两个条件之一即缓存：
+     * 1. Loader is about to be destroyed
+     * 2. [mChargeData] cache size exceeds the threshold
+     */
+    private fun checkIfSavePhoneChargeData2File(destroyed: Boolean) {
+        if (destroyed || mChargeData.size >= IOnDataEnough.ThreshLength.THRESH_FOR_TEST.length) {
+            val chargeData = ArrayList(mChargeData)
+            mChargeData.clear()
+            DataSaver.savePhoneChargeDataASync(mContext, chargeData)
+        }
     }
 
     /**

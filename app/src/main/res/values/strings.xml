@@ -15,4 +15,6 @@
     <string name="usage_un_present">User Did Not Present</string>
     <string name="permission_not_allowed">相应权限未获取成功，启动失败，请重试</string>
     <string name="err_activity_usage_record_failed">ERROR: Activity Resume Event Unfinished</string>
+    <string name="usage_phone_charging">Phone Charging</string>
+    <string name="usage_phone_cancel_charge">Phone Cancel Charge</string>
 </resources>
