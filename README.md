@@ -21,7 +21,14 @@
 
 ![1_app_usage_overview.png][1_app_usage_overview.png]
 
-Example file find in here: [Example File](readme/app_usage_file_example.xlsx)
+Example file find in here: [App Usage Example File](readme/app_usage_file_example.xlsx)
+
+2. 用户充电记录: 充电事件和取消充电事件
+   记录信息包括：用户充电和取消充电的事件、事件发生时间点，事件发生时手机当前电量
+
+![2_charge_usage_record.png][2_charge_usage_record.png]
+
+Example file find in here: [Charge Usage Example File](readme/charge_usage_example.xlsx)
 
 ##### TODO List
 1. 支持发送心跳包到服务器，方便记录用户存活时长（如果最后24小时无法保证时）
@@ -32,3 +39,4 @@ Example file find in here: [Example File](readme/app_usage_file_example.xlsx)
 
 
 [1_app_usage_overview.png]: readme/pics/1_app_usage_overview.png
+[2_charge_usage_record.png]: readme/pics/2_charge_usage_record.png
