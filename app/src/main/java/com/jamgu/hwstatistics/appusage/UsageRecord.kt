@@ -48,11 +48,19 @@ sealed class UsageRecord {
     ) : UsageRecord()
 
     /**
-     * 手机生命周期记录：手机启动 -> 屏幕亮起 -> 用户解锁 -> 屏幕熄灭 -> 手机关机
+     * 用户使用手机生命周期记录：手机启动 -> 屏幕亮起 -> 用户解锁 -> 屏幕熄灭 -> 手机关机。
+     * 一次Session由屏幕亮起开始，到屏幕熄灭结束
      * @param mLifeCycleName 生命周期名称
      * @param mOccTime       发生时间
      */
-    data class PhoneLifeCycleRecord(val mLifeCycleName: String, val mOccTime: String) :
+    data class PhoneLifeCycleRecord(val mLifeCycleName: String, val mOccTime: String) : UsageRecord()
+
+    /**
+     * 手机充电和取消充电记录
+     * 充电和取消充电记录是跨Session的，可以同时出现在同一个SessionRecord中，也可以出现在不同的SessionRecord。
+     * 这取决于用户使用习惯，因此单独存储。
+     */
+    data class PhoneChargeRecord(val mEventName: String, val mOccTime: String, val curBatteryState: String) :
         UsageRecord()
 
     /**

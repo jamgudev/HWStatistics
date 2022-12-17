@@ -1,8 +1,9 @@
-package com.jamgu.hwstatistics.keeplive.service.screen
+package com.jamgu.hwstatistics.appusage.broadcast
 
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.os.Build
 import com.jamgu.common.util.log.JLog
 import com.jamgu.hwstatistics.R
@@ -18,15 +19,32 @@ import com.jamgu.krouter.core.router.KRouters
  *
  * @description 手机开屏、息屏、开机、关机广播接收器
  */
-class ActiveBroadcastReceiver(private val listener: IOnScreenStateChanged? = null) : BroadcastReceiver() {
+class ActiveBroadcastReceiver @JvmOverloads constructor(private val listener: IOnScreenStateChanged? = null) : BroadcastReceiver() {
 
     /**
      * 关机重启时获取开机通知，系统会调用该无参构造方法
      */
-    constructor(): this(null)
+//    constructor(): this(null)
 
     companion object {
         private const val TAG = "ActiveBroadcastReceiver"
+    }
+
+    fun registerReceiver(context: Context) {
+        val intentFilter = IntentFilter()
+        intentFilter.addAction(Intent.ACTION_SCREEN_ON)
+        intentFilter.addAction(Intent.ACTION_SCREEN_OFF)
+        intentFilter.addAction(Intent.ACTION_USER_PRESENT)
+        // 8.0 后，只能通过动态注册
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            intentFilter.addAction(Intent.ACTION_BOOT_COMPLETED)
+            intentFilter.addAction(Intent.ACTION_SHUTDOWN)
+        }
+        context.registerReceiver(this, intentFilter)
+    }
+
+    fun unRegisterReceiver(context: Context) {
+        context.unregisterReceiver(this)
     }
 
     override fun onReceive(context: Context?, intent: Intent?) {

@@ -79,10 +79,9 @@
         <!-- 保活 end -->
         <!-- 手机是否充电状态 -->
         <receiver
-            android:name=".upload.PowerConnectReceiver"
+            android:name=".appusage.broadcast.PowerConnectReceiver"
             android:exported="false">
             <intent-filter>
-
                 <!-- 连接电源状态 -->
                 <action android:name="android.intent.action.ACTION_POWER_CONNECTED" />
                 <!-- 未连接电源状态 -->
@@ -101,7 +100,7 @@
         </provider>
         <!-- 开机、关机、解锁广播 -->
         <receiver
-            android:name=".keeplive.service.screen.ActiveBroadcastReceiver"
+            android:name=".appusage.broadcast.ActiveBroadcastReceiver"
             android:enabled="true"
             android:exported="true"
             android:priority="99999999">
