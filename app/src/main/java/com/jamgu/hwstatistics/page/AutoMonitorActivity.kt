@@ -71,7 +71,6 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
 
         // 加入任务栈
         (applicationContext as? BaseApplication)?.addThisActivityToRunningActivities(this.javaClass)
-
     }
 
     override fun onDestroy() {
@@ -125,7 +124,7 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
         }
 
         // 保活前台服务
-        if (!mKeepLiveServiceOpen) {
+        if (!mKeepLiveServiceOpen && isInit) {
             mKeepLiveServiceOpen = true
             KeepAliveService.start(this)
         }

@@ -408,7 +408,6 @@ class AppUsageDataLoader(private val mContext: Context) :
         val shutdownRecord = addOnShutdownRecord()
         mSessionListener?.onSessionEnd(shutdownRecord)
 
-        onDestroy()
     }
 
     override fun onScreenOn() {
