@@ -1,7 +1,7 @@
 package com.jamgu.hwstatistics.appusage
 
 /**
- * @author gujiaming.dev@bytedance.com
+ * @author jamgudev
  * @date 2022/12/10 14:33
  *
  * @description 用戶使用行為記錄
@@ -102,5 +102,10 @@ sealed class UsageRecord {
             return titles.contentHashCode()
         }
     }
+
+    /**
+     * 测试记录
+     */
+    data class TestRecord(val testRecords: LinkedHashMap<String, String>) : UsageRecord()
 
 }

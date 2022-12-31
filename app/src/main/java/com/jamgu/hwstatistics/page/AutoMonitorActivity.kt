@@ -106,6 +106,34 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
         }
     }
 
+    /**
+     * OnLowMemory是Android提供的API，在系统内存不足，
+     * 所有后台程序（优先级为background的进程，不是指后台运行的进程）都被杀死时，系统会调用OnLowMemory。
+     */
+    override fun onLowMemory() {
+        super.onLowMemory()
+        JLog.d(TAG, "onLowMemory")
+    }
+
+    /**
+     *
+    TRIM_MEMORY_COMPLETE：内存不足，并且该进程在后台进程列表最后一个，马上就要被清理
+    TRIM_MEMORY_MODERATE：内存不足，并且该进程在后台进程列表的中部。
+    TRIM_MEMORY_BACKGROUND：内存不足，并且该进程是后台进程。
+    TRIM_MEMORY_UI_HIDDEN：内存不足，并且该进程的UI已经不可见了。
+    以上4个是4.0增加
+    TRIM_MEMORY_RUNNING_CRITICAL：内存不足(后台进程不足3个)，这个回调的下一个阶段就是 onLowMemory
+    TRIM_MEMORY_RUNNING_LOW：内存不足(后台进程不足5个)，并且该进程优先级比较高，需要清理内存
+    TRIM_MEMORY_RUNNING_MODERATE：内存不足(后台进程超过5个)，并且该进程优先级比较高，需要清理内存
+    以上3个是4.1增加
+
+    通过一键清理后，OnLowMemory不会被触发，而OnTrimMemory会被触发一次
+     */
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        mAppUsageDataLoader.onTrimMemory(level)
+    }
+
     override fun onResume() {
         super.onResume()
         val preference = PreferenceUtil.getCachePreference(this, 0)

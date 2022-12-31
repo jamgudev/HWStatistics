@@ -20,7 +20,6 @@ import com.jamgu.hwstatistics.util.plus
 import com.jamgu.hwstatistics.util.timeStamp2DateString
 import com.permissionx.guolindev.PermissionX
 import java.util.*
-import kotlin.collections.ArrayList
 
 /**
  * Created by jamgu on 2021/10/14
@@ -39,6 +38,14 @@ class StatisticsLoader(private val mContext: Context) : INeedPermission {
     private var mOnDataEnough: IOnDataEnough? = null
     private var mDataNumThreshold: IOnDataEnough.ThreshLength = IOnDataEnough.ThreshLength.THRESH_FOR_TEST
 
+    /**
+     * 数据查询间隔 in ms，越大采样率越低，最大不超过 1000 ms，默认为 200 ms，既每秒采样 5 次
+     */
+    private var mDataQueryInternal: Long = 200L
+
+    /**
+     * 设置数据采样间隔，in ms，采样间隔超过 1000ms 会被置为 1000 ms
+     */
     fun setOnDataEnoughListener(threshold: IOnDataEnough.ThreshLength, onDataEnough: IOnDataEnough) {
         mDataNumThreshold = threshold
         mOnDataEnough = onDataEnough
@@ -53,11 +60,17 @@ class StatisticsLoader(private val mContext: Context) : INeedPermission {
         return this
     }
 
-    private fun start() {
+    fun startInInternal(internal: Long) {
+        if (mContext is FragmentActivity && requestedPermission(mContext)) {
+            stop()
+            start(internal)
+        }
+    }
+
+    private fun start(internal: Long = 200) {
         if (mTimer == null) {
             mTimer = VATimer()
         }
-        mPowerData.clear()
 
         var lastTimeString = ""
         var dataTemp = ArrayList<Any>()
@@ -95,7 +108,7 @@ class StatisticsLoader(private val mContext: Context) : INeedPermission {
             lastTimeString = curTimeString
 //            JLog.d(TAG, "curVal = $it, curRepeat = ${mTimer?.getCurrentRepeatCount()}, info: | ${newData[3]}")
 
-        }, 200)
+        }, internal.toInt())
     }
 
     private fun getDataWithTitle(curTimeString: String, currentTimeMillis: Long): ArrayList<Any> {
@@ -162,6 +175,7 @@ class StatisticsLoader(private val mContext: Context) : INeedPermission {
     fun startNonMainThread() {
         // TODO 优化权限请求时机
         if (mContext is FragmentActivity && requestedPermission(mContext)) {
+            mPowerData.clear()
             start()
         } else {
             Toast.makeText(

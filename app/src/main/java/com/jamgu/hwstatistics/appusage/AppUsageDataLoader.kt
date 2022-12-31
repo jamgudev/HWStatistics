@@ -3,6 +3,7 @@ package com.jamgu.hwstatistics.appusage
 import android.app.Activity
 import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
+import android.content.ComponentCallbacks2.*
 import android.content.Context
 import com.jamgu.common.util.log.JLog
 import com.jamgu.common.util.timer.VATimer
@@ -18,9 +19,10 @@ import com.jamgu.hwstatistics.util.timeStamp2DateStringWithMills
 import com.jamgu.hwstatistics.util.timeStamp2SimpleDateString
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.collections.LinkedHashMap
 
 /**
- * @author gujiaming.dev@bytedance.com
+ * @author jamgudev
  * @date 2022/12/7 7:43 下午
  *
  * @description 用户打开app信息收集器
@@ -479,6 +481,47 @@ class AppUsageDataLoader(private val mContext: Context) :
             mChargeData.clear()
             DataSaver.savePhoneChargeDataASync(mContext, chargeData)
         }
+    }
+
+    /**
+     * 内存优化紧张时，进行更保守的数据采集策略
+     *
+     * level 1: TRIM_MEMORY_RUNNING_MODERATE：内存不足(后台进程超过5个)，立刻缓存一次PowerData数据到本地，清一次内存
+     * level 2: TRIM_MEMORY_RUNNING_CRITICAL：内存不足(后台进程不足3个)，在 level 1 级别上，降低数据采样率
+     *
+     */
+    fun onTrimMemory(level: Int) {
+        JLog.d(TAG, "onTrimMemory level = $level")
+        when(level) {
+            TRIM_MEMORY_MODERATE -> {
+                JLog.d(TAG, "TRIM_MEMORY_MODERATE")
+                saveTempUserUsageData2File()
+                addTestRecord(LinkedHashMap<String, String>().apply {
+                    put("MEM_LEVEL", "onTrimMemory, level = $TRIM_MEMORY_MODERATE")
+                })
+            }
+            TRIM_MEMORY_COMPLETE -> {
+                JLog.d(TAG, "TRIM_MEMORY_COMPLETE")
+                saveTempUserUsageData2File()
+                addTestRecord(LinkedHashMap<String, String>().apply {
+                    put("MEM_LEVEL", "onTrimMemory, level = $TRIM_MEMORY_COMPLETE")
+                })
+//                mPowerDataLoader.startInInternal(1000)
+            }
+            TRIM_MEMORY_BACKGROUND -> {
+                JLog.d(TAG, "TRIM_MEMORY_BACKGROUND")
+                addTestRecord(LinkedHashMap<String, String>().apply {
+                    put("MEM_LEVEL", "onTrimMemory, level = $TRIM_MEMORY_BACKGROUND")
+                })
+            }
+        }
+    }
+
+    /**
+     * 添加一条测试记录
+     */
+    private fun addTestRecord(records: LinkedHashMap<String, String>) {
+        mUserUsageData.add(UsageRecord.TestRecord(records))
     }
 
     /**

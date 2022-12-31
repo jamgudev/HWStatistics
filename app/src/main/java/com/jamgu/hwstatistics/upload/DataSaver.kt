@@ -18,7 +18,7 @@ import java.util.*
 
 
 /**
- * @author gujiaming.dev@bytedance.com
+ * @author jamgudev
  * @date 2022/11/14 8:06 下午
  *
  * @description 保存数据至缓存目录
@@ -113,6 +113,11 @@ object DataSaver {
                         singleData.add(usageRecord.mAppName)
                         singleData.add(usageRecord.mDuration)
                         singleData.add(usageRecord.mDurationLong)
+                    }
+                    is UsageRecord.TestRecord -> {
+                        usageRecord.testRecords.forEach { (key, value) ->
+                            singleData.add(value)
+                        }
                     }
                     else -> {}
                 }
