@@ -3,7 +3,7 @@ package com.jamgu.hwstatistics.util
 import java.util.ArrayList
 
 /**
- * @author gujiaming.dev@bytedance.com
+ * @author jamgudev
  * @date 2022/12/11 15:58
  *
  * @description

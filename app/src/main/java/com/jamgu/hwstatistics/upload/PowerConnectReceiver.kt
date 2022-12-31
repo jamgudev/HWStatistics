@@ -8,7 +8,7 @@ import com.jamgu.common.util.log.JLog
 
 
 /**
- * @author gujiaming.dev@bytedance.com
+ * @author jamgudev
  * @date 2022/11/14 7:52 下午
  *
  * @description 监听手机充电状态

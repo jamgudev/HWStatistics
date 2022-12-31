@@ -14,7 +14,7 @@ import com.jamgu.krouter.core.router.KRouterUriBuilder
 import com.jamgu.krouter.core.router.KRouters
 
 /**
- * @author gujiaming.dev@bytedance.com
+ * @author jamgudev
  * @date 2022/11/20 8:45 下午
  *
  * @description 手机开屏、息屏、开机、关机广播接收器

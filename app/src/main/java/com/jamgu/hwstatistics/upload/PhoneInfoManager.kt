@@ -1,7 +1,7 @@
 package com.jamgu.hwstatistics.upload
 
 /**
- * @author gujiaming.dev@bytedance.com
+ * @author jamgudev
  * @date 2022/12/12 3:38 下午
  *
  * @description 手机信息管理器：手机品牌、系统版本信息

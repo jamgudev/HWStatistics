@@ -9,7 +9,7 @@ import com.jamgu.hwstatistics.R
 import com.jamgu.krouter.annotation.KRouter
 
 /**
- * @author gujiaming.dev@bytedance.com
+ * @author jamgudev
  * @date 2022/11/29 10:16 下午
  *
  * @description 开机自启，用于过渡的activity

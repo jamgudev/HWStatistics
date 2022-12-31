@@ -4,7 +4,7 @@ import android.app.Activity
 import android.app.Application
 
 /**
- * @author gujiaming.dev@bytedance.com
+ * @author jamgudev
  * @date 2022/12/1 9:45 下午
  *
  * @description
