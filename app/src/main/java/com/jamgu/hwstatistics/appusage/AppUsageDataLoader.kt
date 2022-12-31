@@ -19,7 +19,6 @@ import com.jamgu.hwstatistics.util.timeStamp2DateStringWithMills
 import com.jamgu.hwstatistics.util.timeStamp2SimpleDateString
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.collections.LinkedHashMap
 
 /**
  * @author jamgudev
@@ -379,6 +378,7 @@ class AppUsageDataLoader(private val mContext: Context) :
         val screenOnTime = mScreenOnRecord?.mOccTime ?: ""
         saveUserUsageData2File(screenOnTime, System.currentTimeMillis().timeStamp2DateStringWithMills())
         checkIfSavePhoneChargeData2File(true)
+        DataSaver.flushTestData(mContext)
 
         mActiveBroadcastReceiver?.unRegisterReceiver(mContext)
         mPowerConnectReceiver?.unRegisterReceiver(mContext)
@@ -476,7 +476,7 @@ class AppUsageDataLoader(private val mContext: Context) :
      * 2. [mChargeData] cache size exceeds the threshold
      */
     private fun checkIfSavePhoneChargeData2File(destroyed: Boolean) {
-        if (destroyed || mChargeData.size >= IOnDataEnough.ThreshLength.THRESH_FOR_TEST.length) {
+        if (destroyed || mChargeData.size >= IOnDataEnough.ThreshLength.THRESH_FOR_CHARGE.length) {
             val chargeData = ArrayList(mChargeData)
             mChargeData.clear()
             DataSaver.savePhoneChargeDataASync(mContext, chargeData)
@@ -496,32 +496,17 @@ class AppUsageDataLoader(private val mContext: Context) :
             TRIM_MEMORY_MODERATE -> {
                 JLog.d(TAG, "TRIM_MEMORY_MODERATE")
                 saveTempUserUsageData2File()
-                addTestRecord(LinkedHashMap<String, String>().apply {
-                    put("MEM_LEVEL", "onTrimMemory, level = $TRIM_MEMORY_MODERATE")
-                })
             }
             TRIM_MEMORY_COMPLETE -> {
                 JLog.d(TAG, "TRIM_MEMORY_COMPLETE")
                 saveTempUserUsageData2File()
-                addTestRecord(LinkedHashMap<String, String>().apply {
-                    put("MEM_LEVEL", "onTrimMemory, level = $TRIM_MEMORY_COMPLETE")
-                })
 //                mPowerDataLoader.startInInternal(1000)
             }
             TRIM_MEMORY_BACKGROUND -> {
                 JLog.d(TAG, "TRIM_MEMORY_BACKGROUND")
-                addTestRecord(LinkedHashMap<String, String>().apply {
-                    put("MEM_LEVEL", "onTrimMemory, level = $TRIM_MEMORY_BACKGROUND")
-                })
             }
         }
-    }
-
-    /**
-     * 添加一条测试记录
-     */
-    private fun addTestRecord(records: LinkedHashMap<String, String>) {
-        mUserUsageData.add(UsageRecord.TestRecord(records))
+        DataSaver.addTestTracker(mContext, "onTrimMemory, level = $level")
     }
 
     /**

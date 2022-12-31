@@ -2,6 +2,7 @@ package com.jamgu.hwstatistics
 
 import android.app.Activity
 import android.app.Application
+import com.jamgu.common.Common
 
 /**
  * @author jamgudev
@@ -12,6 +13,12 @@ import android.app.Application
 class BaseApplication: Application() {
 
     private val mRunningActivities = ArrayList<Class<out Activity>>()
+
+    override fun onCreate() {
+        super.onCreate()
+
+        Common.getInstance().init(this)
+    }
 
     fun addThisActivityToRunningActivities(cls: Class<out Activity>) {
         if (!mRunningActivities.contains(cls)) mRunningActivities.add(cls)

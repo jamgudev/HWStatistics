@@ -8,8 +8,8 @@ import android.os.Environment.DIRECTORY_DOWNLOADS
 import androidx.core.content.FileProvider
 import com.jamgu.common.thread.ThreadPool
 import com.jamgu.common.util.log.JLog
-import com.jamgu.hwstatistics.R
 import com.jamgu.hwstatistics.appusage.UsageRecord
+import com.jamgu.hwstatistics.power.IOnDataEnough
 import com.jamgu.hwstatistics.util.ExcelUtil
 import com.jamgu.hwstatistics.util.getDateOfTodayString
 import java.io.File
@@ -30,10 +30,15 @@ object DataSaver {
     private const val CACHE_ROOT_DIR = "HWStatistics"
     private const val ACTIVE_DIR = "active"
     private const val CHARGE_RECORD_DIR = "charge_record"
+    private const val TEST_RECORD_DIR = "test_record"
     private const val APP_USAGE_FILE = "app_usage"
     private const val POWER_USAGE_FILE = "power_usage"
     private const val CHARGE_USAGE_FILE = "charge_usage"
+    private const val TEST_FILE = "test_only"
     private const val EXCEL_SUFFIX = ".xlsx"
+
+    // 保存测试数据
+    private val mTestData: MutableList<UsageRecord> = Collections.synchronizedList(ArrayList(30))
 
     /**
      * 保存功耗模型数据
@@ -67,60 +72,14 @@ object DataSaver {
         endTime: String? = "",
         isSessionFinish: Boolean
     ) {
+        if (startTime.isEmpty()) {
+            return
+        }
+
         ThreadPool.runIOTask {
             val usageAnyData = ArrayList<ArrayList<Any>>()
             usageData?.forEach { usageRecord ->
-                val singleData = ArrayList<Any>()
-                when (usageRecord) {
-                    is UsageRecord.AppUsageRecord -> {
-                        singleData.add(usageRecord.mUsageName)
-                        singleData.add(usageRecord.mDetailUsage ?: "")
-                        singleData.add(usageRecord.mStartTime)
-                        singleData.add(usageRecord.mEndTime)
-                        singleData.add(usageRecord.mDuration)
-                        singleData.add(usageRecord.mDurationLong)
-                    }
-                    is UsageRecord.PhoneLifeCycleRecord -> {
-                        singleData.add(usageRecord.mLifeCycleName)
-                        singleData.add(usageRecord.mOccTime)
-                    }
-                    is UsageRecord.SingleSessionRecord -> {
-                        singleData.add(usageRecord.mUsageName)
-                        singleData.add(usageRecord.mScreenOnTime)
-                        singleData.add(
-                            usageRecord.mUserPresentTime.ifEmpty { context.getString(R.string.usage_un_present) }
-                        )
-                        singleData.add(usageRecord.mScreenOfTime)
-                        singleData.add(usageRecord.mScreenSession)
-                        singleData.add(usageRecord.mPresentSession)
-                        singleData.add(usageRecord.mActivitySession)
-                    }
-                    is UsageRecord.EmptyUsageRecord -> {
-                        singleData.add("")
-                    }
-                    is UsageRecord.ActivityResumeRecord -> {
-                        singleData.add(usageRecord.mPackageName)
-                        singleData.add(usageRecord.mClassName)
-                        singleData.add(usageRecord.mTimeStamp)
-                        singleData.add(context.getString(R.string.err_activity_usage_record_failed))
-                    }
-                    is UsageRecord.TextTitleRecord -> {
-                        usageRecord.titles.forEach { title ->
-                            singleData.add(title)
-                        }
-                    }
-                    is UsageRecord.SingleAppUsageRecord -> {
-                        singleData.add(usageRecord.mAppName)
-                        singleData.add(usageRecord.mDuration)
-                        singleData.add(usageRecord.mDurationLong)
-                    }
-                    is UsageRecord.TestRecord -> {
-                        usageRecord.testRecords.forEach { (key, value) ->
-                            singleData.add(value)
-                        }
-                    }
-                    else -> {}
-                }
+                val singleData = usageRecord.toAnyData() ?: return@forEach
                 usageAnyData.add(singleData)
             }
 
@@ -131,6 +90,7 @@ object DataSaver {
             } else {
                 getDateOfTodayString()
             }
+
             val dirName = "${startTime}_"
             var dirFile = File("${getActiveCachePath()}/$subDirName/$dirName")
             if (isSessionFinish) {
@@ -187,15 +147,7 @@ object DataSaver {
             val chargeAnyData = ArrayList<ArrayList<Any>>()
 
             chargeData.forEach { chargeRecord ->
-                val singleData = ArrayList<Any>()
-                when (chargeRecord) {
-                    is UsageRecord.PhoneChargeRecord -> {
-                        singleData.add(chargeRecord.mEventName)
-                        singleData.add(chargeRecord.mOccTime)
-                        singleData.add(chargeRecord.curBatteryState)
-                    }
-                    else -> {}
-                }
+                val singleData = chargeRecord.toAnyData() ?: return@forEach
                 chargeAnyData.add(singleData)
             }
 
@@ -210,6 +162,34 @@ object DataSaver {
                 val chargeUsageUri =
                     FileProvider.getUriForFile(context, FILE_PROVIDER_AUTHORITY, chargeRecordFile)
                 ExcelUtil.writeExcelNew(context, chargeAnyData, chargeUsageUri)
+            }
+        }
+    }
+
+    /**
+     * 保存测试数据
+     */
+    fun saveTestData(context: Context, testData: ArrayList<UsageRecord>?) {
+        testData ?: return
+        ThreadPool.runIOTask {
+            val testAnyData = ArrayList<ArrayList<Any>>()
+
+            testData.forEach { chargeRecord ->
+                val singleData = chargeRecord.toAnyData() ?: return@forEach
+                testAnyData.add(singleData)
+            }
+
+            val dirFile = File(getTestDataCachePath())
+            if (!dirFile.exists()) {
+                dirFile.mkdirs()
+            }
+
+            if (testData.isNotEmpty()) {
+                val timeMillis = System.currentTimeMillis()
+                val testRecordFile = File("${dirFile.path}/${TEST_FILE}_${timeMillis}$EXCEL_SUFFIX")
+                val testUsageUri =
+                    FileProvider.getUriForFile(context, FILE_PROVIDER_AUTHORITY, testRecordFile)
+                ExcelUtil.writeExcelNew(context, testAnyData, testUsageUri)
             }
         }
     }
@@ -234,6 +214,8 @@ object DataSaver {
 
     private fun getChargeDataCachePath() = "${getCacheRootPath()}/$CHARGE_RECORD_DIR"
 
+    private fun getTestDataCachePath() = "${getCacheRootPath()}/$TEST_RECORD_DIR"
+
     private fun getSDPath(): String {
         val sdDir: File?
         val sdCardExist =
@@ -244,6 +226,38 @@ object DataSaver {
             Environment.getDataDirectory()
         }
         return sdDir.toString()
+    }
+
+    fun addTestTracker(context: Context, track: String) {
+        mTestData.add(UsageRecord.TestRecord(LinkedHashMap<String, String>().apply {
+            this["tracker"] = track
+        }))
+
+        checkIfSaveTestData2File(context, false)
+    }
+
+    /**
+     * 添加一条测试记录，每次更新检查是否需要将数据缓存到文件。
+     */
+    fun addTestTracker(context: Context, records: LinkedHashMap<String, String>) {
+        mTestData.add(UsageRecord.TestRecord(records))
+
+        checkIfSaveTestData2File(context, false)
+    }
+
+    /**
+     * 检查是否将程序测试数据保存到文件中
+     */
+    private fun checkIfSaveTestData2File(context: Context, destroyed: Boolean) {
+        if (destroyed || mTestData.size >= IOnDataEnough.ThreshLength.THRESH_FOR_TEST.length) {
+            val testData = ArrayList(mTestData)
+            mTestData.clear()
+            DataSaver.saveTestData(context, testData)
+        }
+    }
+
+    fun flushTestData(context: Context) {
+        checkIfSaveTestData2File(context, true)
     }
 
 }

@@ -127,7 +127,7 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
     TRIM_MEMORY_RUNNING_MODERATE：内存不足(后台进程超过5个)，并且该进程优先级比较高，需要清理内存
     以上3个是4.1增加
 
-    通过一键清理后，OnLowMemory不会被触发，而OnTrimMemory会被触发一次
+    通过一键清理后，OnLowMemory不会被触发，而OnTrimMemory会被触发一次(有些手机如一加，不会触发), level = 80
      */
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
