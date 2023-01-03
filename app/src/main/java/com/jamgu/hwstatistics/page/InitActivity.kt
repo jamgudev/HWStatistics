@@ -1,12 +1,14 @@
 package com.jamgu.hwstatistics.page
 
 import android.content.Intent
+import android.os.Bundle
 import android.provider.Settings
 import com.jamgu.common.page.activity.ViewBindingActivity
 import com.jamgu.common.util.preference.PreferenceUtil
 import com.jamgu.hwstatistics.databinding.ActivityInitLayoutBinding
 import com.jamgu.hwstatistics.keeplive.utils.KeepLiveUtils
 import com.jamgu.hwstatistics.keeplive.utils.PhoneUtils
+import com.jamgu.hwstatistics.upload.DataSaver
 import com.jamgu.krouter.annotation.KRouter
 import com.jamgu.krouter.core.router.KRouterUriBuilder
 import com.jamgu.krouter.core.router.KRouters
@@ -21,8 +23,14 @@ import com.jamgu.krouter.core.router.KRouters
 class InitActivity : ViewBindingActivity<ActivityInitLayoutBinding>() {
 
     companion object {
+        private const val TAG = "InitActivity"
         private const val BATTERY_INIT = "battery_init"
         private const val USAGE_STATE_PERMISSION = "usage_state_permission"
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        DataSaver.addTestTracker(this, "$TAG, onCreate")
     }
 
     override fun initWidget() {
@@ -60,7 +68,7 @@ class InitActivity : ViewBindingActivity<ActivityInitLayoutBinding>() {
         mBinding.vBtnMonitorStart.setOnClickListener {
             KRouters.open(
                 this, KRouterUriBuilder().appendAuthority(AUTO_MONITOR_PAGE)
-                    .with(AUTO_MONITOR_START_FROM_NOTIFICATION, false).build()
+                    .with(AUTO_MONITOR_START_FROM_INIT, true).build()
             )
         }
     }

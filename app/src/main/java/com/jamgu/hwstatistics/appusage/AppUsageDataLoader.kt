@@ -378,7 +378,6 @@ class AppUsageDataLoader(private val mContext: Context) :
         val screenOnTime = mScreenOnRecord?.mOccTime ?: ""
         saveUserUsageData2File(screenOnTime, System.currentTimeMillis().timeStamp2DateStringWithMills())
         checkIfSavePhoneChargeData2File(true)
-        DataSaver.flushTestData(mContext)
 
         mActiveBroadcastReceiver?.unRegisterReceiver(mContext)
         mPowerConnectReceiver?.unRegisterReceiver(mContext)

@@ -23,6 +23,8 @@ import com.jamgu.hwstatistics.page.AutoMonitorActivity;
 import com.jamgu.hwstatistics.BaseApplication;
 import com.jamgu.hwstatistics.R;
 import com.jamgu.hwstatistics.keeplive.forground.ForgroundNF;
+import com.jamgu.hwstatistics.page.TransitionActivity;
+import com.jamgu.hwstatistics.upload.DataSaver;
 
 /**
  * 创建一个JobService用于提高应用优先级
@@ -55,12 +57,21 @@ public class KeepAliveService extends JobService {
                 boolean inBackStack = ((BaseApplication) applicationContext)
                         .isActivityInBackStack(AutoMonitorActivity.class);
                 Log.d(TAG, "isInBackStack = " + inBackStack + ", mForgroundNF = " + mForgroundNF);
+                DataSaver.INSTANCE.addTestTracker(KeepAliveService.this,
+                        TAG + " inBackStack = " + inBackStack);
                 if (mForgroundNF == null) {
                     initForeGroundNF(AutoMonitorActivity.class);
                 }
                 String rebootText = getString(R.string.app_being_killed_reboot);
                 if (!inBackStack) {
                     mForgroundNF.updateContent(rebootText);
+                    Intent intent = new Intent(KeepAliveService.this, TransitionActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    PendingIntent pendingIntent = PendingIntent.getActivity(
+                            KeepAliveService.this,
+                            0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+                    );
+                    mForgroundNF.setContentIntent(pendingIntent);
                     mForgroundNF.startForegroundNotification();
                 } else if (rebootText.equals(mForgroundNF.getCurrentContent())){
                     mForgroundNF.updateContent(getString(R.string.working_background));
@@ -188,6 +199,7 @@ public class KeepAliveService extends JobService {
             mForgroundNF.stopForegroundNotification();
         }
         JLog.d(TAG, "onDestroy");
+        DataSaver.INSTANCE.addTestTracker(this, TAG + " onDestroy.");
     }
 
 }

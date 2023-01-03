@@ -252,10 +252,11 @@ object DataSaver {
         if (destroyed || mTestData.size >= IOnDataEnough.ThreshLength.THRESH_FOR_TEST.length) {
             val testData = ArrayList(mTestData)
             mTestData.clear()
-            DataSaver.saveTestData(context, testData)
+            saveTestData(context, testData)
         }
     }
 
+    @JvmStatic
     fun flushTestData(context: Context) {
         checkIfSaveTestData2File(context, true)
     }
