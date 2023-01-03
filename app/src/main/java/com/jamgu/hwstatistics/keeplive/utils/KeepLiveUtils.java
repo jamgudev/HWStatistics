@@ -1,6 +1,6 @@
 package com.jamgu.hwstatistics.keeplive.utils;
 
-import static com.jamgu.hwstatistics.page.PageRouterKt.AUTO_MONITOR_START_FROM_NOTIFICATION;
+import static com.jamgu.hwstatistics.page.PageRouterKt.AUTO_MONITOR_START_FROM_BOOT;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -98,7 +98,7 @@ public class KeepLiveUtils {
         }
 
         Intent intent = new Intent(context, pdActivity);
-        intent.putExtra(AUTO_MONITOR_START_FROM_NOTIFICATION, true);
+        intent.putExtra(AUTO_MONITOR_START_FROM_BOOT, true);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         @SuppressLint("UnspecifiedImmutableFlag") PendingIntent pendingIntent = PendingIntent
                 .getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);

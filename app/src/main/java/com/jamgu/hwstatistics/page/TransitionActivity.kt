@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.jamgu.common.thread.ThreadPool
 import com.jamgu.common.util.log.JLog
 import com.jamgu.hwstatistics.R
+import com.jamgu.hwstatistics.upload.DataSaver
 import com.jamgu.krouter.annotation.KRouter
 
 /**
@@ -36,12 +37,13 @@ class TransitionActivity : AppCompatActivity() {
 
         ThreadPool.runUITask({
             val intent = Intent(this, AutoMonitorActivity::class.java)
-            intent.putExtra(AUTO_MONITOR_START_FROM_NOTIFICATION, true)
+            intent.putExtra(AUTO_MONITOR_START_FROM_BOOT, true)
             this@TransitionActivity.startActivity(intent)
             finish()
         }, 500)
 
         JLog.d(TAG, "onCreate")
+        DataSaver.addTestTracker(this, "$TAG, onCreate")
     }
 
     override fun onDestroy() {

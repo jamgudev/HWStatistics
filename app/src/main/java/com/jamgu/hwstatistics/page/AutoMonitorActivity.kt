@@ -16,6 +16,7 @@ import com.jamgu.hwstatistics.appusage.UsageRecord
 import com.jamgu.hwstatistics.databinding.ActivityAutoMonitorBinding
 import com.jamgu.hwstatistics.keeplive.service.KeepAliveService
 import com.jamgu.hwstatistics.power.StatisticAdapter
+import com.jamgu.hwstatistics.upload.DataSaver
 import com.jamgu.hwstatistics.util.timeStamp2SimpleDateString
 import com.jamgu.krouter.annotation.KRouter
 import com.jamgu.krouter.core.router.KRouterUriBuilder
@@ -42,7 +43,6 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
     private var mAdapter: StatisticAdapter = StatisticAdapter()
     private var mData: ArrayList<String> = ArrayList()
     private var mShowTime: Boolean = false
-    private var isStartFromNotification: Boolean = false
     private var mKeepLiveServiceOpen: Boolean = false
 
     override fun isBackPressedNeedConfirm(): Boolean {
@@ -53,11 +53,23 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
         super.onCreate(savedInstanceState)
         mAppUsageDataLoader.onCreate()
 
-        isStartFromNotification =
+        val isStartFromNotification =
             intent.extras?.getBoolean(AUTO_MONITOR_START_FROM_NOTIFICATION) ?: false
-        if (isStartFromNotification || mAppUsageDataLoader.isStarted()) {
+
+        val startFromBoot =
+            intent.extras?.getBoolean(AUTO_MONITOR_START_FROM_BOOT) ?: false
+
+        val startFromKilled =
+            intent.extras?.getBoolean(AUTO_MONITOR_START_FROM_KILLED) ?: false
+
+        val startFromInit =
+            intent.extras?.getBoolean(AUTO_MONITOR_START_FROM_INIT) ?: false
+
+        val enableStart = !startFromInit || startFromKilled || startFromBoot || isStartFromNotification
+
+        if (enableStart || mAppUsageDataLoader.isStarted()) {
             ThreadPool.runUITask({
-                if (isStartFromNotification) {
+                if (enableStart) {
                     mBinding.vStart.text = getString(R.string.already_started)
                     mBinding.vStart.isEnabled = false
                 }
@@ -67,7 +79,13 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
                 }
             }, 400)
         }
-        JLog.d(TAG, "onCreate isStartFromBoot = $isStartFromNotification")
+        JLog.d(TAG, "onCreate isStartFromBoot = $isStartFromNotification, isStarted = ${mAppUsageDataLoader.isStarted()}")
+
+        DataSaver.addTestTracker(this, "onCreate startFromNotif = $isStartFromNotification, " +
+                "startFromInit = $startFromInit, " +
+                "startFromKilled = $startFromKilled, " +
+                "startFromBoot = $startFromBoot, " +
+                "isStarted = ${mAppUsageDataLoader.isStarted()}")
 
         // 加入任务栈
         (applicationContext as? BaseApplication)?.addThisActivityToRunningActivities(this.javaClass)
@@ -76,6 +94,8 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
     override fun onDestroy() {
         super.onDestroy()
         JLog.d(TAG, "onDestroy")
+        DataSaver.addTestTracker(this, "$TAG onDestroy called.")
+        DataSaver.flushTestData(this)
         mAppUsageDataLoader.onDestroy()
 
         (applicationContext as? BaseApplication)?.removeThisActivityFromRunningActivities(this.javaClass)
@@ -113,6 +133,7 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
     override fun onLowMemory() {
         super.onLowMemory()
         JLog.d(TAG, "onLowMemory")
+        DataSaver.addTestTracker(this, "$TAG onLowMemory called.")
     }
 
     /**
