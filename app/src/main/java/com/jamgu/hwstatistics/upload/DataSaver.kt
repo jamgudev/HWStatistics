@@ -208,7 +208,7 @@ object DataSaver {
         return sdf.format(Date(System.currentTimeMillis())).toString()
     }
 
-    private fun getCacheRootPath() = "${getSDPath()}/$CACHE_ROOT_DIR"
+    fun getCacheRootPath() = "${getSDPath()}/$CACHE_ROOT_DIR"
 
     private fun getActiveCachePath() = "${getCacheRootPath()}/$ACTIVE_DIR"
 

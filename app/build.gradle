@@ -56,9 +56,12 @@ dependencies {
 
     implementation 'commons-io:commons-io:2.4'
 
-    implementation 'com.github.dyorgio.runtime:cpu-watcher:1.2.4'
     //  Common 库
     implementation 'io.github.jamgudev:common:0.6.0'
     //  SettingPie 库
     implementation 'io.github.jamgudev:settingpie:1.0.1'
+
+    // 网络框架库
+    implementation 'com.kotlinx:yhttp:1.1.4'
+    implementation 'com.google.code.gson:gson:2.8.6'
 }
