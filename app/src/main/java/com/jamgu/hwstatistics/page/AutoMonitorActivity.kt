@@ -18,11 +18,13 @@ import com.jamgu.hwstatistics.appusage.UsageRecord
 import com.jamgu.hwstatistics.databinding.ActivityAutoMonitorBinding
 import com.jamgu.hwstatistics.keeplive.service.KeepAliveService
 import com.jamgu.hwstatistics.power.StatisticAdapter
-import com.jamgu.hwstatistics.upload.DataSaver
+import com.jamgu.hwstatistics.net.upload.DataSaver
+import com.jamgu.hwstatistics.net.upload.DataUploader
 import com.jamgu.hwstatistics.util.timeStamp2SimpleDateString
 import com.jamgu.krouter.annotation.KRouter
 import com.jamgu.krouter.core.router.KRouterUriBuilder
 import com.jamgu.krouter.core.router.KRouters
+import java.io.File
 
 @KRouter(value = [AUTO_MONITOR_PAGE], booleanParams = [AUTO_MONITOR_START_FROM_NOTIFICATION])
 class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
@@ -91,6 +93,7 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
 
         // 加入任务栈
         (applicationContext as? BaseApplication)?.addThisActivityToRunningActivities(this.javaClass)
+
     }
 
     override fun onDestroy() {

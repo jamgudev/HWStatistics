@@ -3,7 +3,7 @@ package com.jamgu.hwstatistics
 import android.app.Activity
 import android.app.Application
 import com.jamgu.common.Common
-import com.jamgu.hwstatistics.upload.DataSaver
+import com.jamgu.hwstatistics.net.upload.DataSaver
 
 /**
  * @author jamgudev

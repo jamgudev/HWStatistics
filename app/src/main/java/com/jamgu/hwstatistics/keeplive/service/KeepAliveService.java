@@ -24,7 +24,7 @@ import com.jamgu.hwstatistics.BaseApplication;
 import com.jamgu.hwstatistics.R;
 import com.jamgu.hwstatistics.keeplive.forground.ForgroundNF;
 import com.jamgu.hwstatistics.page.TransitionActivity;
-import com.jamgu.hwstatistics.upload.DataSaver;
+import com.jamgu.hwstatistics.net.upload.DataSaver;
 
 /**
  * 创建一个JobService用于提高应用优先级

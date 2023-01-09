@@ -1,4 +1,4 @@
-package com.jamgu.hwstatistics.upload
+package com.jamgu.hwstatistics.net.upload
 
 /**
  * @author jamgudev

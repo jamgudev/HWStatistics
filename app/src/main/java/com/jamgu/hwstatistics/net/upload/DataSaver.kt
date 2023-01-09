@@ -1,4 +1,4 @@
-package com.jamgu.hwstatistics.upload
+package com.jamgu.hwstatistics.net.upload
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -12,6 +12,7 @@ import com.jamgu.hwstatistics.appusage.UsageRecord
 import com.jamgu.hwstatistics.power.IOnDataEnough
 import com.jamgu.hwstatistics.util.ExcelUtil
 import com.jamgu.hwstatistics.util.getDateOfTodayString
+import com.jamgu.hwstatistics.util.timeStamp2DateString
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -25,12 +26,14 @@ import java.util.*
  */
 object DataSaver {
 
+    const val ACTIVE_DIR = "active"
+    const val CACHE_ROOT_DIR = "HWStatistics"
+    const val TEST_RECORD_DIR = "test_record"
+    const val FILE_INFIX = "$$"
+    const val TAG_SCREEN_OFF = "tag_screen_off"
     private const val TAG = "DataSaver"
     private const val FILE_PROVIDER_AUTHORITY = "com.jamgu.hwstatistics"
-    private const val CACHE_ROOT_DIR = "HWStatistics"
-    private const val ACTIVE_DIR = "active"
     private const val CHARGE_RECORD_DIR = "charge_record"
-    private const val TEST_RECORD_DIR = "test_record"
     private const val APP_USAGE_FILE = "app_usage"
     private const val POWER_USAGE_FILE = "power_usage"
     private const val CHARGE_USAGE_FILE = "charge_usage"
@@ -64,7 +67,7 @@ object DataSaver {
     /**
      * 保存用户行为数据
      */
-    fun saveAppUsageDataASync(
+    fun saveAppUsageDataSync(
         context: Context,
         usageData: ArrayList<UsageRecord>?,
         powerData: ArrayList<ArrayList<Any>>?,
@@ -91,7 +94,7 @@ object DataSaver {
                 getDateOfTodayString()
             }
 
-            val dirName = "${startTime}_"
+            val dirName = "${startTime}$FILE_INFIX"
             var dirFile = File("${getActiveCachePath()}/$subDirName/$dirName")
             if (isSessionFinish) {
                 val finishFileName = "${dirFile.path}$endTime"
@@ -100,6 +103,7 @@ object DataSaver {
                 if (dirFile.exists()) {
                     if (!dirFile.renameTo(finishFile)) {
                         JLog.e(TAG, "file = ${dirFile.path} rename to path{$finishFileName} failed.")
+                        addTestTracker(context, "file = ${dirFile.path} rename to path{$finishFileName} failed.")
                         return@runIOTask
                     } else {
                         // rename 成功，更改目录File
@@ -119,8 +123,8 @@ object DataSaver {
                 }
             }
 
-            JLog.d(TAG, "dirFile.path = ${dirFile.path}")
-            val timeMillis = System.currentTimeMillis()
+            JLog.d(TAG, "saveAppUsageDataSync, dirFile.path = ${dirFile.path}")
+            val timeMillis = System.currentTimeMillis().timeStamp2DateString()
             if (usageAnyData.isNotEmpty()) {
                 val appUsageFile = File("${dirFile.path}/${APP_USAGE_FILE}_$timeMillis$EXCEL_SUFFIX")
                 val appUsageUri =
@@ -157,7 +161,7 @@ object DataSaver {
             }
 
             if (chargeData.isNotEmpty()) {
-                val timeMillis = System.currentTimeMillis()
+                val timeMillis = System.currentTimeMillis().timeStamp2DateString()
                 val chargeRecordFile = File("${dirFile.path}/${CHARGE_USAGE_FILE}_${timeMillis}$EXCEL_SUFFIX")
                 val chargeUsageUri =
                     FileProvider.getUriForFile(context, FILE_PROVIDER_AUTHORITY, chargeRecordFile)
@@ -185,7 +189,7 @@ object DataSaver {
             }
 
             if (testData.isNotEmpty()) {
-                val timeMillis = System.currentTimeMillis()
+                val timeMillis = System.currentTimeMillis().timeStamp2DateString()
                 val testRecordFile = File("${dirFile.path}/${TEST_FILE}_${timeMillis}$EXCEL_SUFFIX")
                 val testUsageUri =
                     FileProvider.getUriForFile(context, FILE_PROVIDER_AUTHORITY, testRecordFile)
@@ -208,13 +212,13 @@ object DataSaver {
         return sdf.format(Date(System.currentTimeMillis())).toString()
     }
 
-    private fun getCacheRootPath() = "${getSDPath()}/$CACHE_ROOT_DIR"
+    fun getCacheRootPath() = "${getSDPath()}/$CACHE_ROOT_DIR"
 
     private fun getActiveCachePath() = "${getCacheRootPath()}/$ACTIVE_DIR"
 
     private fun getChargeDataCachePath() = "${getCacheRootPath()}/$CHARGE_RECORD_DIR"
 
-    private fun getTestDataCachePath() = "${getCacheRootPath()}/$TEST_RECORD_DIR"
+    fun getTestDataCachePath() = "${getCacheRootPath()}/$TEST_RECORD_DIR"
 
     private fun getSDPath(): String {
         val sdDir: File?

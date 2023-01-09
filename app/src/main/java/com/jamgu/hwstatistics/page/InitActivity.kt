@@ -8,7 +8,7 @@ import com.jamgu.common.util.preference.PreferenceUtil
 import com.jamgu.hwstatistics.databinding.ActivityInitLayoutBinding
 import com.jamgu.hwstatistics.keeplive.utils.KeepLiveUtils
 import com.jamgu.hwstatistics.keeplive.utils.PhoneUtils
-import com.jamgu.hwstatistics.upload.DataSaver
+import com.jamgu.hwstatistics.net.upload.DataSaver
 import com.jamgu.krouter.annotation.KRouter
 import com.jamgu.krouter.core.router.KRouterUriBuilder
 import com.jamgu.krouter.core.router.KRouters
