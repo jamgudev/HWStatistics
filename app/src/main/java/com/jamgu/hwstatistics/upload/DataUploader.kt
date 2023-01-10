@@ -1,8 +1,10 @@
 package com.jamgu.hwstatistics.upload
 
 import android.content.Context
+import com.jamgu.common.thread.ThreadPool
 import com.jamgu.common.util.log.JLog
 import com.jamgu.common.util.preference.PreferenceUtil
+import com.jamgu.hwstatistics.util.timeStamp2DateStringWithMills
 import com.yutils.http.YHttp
 import com.yutils.http.contract.YHttpListener
 import java.io.File
@@ -20,18 +22,41 @@ object DataUploader {
     const val USER_PREFIX = ""
 
     private fun upload(context: Context, file: File) {
-        val user = PreferenceUtil.getCachePreference(context, 0).getString(USER_PREFIX, "") ?: ""
-        val params = HashMap<String, String>().apply {
-            put("", user)
-        }
-        YHttp.create().upload(BASE_URL, params, listOf(file), object : YHttpListener {
-            override fun success(bytes: ByteArray?, value: String?) {
-                JLog.d(TAG, "success = url = $value")
+
+        val parentPath = file.parentFile?.absolutePath ?: return
+        try {
+            val canUpload = if (parentPath.contains(DataSaver.ACTIVE_DIR)) {
+                val parentDirName = parentPath.split("/").last()
+                val sessionDates = parentDirName.split("_")
+                val nowDate = System.currentTimeMillis().timeStamp2DateStringWithMills()
+                // session 文件必须完整才能上传
+                sessionDates.size == 2 && sessionDates[1] < nowDate
+            } else {
+                true
             }
 
-            override fun fail(value: String?) {
+            if (canUpload) {
+                val user = PreferenceUtil.getCachePreference(context, 0).getString(USER_PREFIX, "") ?: ""
+                val params = HashMap<String, String>().apply {
+                    put("", user)
+                }
+                ThreadPool.runIOTask {
+                    YHttp.create().upload(BASE_URL, params, listOf(file), object : YHttpListener {
+                        override fun success(bytes: ByteArray?, value: String?) {
+                            JLog.d(TAG, "success = url = $value")
+                        }
+
+                        override fun fail(value: String?) {
+                        }
+                    })
+                }
+            } else {
+                // TODO 记录不可上传的文件
             }
-        })
+        } catch (e: Exception) {
+            // TODO 记录错误日志
+        }
+
     }
 
     fun recursiveUpload(context: Context, file: File) {

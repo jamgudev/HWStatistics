@@ -427,6 +427,8 @@ class AppUsageDataLoader(private val mContext: Context) :
         }
         val screenOffRecord = addOnScreenOffRecord()
         mSessionListener?.onSessionEnd(screenOffRecord)
+
+        mData
     }
 
     override fun onChargeState(curBatteryState: Float) {

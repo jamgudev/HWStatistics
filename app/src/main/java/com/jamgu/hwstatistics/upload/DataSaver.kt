@@ -25,10 +25,10 @@ import java.util.*
  */
 object DataSaver {
 
+    const val ACTIVE_DIR = "active"
     private const val TAG = "DataSaver"
     private const val FILE_PROVIDER_AUTHORITY = "com.jamgu.hwstatistics"
     private const val CACHE_ROOT_DIR = "HWStatistics"
-    private const val ACTIVE_DIR = "active"
     private const val CHARGE_RECORD_DIR = "charge_record"
     private const val TEST_RECORD_DIR = "test_record"
     private const val APP_USAGE_FILE = "app_usage"
