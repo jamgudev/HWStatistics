@@ -396,7 +396,7 @@ interface IOnDataEnough {
     enum class ThreshLength(val length: Long) {
         THRESH_ONE_HOUR(3600),
         THRESH_HALF_HOUR(1800),
-        THRESH_FOR_TEST(30),
+        THRESH_FOR_TEST(10),
         THRESH_FIVE_MINS(300),
         THRESH_FOR_CHARGE(4),
     }

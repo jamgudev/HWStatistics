@@ -1,7 +1,9 @@
 package com.jamgu.hwstatistics.page
 
 import android.annotation.SuppressLint
+import android.app.ActivityManager
 import android.os.Bundle
+import androidx.core.content.getSystemService
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -94,7 +96,11 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
     override fun onDestroy() {
         super.onDestroy()
         JLog.d(TAG, "onDestroy")
-        DataSaver.addTestTracker(this, "$TAG onDestroy called.")
+        val activityManager = getSystemService<ActivityManager>()
+        val memState = activityManager?.runningAppProcesses?.first()?.let {
+             ActivityManager.getMyMemoryState(it)
+        } ?: 0
+        DataSaver.addTestTracker(this, "$TAG onDestroy called, memState = $memState")
         DataSaver.flushTestData(this)
         mAppUsageDataLoader.onDestroy()
 
