@@ -60,6 +60,7 @@ object CPUInfoManager {
         try {
             val freqStr = readFile("$CPU_PATH_DIR/cpu$cpuIdx$CPU_RUNNING_FREQ")
             freq = String.format("%.1f", freqStr.toInt() / 1000.0).toFloat()
+            JLog.d(TAG, "cpu#$cpuIdx's freq --->>> $freq")
         } catch (e: NumberFormatException) {
             Log.d(TAG, e.message.toString())
         }
