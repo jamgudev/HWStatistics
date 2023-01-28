@@ -431,7 +431,6 @@ class AppUsageDataLoader(private val mContext: Context) :
 
     override fun onChargeState(curBatteryState: Float) {
         addOnPowerCharge(curBatteryState)
-
     }
 
     override fun onCancelChargeState(curBatteryState: Float) {
@@ -506,6 +505,12 @@ class AppUsageDataLoader(private val mContext: Context) :
             }
         }
         DataSaver.addTestTracker(mContext, "onTrimMemory, level = $level")
+
+        if (level >= TRIM_MEMORY_RUNNING_CRITICAL) {
+            checkIfSavePhoneChargeData2File(true)
+            saveTempUserUsageData2File()
+            DataSaver.flushTestData(mContext)
+        }
     }
 
     /**

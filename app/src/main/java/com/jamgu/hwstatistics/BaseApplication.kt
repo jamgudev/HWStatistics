@@ -3,6 +3,7 @@ package com.jamgu.hwstatistics
 import android.app.Activity
 import android.app.Application
 import com.jamgu.common.Common
+import com.jamgu.hwstatistics.upload.DataSaver
 
 /**
  * @author jamgudev
@@ -12,12 +13,22 @@ import com.jamgu.common.Common
  */
 class BaseApplication: Application() {
 
+    companion object {
+        private const val TAG = "BaseApplication"
+    }
+
     private val mRunningActivities = ArrayList<Class<out Activity>>()
 
     override fun onCreate() {
         super.onCreate()
 
         Common.getInstance().init(this)
+    }
+
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+
+        DataSaver.addTestTracker(this, "$TAG, onTrimMemory level = $level")
     }
 
     fun addThisActivityToRunningActivities(cls: Class<out Activity>) {

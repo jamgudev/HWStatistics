@@ -1,9 +1,9 @@
 <resources>
     <string name="app_name">HWStatistics</string>
-    <string name="working_background">正在后台运行…</string>
+    <string name="working_background">日志已开启</string>
     <string name="click_to_start">点击以启动日志</string>
     <string name="already_started">已经启动，请您将App退至后台</string>
-    <string name="app_being_killed_reboot">日志APP被杀死啦！点击重启</string>
+    <string name="app_being_killed_reboot">日志APP下线啦！点击重启</string>
     <string name="app_battery_save_init">电量白名单初始化</string>
     <string name="app_usage_state_perm">获取应用信息白名单</string>
     <string name="app_start_monitor">启动活动监控日志</string>
