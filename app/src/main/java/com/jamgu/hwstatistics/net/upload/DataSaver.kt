@@ -1,4 +1,4 @@
-package com.jamgu.hwstatistics.upload
+package com.jamgu.hwstatistics.net.upload
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -214,7 +214,7 @@ object DataSaver {
 
     private fun getChargeDataCachePath() = "${getCacheRootPath()}/$CHARGE_RECORD_DIR"
 
-    private fun getTestDataCachePath() = "${getCacheRootPath()}/$TEST_RECORD_DIR"
+    fun getTestDataCachePath() = "${getCacheRootPath()}/$TEST_RECORD_DIR"
 
     private fun getSDPath(): String {
         val sdDir: File?

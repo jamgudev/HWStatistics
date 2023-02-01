@@ -12,7 +12,7 @@ import com.jamgu.hwstatistics.appusage.broadcast.ActiveBroadcastReceiver
 import com.jamgu.hwstatistics.appusage.broadcast.PowerConnectReceiver
 import com.jamgu.hwstatistics.power.IOnDataEnough
 import com.jamgu.hwstatistics.power.StatisticsLoader
-import com.jamgu.hwstatistics.upload.DataSaver
+import com.jamgu.hwstatistics.net.upload.DataSaver
 import com.jamgu.hwstatistics.util.getCurrentDateString
 import com.jamgu.hwstatistics.util.timeMillsBetween
 import com.jamgu.hwstatistics.util.timeStamp2DateStringWithMills
@@ -427,8 +427,6 @@ class AppUsageDataLoader(private val mContext: Context) :
         }
         val screenOffRecord = addOnScreenOffRecord()
         mSessionListener?.onSessionEnd(screenOffRecord)
-
-        mData
     }
 
     override fun onChargeState(curBatteryState: Float) {

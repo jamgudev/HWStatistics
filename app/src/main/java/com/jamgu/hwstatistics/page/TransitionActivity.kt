@@ -6,7 +6,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.jamgu.common.thread.ThreadPool
 import com.jamgu.common.util.log.JLog
 import com.jamgu.hwstatistics.R
-import com.jamgu.hwstatistics.upload.DataSaver
+import com.jamgu.hwstatistics.net.upload.DataSaver
 import com.jamgu.krouter.annotation.KRouter
 
 /**
