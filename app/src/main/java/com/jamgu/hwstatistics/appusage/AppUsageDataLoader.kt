@@ -13,10 +13,12 @@ import com.jamgu.hwstatistics.appusage.broadcast.PowerConnectReceiver
 import com.jamgu.hwstatistics.power.IOnDataEnough
 import com.jamgu.hwstatistics.power.StatisticsLoader
 import com.jamgu.hwstatistics.net.upload.DataSaver
+import com.jamgu.hwstatistics.net.upload.DataUploader
 import com.jamgu.hwstatistics.util.getCurrentDateString
 import com.jamgu.hwstatistics.util.timeMillsBetween
 import com.jamgu.hwstatistics.util.timeStamp2DateStringWithMills
 import com.jamgu.hwstatistics.util.timeStamp2SimpleDateString
+import java.io.File
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -62,6 +64,7 @@ class AppUsageDataLoader(private val mContext: Context) :
     private lateinit var mPowerDataLoader: StatisticsLoader
 
     private var mTimer: VATimer = VATimer()
+    private var mIsCharging: AtomicBoolean = AtomicBoolean(false)
 
     companion object {
         private const val TAG = "AppUsageDataLoader"
@@ -422,18 +425,22 @@ class AppUsageDataLoader(private val mContext: Context) :
     }
 
     override fun onScreenOff() {
-        if (!mScreenOn.get()) {
-            return
-        }
+        mScreenOn.set(false)
         val screenOffRecord = addOnScreenOffRecord()
         mSessionListener?.onSessionEnd(screenOffRecord)
+
+        if (mIsCharging.get()) {
+            DataUploader.recursivelyUpload(mContext, File(DataSaver.getCacheRootPath()))
+        }
     }
 
     override fun onChargeState(curBatteryState: Float) {
+        mIsCharging.set(true)
         addOnPowerCharge(curBatteryState)
     }
 
     override fun onCancelChargeState(curBatteryState: Float) {
+        mIsCharging.set(false)
         addOnPowerCancelCharge(curBatteryState)
     }
 
@@ -453,7 +460,7 @@ class AppUsageDataLoader(private val mContext: Context) :
         }
         val powerDataWithTitle = ArrayList(mPowerDataLoader.getDataWithTitle())
         val appUsageData = ArrayList(mUserUsageData)
-        DataSaver.saveAppUsageDataASync(mContext, appUsageData, powerDataWithTitle, startTime, endTime, true)
+        DataSaver.saveAppUsageDataSync(mContext, appUsageData, powerDataWithTitle, startTime, endTime, true)
         resetAfterDataSaved()
     }
 
@@ -465,7 +472,7 @@ class AppUsageDataLoader(private val mContext: Context) :
         val screenOnTime = mScreenOnRecord?.mOccTime ?: ""
         val powerDataWithTitle = ArrayList(mPowerDataLoader.getDataWithTitle())
         mPowerDataLoader.clearData()
-        DataSaver.saveAppUsageDataASync(mContext, null, powerDataWithTitle, screenOnTime, "", false)
+        DataSaver.saveAppUsageDataSync(mContext, null, powerDataWithTitle, screenOnTime, "", false)
     }
 
     /**

@@ -12,6 +12,7 @@ import com.jamgu.hwstatistics.appusage.UsageRecord
 import com.jamgu.hwstatistics.power.IOnDataEnough
 import com.jamgu.hwstatistics.util.ExcelUtil
 import com.jamgu.hwstatistics.util.getDateOfTodayString
+import com.jamgu.hwstatistics.util.timeStamp2DateString
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -26,11 +27,12 @@ import java.util.*
 object DataSaver {
 
     const val ACTIVE_DIR = "active"
+    const val CACHE_ROOT_DIR = "HWStatistics"
+    const val TEST_RECORD_DIR = "test_record"
+    const val FILE_INFIX = "$$"
     private const val TAG = "DataSaver"
     private const val FILE_PROVIDER_AUTHORITY = "com.jamgu.hwstatistics"
-    private const val CACHE_ROOT_DIR = "HWStatistics"
     private const val CHARGE_RECORD_DIR = "charge_record"
-    private const val TEST_RECORD_DIR = "test_record"
     private const val APP_USAGE_FILE = "app_usage"
     private const val POWER_USAGE_FILE = "power_usage"
     private const val CHARGE_USAGE_FILE = "charge_usage"
@@ -64,7 +66,7 @@ object DataSaver {
     /**
      * 保存用户行为数据
      */
-    fun saveAppUsageDataASync(
+    fun saveAppUsageDataSync(
         context: Context,
         usageData: ArrayList<UsageRecord>?,
         powerData: ArrayList<ArrayList<Any>>?,
@@ -91,7 +93,7 @@ object DataSaver {
                 getDateOfTodayString()
             }
 
-            val dirName = "${startTime}_"
+            val dirName = "${startTime}$FILE_INFIX"
             var dirFile = File("${getActiveCachePath()}/$subDirName/$dirName")
             if (isSessionFinish) {
                 val finishFileName = "${dirFile.path}$endTime"
@@ -120,7 +122,7 @@ object DataSaver {
             }
 
             JLog.d(TAG, "dirFile.path = ${dirFile.path}")
-            val timeMillis = System.currentTimeMillis()
+            val timeMillis = System.currentTimeMillis().timeStamp2DateString()
             if (usageAnyData.isNotEmpty()) {
                 val appUsageFile = File("${dirFile.path}/${APP_USAGE_FILE}_$timeMillis$EXCEL_SUFFIX")
                 val appUsageUri =
@@ -157,7 +159,7 @@ object DataSaver {
             }
 
             if (chargeData.isNotEmpty()) {
-                val timeMillis = System.currentTimeMillis()
+                val timeMillis = System.currentTimeMillis().timeStamp2DateString()
                 val chargeRecordFile = File("${dirFile.path}/${CHARGE_USAGE_FILE}_${timeMillis}$EXCEL_SUFFIX")
                 val chargeUsageUri =
                     FileProvider.getUriForFile(context, FILE_PROVIDER_AUTHORITY, chargeRecordFile)
@@ -185,7 +187,7 @@ object DataSaver {
             }
 
             if (testData.isNotEmpty()) {
-                val timeMillis = System.currentTimeMillis()
+                val timeMillis = System.currentTimeMillis().timeStamp2DateString()
                 val testRecordFile = File("${dirFile.path}/${TEST_FILE}_${timeMillis}$EXCEL_SUFFIX")
                 val testUsageUri =
                     FileProvider.getUriForFile(context, FILE_PROVIDER_AUTHORITY, testRecordFile)

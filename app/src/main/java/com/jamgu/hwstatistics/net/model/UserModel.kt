@@ -1,7 +1,7 @@
 package com.jamgu.hwstatistics.net.model
 
 /**
- * @author gujiaming.dev@bytedance.com
+ * @author jamgudev
  * @date 2023/2/1 10:13 上午
  *
  * @description 用户信息

@@ -94,7 +94,6 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
         // 加入任务栈
         (applicationContext as? BaseApplication)?.addThisActivityToRunningActivities(this.javaClass)
 
-        DataUploader.recursiveUpload(this, File(DataSaver.getTestDataCachePath()))
     }
 
     override fun onDestroy() {
