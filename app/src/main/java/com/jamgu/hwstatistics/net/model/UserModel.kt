@@ -6,12 +6,9 @@ package com.jamgu.hwstatistics.net.model
  *
  * @description 用户信息
  */
-class UserModel {
-
-    var username: String? = null
-    var password: String? = null
-    var telephone: String? = null
-    var occupation: String? = null
-    var device: String? = null
-
-}
+class UserModel(
+    var username: String,
+    var telephone: String,
+    var occupation: String,
+    var device: String
+) {}
