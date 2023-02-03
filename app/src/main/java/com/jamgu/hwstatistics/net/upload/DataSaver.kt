@@ -30,6 +30,7 @@ object DataSaver {
     const val CACHE_ROOT_DIR = "HWStatistics"
     const val TEST_RECORD_DIR = "test_record"
     const val FILE_INFIX = "$$"
+    const val TAG_SCREEN_OFF = "tag_screen_off"
     private const val TAG = "DataSaver"
     private const val FILE_PROVIDER_AUTHORITY = "com.jamgu.hwstatistics"
     private const val CHARGE_RECORD_DIR = "charge_record"
@@ -102,6 +103,7 @@ object DataSaver {
                 if (dirFile.exists()) {
                     if (!dirFile.renameTo(finishFile)) {
                         JLog.e(TAG, "file = ${dirFile.path} rename to path{$finishFileName} failed.")
+                        addTestTracker(context, "file = ${dirFile.path} rename to path{$finishFileName} failed.")
                         return@runIOTask
                     } else {
                         // rename 成功，更改目录File
@@ -121,7 +123,7 @@ object DataSaver {
                 }
             }
 
-            JLog.d(TAG, "dirFile.path = ${dirFile.path}")
+            JLog.d(TAG, "saveAppUsageDataSync, dirFile.path = ${dirFile.path}")
             val timeMillis = System.currentTimeMillis().timeStamp2DateString()
             if (usageAnyData.isNotEmpty()) {
                 val appUsageFile = File("${dirFile.path}/${APP_USAGE_FILE}_$timeMillis$EXCEL_SUFFIX")

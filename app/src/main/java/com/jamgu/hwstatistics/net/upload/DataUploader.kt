@@ -5,7 +5,7 @@ import com.jamgu.common.util.log.JLog
 import com.jamgu.common.util.preference.PreferenceUtil
 import com.jamgu.hwstatistics.net.Network
 import com.jamgu.hwstatistics.net.RspModel
-import com.jamgu.hwstatistics.util.timeStamp2DateStringWithMills
+import com.jamgu.hwstatistics.power.mobiledata.network.NetWorkManager
 import io.reactivex.Observer
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
@@ -27,6 +27,12 @@ object DataUploader {
     const val USER_PREFIX = ""
 
     private fun upload(context: Context, file: File) {
+        val isScreenOff = PreferenceUtil.getCachePreference(context, 0).getBoolean((DataSaver.TAG_SCREEN_OFF), false)
+        if (!isScreenOff) {
+            JLog.d(TAG, "uploading when screen off.")
+            DataSaver.addTestTracker(context, "uploading when screen off, file = ${file.absolutePath}")
+            return
+        }
         try {
             val filePath = file.absolutePath
             val suffixPath = filePath.substring(filePath.indexOf(DataSaver.CACHE_ROOT_DIR) - 1)
@@ -38,6 +44,12 @@ object DataUploader {
                 .addFormDataPart("file", "", requestBody)
                 .setType(MultipartBody.FORM)
                 .build()
+
+            if (!isNetWorkEnable(context)) {
+                DataSaver.addTestTracker(context, "network error, upload failed, file = $filePath")
+                return
+            }
+
             Network.remote().upload(multipartBody.parts)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(Schedulers.io())
@@ -92,8 +104,9 @@ object DataUploader {
 
     /**
      * 递归上传[file]目录下所有文件
+     * @param timeStamp session文件，只会上传记录时间完成在timeStamp之前的文件
      */
-    fun recursivelyUpload(context: Context, file: File) {
+    fun recursivelyUpload(context: Context, file: File, timeStamp: String) {
         if (!file.exists()) return
 
         val childFiles = file.listFiles()
@@ -102,26 +115,28 @@ object DataUploader {
                 if (child.listFiles().isNullOrEmpty()) {
                     child.delete()
                 } else {
-                    val parentPath = file.parentFile?.absolutePath ?: return
-                    // 文件目录是否完整，完整才能上传
-                    // FIXME 这里有bug
-                    val canUpload = if (parentPath.contains(DataSaver.ACTIVE_DIR)) {
-                        val parentDirName = parentPath.split("/").last()
-                        val sessionDates = parentDirName.split(DataSaver.FILE_INFIX)
-                        val nowDate = System.currentTimeMillis().timeStamp2DateStringWithMills()
+                    val childPath = child.absolutePath ?: return
+                    // session文件目录是否完整，完整才能上传
+                    val canUpload = if (childPath.contains(DataSaver.FILE_INFIX)) {
+                        val childPathSplits = childPath.split(DataSaver.FILE_INFIX)
                         // session 文件必须完整才能上传
-                        sessionDates.size == 2 && sessionDates[1] < nowDate
+                        JLog.d(TAG, "path = $childPath, ${childPathSplits[1]}, $timeStamp")
+                        childPathSplits.size == 2 && childPathSplits[1].isNotEmpty() && childPathSplits[1] < timeStamp
                     } else {
                         true
                     }
                     if (canUpload) {
-                        recursivelyUpload(context, child)
+                        recursivelyUpload(context, child, timeStamp)
                     }
                 }
             } else {
                 upload(context, child)
             }
         }
+    }
+
+    private fun isNetWorkEnable(context: Context): Boolean {
+        return NetWorkManager.getNetworkType(context) >= 0
     }
 
 }
