@@ -29,19 +29,24 @@ object DataSaver {
     const val ACTIVE_DIR = "active"
     const val CACHE_ROOT_DIR = "HWStatistics"
     const val TEST_RECORD_DIR = "test_record"
+    const val ERROR_RECORD_DIR = "error_record"
     const val FILE_INFIX = "$$"
     const val TAG_SCREEN_OFF = "tag_screen_off"
     private const val TAG = "DataSaver"
     private const val FILE_PROVIDER_AUTHORITY = "com.jamgu.hwstatistics"
     private const val CHARGE_RECORD_DIR = "charge_record"
     private const val APP_USAGE_FILE = "app_usage"
-    private const val POWER_USAGE_FILE = "power_usage"
-    private const val CHARGE_USAGE_FILE = "charge_usage"
-    private const val TEST_FILE = "test_only"
+    private const val POWER_USAGE_FILE_PREFIX = "power_usage"
+    private const val CHARGE_USAGE_FILE_PREFIX = "charge_usage"
+    private const val TEST_FILE_PREFIX = "test_only"
+    private const val ERROR_FILE_PREFIX = "ERROR"
     private const val EXCEL_SUFFIX = ".xlsx"
 
     // 保存测试数据
     private val mTestData: MutableList<UsageRecord> = Collections.synchronizedList(ArrayList(30))
+
+    // 保存致命的报错数据
+    private val mErrorData: MutableList<UsageRecord> = Collections.synchronizedList(ArrayList(4))
 
     /**
      * 保存功耗模型数据
@@ -134,7 +139,7 @@ object DataSaver {
 
             if (!powerData.isNullOrEmpty()) {
                 val powerUsageFile =
-                    File("${dirFile.path}/${POWER_USAGE_FILE}_$timeMillis$EXCEL_SUFFIX")
+                    File("${dirFile.path}/${POWER_USAGE_FILE_PREFIX}_$timeMillis$EXCEL_SUFFIX")
                 val powerUsageUri =
                     FileProvider.getUriForFile(context, FILE_PROVIDER_AUTHORITY, powerUsageFile)
                 saveData2DestFile(context, powerData, powerUsageUri)
@@ -162,7 +167,7 @@ object DataSaver {
 
             if (chargeData.isNotEmpty()) {
                 val timeMillis = System.currentTimeMillis().timeStamp2DateString()
-                val chargeRecordFile = File("${dirFile.path}/${CHARGE_USAGE_FILE}_${timeMillis}$EXCEL_SUFFIX")
+                val chargeRecordFile = File("${dirFile.path}/${CHARGE_USAGE_FILE_PREFIX}_${timeMillis}$EXCEL_SUFFIX")
                 val chargeUsageUri =
                     FileProvider.getUriForFile(context, FILE_PROVIDER_AUTHORITY, chargeRecordFile)
                 ExcelUtil.writeExcelNew(context, chargeAnyData, chargeUsageUri)
@@ -190,10 +195,38 @@ object DataSaver {
 
             if (testData.isNotEmpty()) {
                 val timeMillis = System.currentTimeMillis().timeStamp2DateString()
-                val testRecordFile = File("${dirFile.path}/${TEST_FILE}_${timeMillis}$EXCEL_SUFFIX")
+                val testRecordFile = File("${dirFile.path}/${TEST_FILE_PREFIX}_${timeMillis}$EXCEL_SUFFIX")
                 val testUsageUri =
                     FileProvider.getUriForFile(context, FILE_PROVIDER_AUTHORITY, testRecordFile)
                 ExcelUtil.writeExcelNew(context, testAnyData, testUsageUri)
+            }
+        }
+    }
+
+    /**
+     * 保存测试数据
+     */
+    fun saveErrorData(context: Context, errorData: ArrayList<UsageRecord>?) {
+        errorData ?: return
+        ThreadPool.runIOTask {
+            val errorAnyData = ArrayList<ArrayList<Any>>()
+
+            errorData.forEach { chargeRecord ->
+                val singleData = chargeRecord.toAnyData() ?: return@forEach
+                errorAnyData.add(singleData)
+            }
+
+            val dirFile = File(getErrorDataCachePath())
+            if (!dirFile.exists()) {
+                dirFile.mkdirs()
+            }
+
+            if (errorData.isNotEmpty()) {
+                val dateStr = System.currentTimeMillis().timeStamp2DateString()
+                val errorRecordFile = File("${dirFile.path}/${ERROR_FILE_PREFIX}_${dateStr}$EXCEL_SUFFIX")
+                val errorUsageUri =
+                    FileProvider.getUriForFile(context, FILE_PROVIDER_AUTHORITY, errorRecordFile)
+                ExcelUtil.writeExcelNew(context, errorAnyData, errorUsageUri)
             }
         }
     }
@@ -220,6 +253,8 @@ object DataSaver {
 
     fun getTestDataCachePath() = "${getCacheRootPath()}/$TEST_RECORD_DIR"
 
+    fun getErrorDataCachePath() = "${getCacheRootPath()}/$ERROR_RECORD_DIR"
+
     private fun getSDPath(): String {
         val sdDir: File?
         val sdCardExist =
@@ -240,6 +275,14 @@ object DataSaver {
         checkIfSaveTestData2File(context, false)
     }
 
+    fun addErrorTracker(context: Context, track: String) {
+        mErrorData.add(UsageRecord.TestRecord(LinkedHashMap<String, String>().apply {
+            this["ERROR"] = track
+        }))
+
+        checkIfSaveErrorData2File(context)
+    }
+
     /**
      * 添加一条测试记录，每次更新检查是否需要将数据缓存到文件。
      */
@@ -252,11 +295,22 @@ object DataSaver {
     /**
      * 检查是否将程序测试数据保存到文件中
      */
-    private fun checkIfSaveTestData2File(context: Context, destroyed: Boolean) {
-        if (destroyed || mTestData.size >= IOnDataEnough.ThreshLength.THRESH_FOR_TEST.length) {
+    private fun checkIfSaveTestData2File(context: Context, flushImmediately: Boolean) {
+        if (flushImmediately || mTestData.size >= IOnDataEnough.ThreshLength.THRESH_FOR_ERROR.length) {
             val testData = ArrayList(mTestData)
             mTestData.clear()
             saveTestData(context, testData)
+        }
+    }
+
+    /**
+     * 检查是否将程序测试数据保存到文件中
+     */
+    private fun checkIfSaveErrorData2File(context: Context) {
+        if (mErrorData.size >= IOnDataEnough.ThreshLength.THRESH_FOR_ERROR.length) {
+            val testData = ArrayList(mTestData)
+            mErrorData.clear()
+            saveErrorData(context, testData)
         }
     }
 
