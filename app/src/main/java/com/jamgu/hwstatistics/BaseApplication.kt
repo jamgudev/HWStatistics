@@ -3,6 +3,7 @@ package com.jamgu.hwstatistics
 import android.app.Activity
 import android.app.Application
 import com.jamgu.common.Common
+import com.jamgu.common.util.log.JLog
 import com.jamgu.hwstatistics.net.upload.DataSaver
 
 /**
@@ -11,7 +12,7 @@ import com.jamgu.hwstatistics.net.upload.DataSaver
  *
  * @description
  */
-class BaseApplication: Application() {
+class BaseApplication: Application(), Thread.UncaughtExceptionHandler {
 
     companion object {
         private const val TAG = "BaseApplication"
@@ -23,6 +24,7 @@ class BaseApplication: Application() {
         super.onCreate()
 
         Common.getInstance().init(this)
+        Thread.setDefaultUncaughtExceptionHandler(this)
     }
 
     override fun onTrimMemory(level: Int) {
@@ -41,6 +43,11 @@ class BaseApplication: Application() {
 
     fun isActivityInBackStack(cls: Class<out Activity>): Boolean {
         return mRunningActivities.contains(cls)
+    }
+
+    override fun uncaughtException(t: Thread, e: Throwable) {
+        JLog.e(TAG, "uncaughtException happens[${t.name}]: error{${e.printStackTrace()}}")
+        DataSaver.addErrorTracker(this, "uncaughtException happens[${t.name}]: error{${e.printStackTrace()}}")
     }
 
 }

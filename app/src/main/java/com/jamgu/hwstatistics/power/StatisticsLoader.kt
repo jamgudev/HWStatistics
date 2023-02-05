@@ -36,7 +36,7 @@ class StatisticsLoader(private val mContext: Context) : INeedPermission {
     private val mPowerData: MutableList<ArrayList<Any>> = Collections.synchronizedList(ArrayList<ArrayList<Any>>())
 
     private var mOnDataEnough: IOnDataEnough? = null
-    private var mDataNumThreshold: IOnDataEnough.ThreshLength = IOnDataEnough.ThreshLength.THRESH_FOR_TEST
+    private var mDataNumThreshold: IOnDataEnough.ThreshLength = IOnDataEnough.ThreshLength.THRESH_FOR_ERROR
 
     /**
      * 数据查询间隔 in ms，越大采样率越低，最大不超过 1000 ms，默认为 200 ms，既每秒采样 5 次
@@ -397,6 +397,7 @@ interface IOnDataEnough {
         THRESH_ONE_HOUR(3600),
         THRESH_HALF_HOUR(1800),
         THRESH_FOR_TEST(10),
+        THRESH_FOR_ERROR(1),
         THRESH_FIVE_MINS(60),
         THRESH_FOR_CHARGE(4),
     }

@@ -196,13 +196,31 @@ sealed class UsageRecord {
      * 测试记录
      */
     data class TestRecord(
-        val testRecords: LinkedHashMap<String, String>,
+        val records: LinkedHashMap<String, String>,
         val mRecordTime: String = System.currentTimeMillis().timeStamp2DateStringWithMills()
     ) : UsageRecord() {
         override fun toAnyData(): ArrayList<Any> {
             return ArrayList<Any>().apply {
                 this.add(mRecordTime)
-                testRecords.forEach { entry ->
+                records.forEach { entry ->
+                    this.add(entry.key)
+                    this.add(entry.value)
+                }
+            }
+        }
+    }
+
+    /**
+     * 用来记录 App 发生的错误
+     */
+    data class ErrorRecord(
+        val records: LinkedHashMap<String, String>,
+        val mRecordTime: String = System.currentTimeMillis().timeStamp2DateStringWithMills()
+    ) : UsageRecord() {
+        override fun toAnyData(): ArrayList<Any> {
+            return ArrayList<Any>().apply {
+                this.add(mRecordTime)
+                records.forEach { entry ->
                     this.add(entry.key)
                     this.add(entry.value)
                 }
