@@ -103,7 +103,7 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
         val memState = activityManager?.runningAppProcesses?.first()?.let {
              ActivityManager.getMyMemoryState(it)
         } ?: 0
-        DataSaver.addTestTracker(this, "$TAG onDestroy called, memState = $memState")
+        DataSaver.addErrorTracker(this, "$TAG onDestroy called, memState = $memState")
         DataSaver.flushTestData(this)
         mAppUsageDataLoader.onDestroy()
 

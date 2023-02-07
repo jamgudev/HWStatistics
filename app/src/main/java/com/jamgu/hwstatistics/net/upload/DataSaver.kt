@@ -108,7 +108,7 @@ object DataSaver {
                 if (dirFile.exists()) {
                     if (!dirFile.renameTo(finishFile)) {
                         JLog.e(TAG, "file = ${dirFile.path} rename to path{$finishFileName} failed.")
-                        addTestTracker(context, "file = ${dirFile.path} rename to path{$finishFileName} failed.")
+                        addErrorTracker(context, "file = ${dirFile.path} rename to path{$finishFileName} failed.")
                         return@runIOTask
                     } else {
                         // rename 成功，更改目录File
@@ -296,7 +296,7 @@ object DataSaver {
      * 检查是否将程序测试数据保存到文件中
      */
     private fun checkIfSaveTestData2File(context: Context, flushImmediately: Boolean) {
-        if (flushImmediately || mTestData.size >= IOnDataEnough.ThreshLength.THRESH_FOR_ERROR.length) {
+        if (flushImmediately || mTestData.size >= IOnDataEnough.ThreshLength.THRESH_FOR_TRACKER.length) {
             val testData = ArrayList(mTestData)
             mTestData.clear()
             saveTestData(context, testData)
@@ -308,7 +308,7 @@ object DataSaver {
      */
     private fun checkIfSaveErrorData2File(context: Context) {
         if (mErrorData.size >= IOnDataEnough.ThreshLength.THRESH_FOR_ERROR.length) {
-            val testData = ArrayList(mTestData)
+            val testData = ArrayList(mErrorData)
             mErrorData.clear()
             saveErrorData(context, testData)
         }

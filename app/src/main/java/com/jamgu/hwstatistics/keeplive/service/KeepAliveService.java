@@ -56,7 +56,6 @@ public class KeepAliveService extends JobService {
             if (applicationContext instanceof BaseApplication) {
                 boolean inBackStack = ((BaseApplication) applicationContext)
                         .isActivityInBackStack(AutoMonitorActivity.class);
-                Log.d(TAG, "isInBackStack = " + inBackStack + ", mForgroundNF = " + mForgroundNF);
                 DataSaver.INSTANCE.addTestTracker(KeepAliveService.this,
                         TAG + " inBackStack = " + inBackStack);
                 if (mForgroundNF == null) {

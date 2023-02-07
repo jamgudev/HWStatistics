@@ -36,7 +36,7 @@ object DataUploader {
         try {
             val filePath = file.absolutePath
             val suffixPath = filePath.substring(filePath.indexOf(DataSaver.CACHE_ROOT_DIR) - 1)
-            val user = PreferenceUtil.getCachePreference(context, 0).getString(USER_PREFIX, "ott") ?: "ott"
+            val user = PreferenceUtil.getCachePreference(context, 0).getString(USER_PREFIX, "jamgu") ?: "jamgu"
             val requestBody = file.asRequestBody("multipart/form-data".toMediaTypeOrNull())
             val multipartBody = MultipartBody.Builder()
                 .addFormDataPart("username", user)
@@ -46,7 +46,7 @@ object DataUploader {
                 .build()
 
             if (!isNetWorkEnable(context)) {
-                DataSaver.addTestTracker(context, "network error, upload failed, file = $filePath")
+                DataSaver.addErrorTracker(context, "network error, upload failed, file = $filePath")
                 return
             }
 
@@ -58,18 +58,18 @@ object DataUploader {
                         if (rspModel.getCode() == 0) {
                             if (!checkIfNeedDelete(file)) {
                                 // 文件未成功删去
-                                DataSaver.addTestTracker(context, "delete file failed, filepath = $filePath")
+                                DataSaver.addErrorTracker(context, "delete file failed, filepath = $filePath")
                             } else {
                                 // 看看它的父目录还是否有文件，没有的话，删掉父目录
                                 val dirFile = file.parentFile ?: return
                                 if (dirFile.isDirectory && dirFile.listFiles().isNullOrEmpty()) {
                                     if (!dirFile.delete()) {
-                                        DataSaver.addTestTracker(context, "parent file delete failed, filepath = ${dirFile.absolutePath}")
+                                        DataSaver.addErrorTracker(context, "parent file delete failed, filepath = ${dirFile.absolutePath}")
                                     }
                                 }
                             }
                         } else {
-                            DataSaver.addTestTracker(context, "upload file failed, code = ${rspModel.getCode()}, " +
+                            DataSaver.addErrorTracker(context, "upload file failed, code = ${rspModel.getCode()}, " +
                                     "msg = ${rspModel.getMsg()}, filepath = $filePath")
                             JLog.d(TAG, "upload file failed, code = ${rspModel.getCode()}, msg = ${rspModel.getMsg()}, filepath = $filePath")
                         }
@@ -80,14 +80,14 @@ object DataUploader {
 
                     override fun onError(e: Throwable) {
                         JLog.d(TAG, "onError")
-                        DataSaver.addTestTracker(context, "filepath = ${file.absolutePath}, error when uploading, e = ${e.stackTrace}")
+                        DataSaver.addErrorTracker(context, "filepath = ${file.absolutePath}, error when uploading, e = ${e.stackTrace}")
                     }
 
                     override fun onComplete() {
                     }
                 })
         } catch (e: Exception) {
-            DataSaver.addTestTracker(context, "filepath = ${file.absolutePath}, error happened when uploading")
+            DataSaver.addErrorTracker(context, "filepath = ${file.absolutePath}, error happened when uploading")
         }
     }
 
@@ -136,7 +136,8 @@ object DataUploader {
     }
 
     private fun isNetWorkEnable(context: Context): Boolean {
-        return NetWorkManager.getNetworkType(context) >= 0
+        val networkType = NetWorkManager.getNetworkType(context)
+        return networkType >= 0
     }
 
 }
