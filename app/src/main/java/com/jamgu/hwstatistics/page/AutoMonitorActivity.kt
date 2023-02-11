@@ -17,14 +17,16 @@ import com.jamgu.hwstatistics.appusage.AppUsageDataLoader
 import com.jamgu.hwstatistics.appusage.UsageRecord
 import com.jamgu.hwstatistics.databinding.ActivityAutoMonitorBinding
 import com.jamgu.hwstatistics.keeplive.service.KeepAliveService
-import com.jamgu.hwstatistics.power.StatisticAdapter
 import com.jamgu.hwstatistics.net.upload.DataSaver
 import com.jamgu.hwstatistics.net.upload.DataUploader
+import com.jamgu.hwstatistics.power.StatisticAdapter
+import com.jamgu.hwstatistics.util.timeStamp2DateStringWithMills
 import com.jamgu.hwstatistics.util.timeStamp2SimpleDateString
 import com.jamgu.krouter.annotation.KRouter
 import com.jamgu.krouter.core.router.KRouterUriBuilder
 import com.jamgu.krouter.core.router.KRouters
 import java.io.File
+
 
 @KRouter(value = [AUTO_MONITOR_PAGE], booleanParams = [AUTO_MONITOR_START_FROM_NOTIFICATION])
 class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
@@ -85,7 +87,7 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
         }
         JLog.d(TAG, "onCreate isStartFromBoot = $isStartFromNotification, isStarted = ${mAppUsageDataLoader.isStarted()}")
 
-        DataSaver.addTestTracker(this, "onCreate startFromNotif = $isStartFromNotification, " +
+        DataSaver.addDebugTracker(this, "onCreate startFromNotif = $isStartFromNotification, " +
                 "startFromInit = $startFromInit, " +
                 "startFromKilled = $startFromKilled, " +
                 "startFromBoot = $startFromBoot, " +
@@ -103,7 +105,7 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
         val memState = activityManager?.runningAppProcesses?.first()?.let {
              ActivityManager.getMyMemoryState(it)
         } ?: 0
-        DataSaver.addErrorTracker(this, "$TAG onDestroy called, memState = $memState")
+        DataSaver.addInfoTracker(this, "$TAG onDestroy called, memState = $memState")
         DataSaver.flushTestData(this)
         mAppUsageDataLoader.onDestroy()
 
@@ -142,7 +144,7 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
     override fun onLowMemory() {
         super.onLowMemory()
         JLog.d(TAG, "onLowMemory")
-        DataSaver.addTestTracker(this, "$TAG onLowMemory called.")
+        DataSaver.addDebugTracker(this, "$TAG onLowMemory called.")
     }
 
     /**

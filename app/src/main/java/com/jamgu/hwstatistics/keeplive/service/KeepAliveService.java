@@ -56,7 +56,7 @@ public class KeepAliveService extends JobService {
             if (applicationContext instanceof BaseApplication) {
                 boolean inBackStack = ((BaseApplication) applicationContext)
                         .isActivityInBackStack(AutoMonitorActivity.class);
-                DataSaver.INSTANCE.addTestTracker(KeepAliveService.this,
+                DataSaver.INSTANCE.addDebugTracker(KeepAliveService.this,
                         TAG + " inBackStack = " + inBackStack);
                 if (mForgroundNF == null) {
                     initForeGroundNF(AutoMonitorActivity.class);
@@ -198,7 +198,7 @@ public class KeepAliveService extends JobService {
             mForgroundNF.stopForegroundNotification();
         }
         JLog.d(TAG, "onDestroy");
-        DataSaver.INSTANCE.addTestTracker(this, TAG + " onDestroy.");
+        DataSaver.INSTANCE.addDebugTracker(this, TAG + " onDestroy.");
     }
 
 }

@@ -28,9 +28,9 @@ object DataSaver {
 
     const val ACTIVE_DIR = "active"
     const val CACHE_ROOT_DIR = "HWStatistics"
-    const val TEST_RECORD_DIR = "test_record"
-    const val ERROR_RECORD_DIR = "error_record"
-    const val FILE_INFIX = "$$"
+    const val DEBUG_RECORD_DIR = "debug_record"
+    const val INFO_RECORD_DIR = "info_record"
+    const val SESSION_FILE_INFIX = "$$"
     const val TAG_SCREEN_OFF = "tag_screen_off"
     private const val TAG = "DataSaver"
     private const val FILE_PROVIDER_AUTHORITY = "com.jamgu.hwstatistics"
@@ -38,15 +38,15 @@ object DataSaver {
     private const val APP_USAGE_FILE = "app_usage"
     private const val POWER_USAGE_FILE_PREFIX = "power_usage"
     private const val CHARGE_USAGE_FILE_PREFIX = "charge_usage"
-    private const val TEST_FILE_PREFIX = "test_only"
-    private const val ERROR_FILE_PREFIX = "ERROR"
+    private const val DEBUG_FILE_PREFIX = "DEBUG"
+    private const val INFO_FILE_PREFIX = "INFO"
     private const val EXCEL_SUFFIX = ".xlsx"
 
     // 保存测试数据
-    private val mTestData: MutableList<UsageRecord> = Collections.synchronizedList(ArrayList(30))
+    private val mDebugData: MutableList<UsageRecord> = Collections.synchronizedList(ArrayList(30))
 
     // 保存致命的报错数据
-    private val mErrorData: MutableList<UsageRecord> = Collections.synchronizedList(ArrayList(4))
+    private val mInfoData: MutableList<UsageRecord> = Collections.synchronizedList(ArrayList(4))
 
     /**
      * 保存功耗模型数据
@@ -99,7 +99,7 @@ object DataSaver {
                 getDateOfTodayString()
             }
 
-            val dirName = "${startTime}$FILE_INFIX"
+            val dirName = "${startTime}$SESSION_FILE_INFIX"
             var dirFile = File("${getActiveCachePath()}/$subDirName/$dirName")
             if (isSessionFinish) {
                 val finishFileName = "${dirFile.path}$endTime"
@@ -108,7 +108,7 @@ object DataSaver {
                 if (dirFile.exists()) {
                     if (!dirFile.renameTo(finishFile)) {
                         JLog.e(TAG, "file = ${dirFile.path} rename to path{$finishFileName} failed.")
-                        addErrorTracker(context, "file = ${dirFile.path} rename to path{$finishFileName} failed.")
+                        addInfoTracker(context, "file = ${dirFile.path} rename to path{$finishFileName} failed.")
                         return@runIOTask
                     } else {
                         // rename 成功，更改目录File
@@ -178,7 +178,7 @@ object DataSaver {
     /**
      * 保存测试数据
      */
-    fun saveTestData(context: Context, testData: ArrayList<UsageRecord>?) {
+    fun saveDebugData(context: Context, testData: ArrayList<UsageRecord>?) {
         testData ?: return
         ThreadPool.runIOTask {
             val testAnyData = ArrayList<ArrayList<Any>>()
@@ -195,7 +195,7 @@ object DataSaver {
 
             if (testData.isNotEmpty()) {
                 val timeMillis = System.currentTimeMillis().timeStamp2DateString()
-                val testRecordFile = File("${dirFile.path}/${TEST_FILE_PREFIX}_${timeMillis}$EXCEL_SUFFIX")
+                val testRecordFile = File("${dirFile.path}/${DEBUG_FILE_PREFIX}_${timeMillis}$EXCEL_SUFFIX")
                 val testUsageUri =
                     FileProvider.getUriForFile(context, FILE_PROVIDER_AUTHORITY, testRecordFile)
                 ExcelUtil.writeExcelNew(context, testAnyData, testUsageUri)
@@ -206,7 +206,7 @@ object DataSaver {
     /**
      * 保存测试数据
      */
-    fun saveErrorData(context: Context, errorData: ArrayList<UsageRecord>?) {
+    fun saveInfoData(context: Context, errorData: ArrayList<UsageRecord>?) {
         errorData ?: return
         ThreadPool.runIOTask {
             val errorAnyData = ArrayList<ArrayList<Any>>()
@@ -223,7 +223,7 @@ object DataSaver {
 
             if (errorData.isNotEmpty()) {
                 val dateStr = System.currentTimeMillis().timeStamp2DateString()
-                val errorRecordFile = File("${dirFile.path}/${ERROR_FILE_PREFIX}_${dateStr}$EXCEL_SUFFIX")
+                val errorRecordFile = File("${dirFile.path}/${INFO_FILE_PREFIX}_${dateStr}$EXCEL_SUFFIX")
                 val errorUsageUri =
                     FileProvider.getUriForFile(context, FILE_PROVIDER_AUTHORITY, errorRecordFile)
                 ExcelUtil.writeExcelNew(context, errorAnyData, errorUsageUri)
@@ -251,9 +251,9 @@ object DataSaver {
 
     private fun getChargeDataCachePath() = "${getCacheRootPath()}/$CHARGE_RECORD_DIR"
 
-    fun getTestDataCachePath() = "${getCacheRootPath()}/$TEST_RECORD_DIR"
+    fun getTestDataCachePath() = "${getCacheRootPath()}/$DEBUG_RECORD_DIR"
 
-    fun getErrorDataCachePath() = "${getCacheRootPath()}/$ERROR_RECORD_DIR"
+    fun getErrorDataCachePath() = "${getCacheRootPath()}/$INFO_RECORD_DIR"
 
     private fun getSDPath(): String {
         val sdDir: File?
@@ -267,56 +267,56 @@ object DataSaver {
         return sdDir.toString()
     }
 
-    fun addTestTracker(context: Context, track: String) {
-        mTestData.add(UsageRecord.TestRecord(LinkedHashMap<String, String>().apply {
+    fun addDebugTracker(context: Context, track: String) {
+        mDebugData.add(UsageRecord.TestRecord(LinkedHashMap<String, String>().apply {
             this["tracker"] = track
         }))
 
-        checkIfSaveTestData2File(context, false)
+        checkIfSaveDebugData2File(context, false)
     }
 
-    fun addErrorTracker(context: Context, track: String) {
-        mErrorData.add(UsageRecord.TestRecord(LinkedHashMap<String, String>().apply {
+    fun addInfoTracker(context: Context, track: String) {
+        mInfoData.add(UsageRecord.TestRecord(LinkedHashMap<String, String>().apply {
             this["ERROR"] = track
         }))
 
-        checkIfSaveErrorData2File(context)
+        checkIfSaveInfoData2File(context)
     }
 
     /**
      * 添加一条测试记录，每次更新检查是否需要将数据缓存到文件。
      */
-    fun addTestTracker(context: Context, records: LinkedHashMap<String, String>) {
-        mTestData.add(UsageRecord.TestRecord(records))
+    fun addDebugTracker(context: Context, records: LinkedHashMap<String, String>) {
+        mDebugData.add(UsageRecord.TestRecord(records))
 
-        checkIfSaveTestData2File(context, false)
+        checkIfSaveDebugData2File(context, false)
     }
 
     /**
      * 检查是否将程序测试数据保存到文件中
      */
-    private fun checkIfSaveTestData2File(context: Context, flushImmediately: Boolean) {
-        if (flushImmediately || mTestData.size >= IOnDataEnough.ThreshLength.THRESH_FOR_TRACKER.length) {
-            val testData = ArrayList(mTestData)
-            mTestData.clear()
-            saveTestData(context, testData)
+    private fun checkIfSaveDebugData2File(context: Context, flushImmediately: Boolean) {
+        if (flushImmediately || mDebugData.size >= IOnDataEnough.ThreshLength.THRESH_FOR_TRACKER.length) {
+            val testData = ArrayList(mDebugData)
+            mDebugData.clear()
+            saveDebugData(context, testData)
         }
     }
 
     /**
      * 检查是否将程序测试数据保存到文件中
      */
-    private fun checkIfSaveErrorData2File(context: Context) {
-        if (mErrorData.size >= IOnDataEnough.ThreshLength.THRESH_FOR_ERROR.length) {
-            val testData = ArrayList(mErrorData)
-            mErrorData.clear()
-            saveErrorData(context, testData)
+    private fun checkIfSaveInfoData2File(context: Context) {
+        if (mInfoData.size >= IOnDataEnough.ThreshLength.THRESH_FOR_ERROR.length) {
+            val testData = ArrayList(mInfoData)
+            mInfoData.clear()
+            saveInfoData(context, testData)
         }
     }
 
     @JvmStatic
     fun flushTestData(context: Context) {
-        checkIfSaveTestData2File(context, true)
+        checkIfSaveDebugData2File(context, true)
     }
 
 }

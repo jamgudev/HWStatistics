@@ -30,7 +30,7 @@ class BaseApplication: Application(), Thread.UncaughtExceptionHandler {
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
 
-        DataSaver.addTestTracker(this, "$TAG, onTrimMemory level = $level")
+        DataSaver.addDebugTracker(this, "$TAG, onTrimMemory level = $level")
     }
 
     fun addThisActivityToRunningActivities(cls: Class<out Activity>) {
@@ -47,7 +47,7 @@ class BaseApplication: Application(), Thread.UncaughtExceptionHandler {
 
     override fun uncaughtException(t: Thread, e: Throwable) {
         JLog.e(TAG, "uncaughtException happens[${t.name}]: error{${e.printStackTrace()}}")
-        DataSaver.addErrorTracker(this, "uncaughtException happens[${t.name}]: error{${e.printStackTrace()}}")
+        DataSaver.addInfoTracker(this, "uncaughtException happens[${t.name}]: error{${e.printStackTrace()}}")
     }
 
 }

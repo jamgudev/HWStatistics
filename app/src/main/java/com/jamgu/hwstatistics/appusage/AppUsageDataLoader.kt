@@ -516,7 +516,7 @@ class AppUsageDataLoader(private val mContext: Context) :
                 JLog.d(TAG, "TRIM_MEMORY_BACKGROUND")
             }
         }
-        DataSaver.addTestTracker(mContext, "onTrimMemory, level = $level")
+        DataSaver.addDebugTracker(mContext, "onTrimMemory, level = $level")
 
         if (level >= TRIM_MEMORY_RUNNING_CRITICAL) {
             checkIfSavePhoneChargeData2File(true)

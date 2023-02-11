@@ -43,7 +43,7 @@ class TransitionActivity : AppCompatActivity() {
         }, 500)
 
         JLog.d(TAG, "onCreate")
-        DataSaver.addTestTracker(this, "$TAG, onCreate")
+        DataSaver.addDebugTracker(this, "$TAG, onCreate")
     }
 
     override fun onDestroy() {
