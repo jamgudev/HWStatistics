@@ -30,6 +30,7 @@ class InitActivity : ViewBindingActivity<ActivityInitLayoutBinding>() {
         private const val TAG = "InitActivity"
         private const val BATTERY_INIT = "battery_init"
         private const val USAGE_STATE_PERMISSION = "usage_state_permission"
+        const val MONITOR_INIT = "monitor_init"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -60,13 +61,14 @@ class InitActivity : ViewBindingActivity<ActivityInitLayoutBinding>() {
             }
         }
 
+        val mMonitorActivityLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            preference.edit().putBoolean(USAGE_STATE_PERMISSION, true).apply()
+        }
         mBinding.vBtnUsageState.setOnClickListener {
             if (!isUsageStatePermissionSet) {
                 // 打开获取应用信息页面
                 val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
-                registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-                    preference.edit().putBoolean(USAGE_STATE_PERMISSION, true).apply()
-                }.launch(intent)
+                mMonitorActivityLauncher.launch(intent)
             }
         }
 
@@ -75,15 +77,20 @@ class InitActivity : ViewBindingActivity<ActivityInitLayoutBinding>() {
                 this, KRouterUriBuilder().appendAuthority(AUTO_MONITOR_PAGE)
                     .with(AUTO_MONITOR_START_FROM_INIT, true).build()
             )
+
+            preference.edit().putBoolean(MONITOR_INIT, true).apply()
+            finish()
         }
 
         val mFileAccessBtn = mBinding.vBtnFileAccess
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             mFileAccessBtn.visibility = View.VISIBLE
+            val fileAccessActivityLauncher = registerForActivityResult(
+                ActivityResultContracts.StartActivityForResult()) { }
             mFileAccessBtn.setOnClickListener {
                 val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
                 intent.data = Uri.parse("package:" + this.packageName)
-                registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { }.launch(intent)
+                fileAccessActivityLauncher.launch(intent)
             }
         } else {
             mFileAccessBtn.visibility = View.GONE

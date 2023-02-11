@@ -19,6 +19,7 @@ import com.jamgu.hwstatistics.databinding.ActivityAutoMonitorBinding
 import com.jamgu.hwstatistics.keeplive.service.KeepAliveService
 import com.jamgu.hwstatistics.net.upload.DataSaver
 import com.jamgu.hwstatistics.net.upload.DataUploader
+import com.jamgu.hwstatistics.page.InitActivity.Companion.MONITOR_INIT
 import com.jamgu.hwstatistics.power.StatisticAdapter
 import com.jamgu.hwstatistics.util.timeStamp2DateStringWithMills
 import com.jamgu.hwstatistics.util.timeStamp2SimpleDateString
@@ -26,6 +27,7 @@ import com.jamgu.krouter.annotation.KRouter
 import com.jamgu.krouter.core.router.KRouterUriBuilder
 import com.jamgu.krouter.core.router.KRouters
 import java.io.File
+import java.util.concurrent.atomic.AtomicBoolean
 
 
 @KRouter(value = [AUTO_MONITOR_PAGE], booleanParams = [AUTO_MONITOR_START_FROM_NOTIFICATION])
@@ -33,7 +35,6 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
 
     companion object {
         private const val TAG = "AutoMonitorActivity"
-        private const val MONITOR_INIT = "monitor_init"
     }
 
     private val mAppUsageDataLoader: AppUsageDataLoader = AppUsageDataLoader(this).apply {
@@ -50,6 +51,7 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
     private var mData: ArrayList<String> = ArrayList()
     private var mShowTime: Boolean = false
     private var mKeepLiveServiceOpen: Boolean = false
+    private var isInit = AtomicBoolean(false)
 
     override fun isBackPressedNeedConfirm(): Boolean {
         return true
@@ -59,43 +61,67 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
         super.onCreate(savedInstanceState)
         mAppUsageDataLoader.onCreate()
 
-        val isStartFromNotification =
-            intent.extras?.getBoolean(AUTO_MONITOR_START_FROM_NOTIFICATION) ?: false
-
-        val startFromBoot =
-            intent.extras?.getBoolean(AUTO_MONITOR_START_FROM_BOOT) ?: false
-
-        val startFromKilled =
-            intent.extras?.getBoolean(AUTO_MONITOR_START_FROM_KILLED) ?: false
-
-        val startFromInit =
-            intent.extras?.getBoolean(AUTO_MONITOR_START_FROM_INIT) ?: false
-
-        val enableStart = !startFromInit || startFromKilled || startFromBoot || isStartFromNotification
-
-        if (enableStart || mAppUsageDataLoader.isStarted()) {
-            ThreadPool.runUITask({
-                if (enableStart) {
-                    mBinding.vStart.text = getString(R.string.already_started)
-                    mBinding.vStart.isEnabled = false
-                }
-                if (!mAppUsageDataLoader.isStarted()) {
-                    mAppUsageDataLoader.start()
-                    mStartTime = System.currentTimeMillis()
-                }
-            }, 400)
-        }
-        JLog.d(TAG, "onCreate isStartFromBoot = $isStartFromNotification, isStarted = ${mAppUsageDataLoader.isStarted()}")
-
-        DataSaver.addDebugTracker(this, "onCreate startFromNotif = $isStartFromNotification, " +
-                "startFromInit = $startFromInit, " +
-                "startFromKilled = $startFromKilled, " +
-                "startFromBoot = $startFromBoot, " +
-                "isStarted = ${mAppUsageDataLoader.isStarted()}")
-
         // 加入任务栈
         (applicationContext as? BaseApplication)?.addThisActivityToRunningActivities(this.javaClass)
+    }
 
+    override fun onResume() {
+        super.onResume()
+        val preference = PreferenceUtil.getCachePreference(this, 0)
+        val isInit = preference.getBoolean(MONITOR_INIT, false)
+        if (!isInit) {
+            ThreadPool.runUITask({
+                KRouters.open(this, KRouterUriBuilder().appendAuthority(INIT_PAGE).build())
+            }, 400)
+        } else {
+            val isStartFromNotification =
+                intent.extras?.getBoolean(AUTO_MONITOR_START_FROM_NOTIFICATION) ?: false
+
+            val startFromBoot =
+                intent.extras?.getBoolean(AUTO_MONITOR_START_FROM_BOOT) ?: false
+
+            val startFromKilled =
+                intent.extras?.getBoolean(AUTO_MONITOR_START_FROM_KILLED) ?: false
+
+            val startFromInit =
+                intent.extras?.getBoolean(AUTO_MONITOR_START_FROM_INIT) ?: false
+
+            val enableStart = !startFromInit || startFromKilled || startFromBoot || isStartFromNotification
+
+            if (enableStart || mAppUsageDataLoader.isStarted()) {
+                ThreadPool.runUITask({
+                    if (enableStart) {
+                        mBinding.vStart.text = getString(R.string.already_started)
+                        mBinding.vStart.isEnabled = false
+                    }
+                    if (!mAppUsageDataLoader.isStarted()) {
+                        mAppUsageDataLoader.start()
+                        mStartTime = System.currentTimeMillis()
+                    }
+                }, 400)
+            }
+            JLog.d(TAG, "onResume isStartFromBoot = $isStartFromNotification, isStarted = ${mAppUsageDataLoader.isStarted()}")
+
+            DataSaver.addDebugTracker(this, "onResume startFromNotif = $isStartFromNotification, " +
+                    "startFromInit = $startFromInit, " +
+                    "startFromKilled = $startFromKilled, " +
+                    "startFromBoot = $startFromBoot, " +
+                    "isStarted = ${mAppUsageDataLoader.isStarted()}")
+
+            mStartTime?.let { startTime ->
+                val duration = System.currentTimeMillis() - startTime
+                mData.add("Session Duration:" + duration.timeStamp2SimpleDateString())
+                mAdapter.notifyItemInserted(mData.size - 1)
+            }
+
+            // 保活前台服务
+            if (!mKeepLiveServiceOpen && isInit) {
+                mKeepLiveServiceOpen = true
+                KeepAliveService.start(this)
+            }
+
+            this.isInit.set(isInit)
+        }
     }
 
     override fun onDestroy() {
@@ -164,30 +190,6 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
         mAppUsageDataLoader.onTrimMemory(level)
-    }
-
-    override fun onResume() {
-        super.onResume()
-        val preference = PreferenceUtil.getCachePreference(this, 0)
-        val isInit = preference.getBoolean(MONITOR_INIT, false)
-        if (!isInit) {
-            ThreadPool.runUITask({
-                KRouters.open(this, KRouterUriBuilder().appendAuthority(INIT_PAGE).build())
-            }, 400)
-            preference.edit().putBoolean(MONITOR_INIT, true).apply()
-        }
-
-        mStartTime?.let { startTime ->
-            val duration = System.currentTimeMillis() - startTime
-            mData.add("Session Duration:" + duration.timeStamp2SimpleDateString())
-            mAdapter.notifyItemInserted(mData.size - 1)
-        }
-
-        // 保活前台服务
-        if (!mKeepLiveServiceOpen && isInit) {
-            mKeepLiveServiceOpen = true
-            KeepAliveService.start(this)
-        }
     }
 
     /**
