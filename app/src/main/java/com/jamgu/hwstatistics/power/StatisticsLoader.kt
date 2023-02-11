@@ -1,6 +1,5 @@
 package com.jamgu.hwstatistics.power
 
-import android.content.Context
 import android.widget.Toast
 import androidx.fragment.app.FragmentActivity
 import com.jamgu.common.thread.ThreadPool
@@ -24,7 +23,7 @@ import java.util.*
 /**
  * Created by jamgu on 2021/10/14
  */
-class StatisticsLoader(private val mContext: Context) : INeedPermission {
+class StatisticsLoader(private val mContext: FragmentActivity) : INeedPermission {
 
     companion object {
         private const val TAG = "StatisticsLoader"
@@ -61,7 +60,7 @@ class StatisticsLoader(private val mContext: Context) : INeedPermission {
     }
 
     fun startInInternal(internal: Long) {
-        if (mContext is FragmentActivity && requestedPermission(mContext)) {
+        if (mContext is FragmentActivity && requestedPermission()) {
             stop()
             start(internal)
         }
@@ -173,8 +172,7 @@ class StatisticsLoader(private val mContext: Context) : INeedPermission {
     }
 
     fun startNonMainThread() {
-        // TODO 优化权限请求时机
-        if (mContext is FragmentActivity && requestedPermission(mContext)) {
+        if (requestedPermission()) {
             mPowerData.clear()
             start()
         } else {
@@ -238,23 +236,23 @@ class StatisticsLoader(private val mContext: Context) : INeedPermission {
         mPowerData.clear()
     }
 
-    fun requestedPermission(context: FragmentActivity?): Boolean {
+    fun requestedPermission(): Boolean {
         val permissions = ArrayList<String>().apply {
             addAll(permission())
             addAll(NetWorkManager.permission())
             addAll(BluetoothManager.permission())
         }
-        val notGrantedPermission = permissions.filterNot { PermissionX.isGranted(context, it) }
+        val notGrantedPermission = permissions.filterNot { PermissionX.isGranted(mContext, it) }
         return if (notGrantedPermission.isEmpty()) {
             true
         } else {
-            requestPermission(context, notGrantedPermission)
+            requestPermission(notGrantedPermission)
             false
         }
     }
 
-    private fun requestPermission(context: FragmentActivity?, notGrantedPermission: List<String>) {
-        PermissionX.init(context)
+    private fun requestPermission(notGrantedPermission: List<String>) {
+        PermissionX.init(mContext)
             .permissions(notGrantedPermission)
             .onExplainRequestReason { scope, deniedList ->
                 scope.showRequestReasonDialog(
@@ -274,7 +272,7 @@ class StatisticsLoader(private val mContext: Context) : INeedPermission {
                 } else {
                     ThreadPool.runUITask {
                         Toast.makeText(
-                            context,
+                            mContext,
                             "These permissions are denied: $deniedList",
                             Toast.LENGTH_LONG
                         )

@@ -51,7 +51,7 @@ class BaseApplication: Application(), Thread.UncaughtExceptionHandler {
 
     override fun uncaughtException(t: Thread, e: Throwable) {
         JLog.e(TAG, "uncaughtException happens[${t.name}]: error{${e.printStackTrace()}}")
-        DataSaver.addInfoTracker(this, "uncaughtException happens[${t.name}]: error{${e.printStackTrace()}}")
+        DataSaver.addInfoTracker(this, "uncaughtException happens in thread[${t.name}]: error{${e.stackTrace}}")
         // 重启自己并杀掉之前的进程
         val intent = applicationContext.packageManager.getLaunchIntentForPackage(packageName)
         intent?.addFlags(
