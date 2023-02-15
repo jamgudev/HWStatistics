@@ -30,17 +30,19 @@ object DataSaver {
     const val CACHE_ROOT_DIR = "HWStatistics"
     const val DEBUG_RECORD_DIR = "debug_record"
     const val INFO_RECORD_DIR = "info_record"
-    const val SESSION_FILE_INFIX = "$$"
+    const val SESSION_TEMP_SUFFIX = "#temp"
+    const val SESSION_DIR_INFIX = "$$"
+    const val SESSION_FILE_PREFIX = "session"
     const val TAG_SCREEN_OFF = "tag_screen_off"
     private const val TAG = "DataSaver"
     private const val FILE_PROVIDER_AUTHORITY = "com.jamgu.hwstatistics"
     private const val CHARGE_RECORD_DIR = "charge_record"
-    private const val APP_USAGE_FILE = "app_usage"
-    private const val POWER_USAGE_FILE_PREFIX = "power_usage"
+    private const val APP_USAGE_FILE = "${SESSION_FILE_PREFIX}_app_usage"
+    private const val POWER_USAGE_FILE_PREFIX = "${SESSION_FILE_PREFIX}_power_usage"
     private const val CHARGE_USAGE_FILE_PREFIX = "charge_usage"
     private const val DEBUG_FILE_PREFIX = "DEBUG"
     private const val INFO_FILE_PREFIX = "INFO"
-    private const val EXCEL_SUFFIX = ".xlsx"
+    const val EXCEL_SUFFIX = ".xlsx"
 
     // 保存测试数据
     private val mDebugData: MutableList<UsageRecord> = Collections.synchronizedList(ArrayList(30))
@@ -99,16 +101,25 @@ object DataSaver {
                 getDateOfTodayString()
             }
 
-            val dirName = "${startTime}$SESSION_FILE_INFIX"
-            var dirFile = File("${getActiveCachePath()}/$subDirName/$dirName")
+            var dirFile: File
+            val tempPath = "${getActiveCachePath()}/$subDirName/$startTime$SESSION_TEMP_SUFFIX"
             if (isSessionFinish) {
-                val finishFileName = "${dirFile.path}$endTime"
-                val finishFile = File(finishFileName)
+                val tempFile = File(tempPath)
                 // 之前已经上传了部分power data，rename
-                if (dirFile.exists()) {
-                    if (!dirFile.renameTo(finishFile)) {
-                        JLog.e(TAG, "file = ${dirFile.path} rename to path{$finishFileName} failed.")
-                        addInfoTracker(context, "file = ${dirFile.path} rename to path{$finishFileName} failed.")
+                if (tempFile.exists()) {
+                    val suffixIndex = tempPath.lastIndexOf(SESSION_TEMP_SUFFIX)
+                    if (suffixIndex < 0) {
+                        JLog.e(TAG, "file = $tempPath, suffixIndex < 0, continue")
+                        addDebugTracker(context, "file = $tempPath, suffixIndex < 0, continue")
+                        return@runIOTask
+                    }
+                    // 把临时文件后缀去掉
+                    val finishPath = tempPath.substring(0, suffixIndex)
+                    val finishFileName = "${finishPath}$SESSION_DIR_INFIX$endTime"
+                    val finishFile = File(finishFileName)
+                    if (!tempFile.renameTo(finishFile)) {
+                        JLog.e(TAG, "file = ${tempFile.path} rename to path{$finishFileName} failed.")
+                        addInfoTracker(context, "file = ${tempFile.path} rename to path{$finishFileName} failed.")
                         return@runIOTask
                     } else {
                         // rename 成功，更改目录File
@@ -116,13 +127,14 @@ object DataSaver {
                     }
                 } else {
                     // session时长低于power data分段保存的阈值，直接保存
-                    dirFile = finishFile
+                    dirFile = File("${getActiveCachePath()}/$subDirName/$startTime$SESSION_DIR_INFIX$endTime")
                     if (!dirFile.exists()) {
                         dirFile.mkdirs()
                     }
                 }
             } else {
                 // 创建临时保存目录
+                dirFile = File(tempPath)
                 if (!dirFile.exists()) {
                     dirFile.mkdirs()
                 }

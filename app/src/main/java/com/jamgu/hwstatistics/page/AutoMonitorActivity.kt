@@ -121,6 +121,8 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
             }
 
             this.isInit.set(isInit)
+//            val nowDate = System.currentTimeMillis().timeStamp2DateStringWithMills()
+//            DataUploader.recursivelyUpload(this, File(DataSaver.getCacheRootPath()), nowDate)
         }
     }
 
