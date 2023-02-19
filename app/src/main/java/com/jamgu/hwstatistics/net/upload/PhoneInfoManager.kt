@@ -45,6 +45,11 @@ object PhoneInfoManager {
         // 厂商
         var manufacture: String? = ""
     ) {
+
+        override fun toString(): String {
+            return brand +  "_" + model + "_android_" + version + "(" + sdkInt + ")"
+        }
+
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (javaClass != other?.javaClass) return false

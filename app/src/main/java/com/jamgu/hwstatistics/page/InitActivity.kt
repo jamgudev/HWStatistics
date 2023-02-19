@@ -107,6 +107,10 @@ class InitActivity : ViewBindingActivity<ActivityInitLayoutBinding>() {
         } else {
             mFileAccessBtn.visibility = View.GONE
         }
+
+        mBinding.vBtnRegister.setOnClickListener {
+            KRouters.open(this@InitActivity, REGISTER_PAGE)
+        }
     }
 
     override fun getViewBinding(): ActivityInitLayoutBinding = ActivityInitLayoutBinding.inflate(layoutInflater)

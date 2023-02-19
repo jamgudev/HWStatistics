@@ -28,7 +28,7 @@ import java.io.File
 object DataUploader {
 
     private const val TAG = "DataUploader"
-    const val USER_PREFIX = ""
+    const val USER_NAME = "user_name"
     const val UPLOADED_SUFFIX = "@"
 
     private fun upload(context: Context, file: File) {
@@ -42,7 +42,7 @@ object DataUploader {
         try {
             val filePath = file.path
             val suffixPath = filePath.substring(filePath.indexOf(DataSaver.CACHE_ROOT_DIR) - 1)
-            val user = PreferenceUtil.getCachePreference(context, 0).getString(USER_PREFIX, "jamgu") ?: "jamgu"
+            val user = PreferenceUtil.getCachePreference(context, 0).getString(USER_NAME, "jamgu") ?: "jamgu"
             val requestBody = file.asRequestBody("multipart/form-data".toMediaTypeOrNull())
             val multipartBody = MultipartBody.Builder()
                 .addFormDataPart("username", user)
@@ -159,9 +159,7 @@ object DataUploader {
                         sessionEndTime < timeStamp
                     } else if (!checkIfNeedDelete(child)){
                         true
-                    } else {
-                        true
-                    }
+                    } else !isSessionTempDir(child)
                     if (canUpload) {
                         innerRecursivelyUpload(context, child, timeStamp)
                     }

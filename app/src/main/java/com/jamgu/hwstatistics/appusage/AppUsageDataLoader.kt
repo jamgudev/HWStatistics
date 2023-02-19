@@ -36,6 +36,8 @@ class AppUsageDataLoader(private val mContext: FragmentActivity) :
 
     @Volatile
     private var mScreenOn: AtomicBoolean = AtomicBoolean(false)
+    @Volatile
+    private var mIsCharging: AtomicBoolean = AtomicBoolean(false)
 
     // 用来存放一次Session用户行为
     // --- 时间 --- 活动名 --- 详细包名 --- 开始访问时间 --- 结束访问时间 --- 访问时长
@@ -67,7 +69,6 @@ class AppUsageDataLoader(private val mContext: FragmentActivity) :
     private lateinit var mPowerDataLoader: StatisticsLoader
 
     private var mTimer: VATimer = VATimer()
-    private var mIsCharging: AtomicBoolean = AtomicBoolean(false)
 
     companion object {
         private const val TAG = "AppUsageDataLoader"

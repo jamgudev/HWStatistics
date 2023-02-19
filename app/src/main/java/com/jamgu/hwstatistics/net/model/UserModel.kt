@@ -10,5 +10,6 @@ class UserModel(
     var username: String,
     var telephone: String,
     var occupation: String,
-    var device: String
-) {}
+    var device: String,
+    var startFrom: String,
+)
