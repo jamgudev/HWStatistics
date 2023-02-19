@@ -66,8 +66,7 @@
         <activity
             android:name=".page.AutoMonitorActivity"
             android:exported="true"
-            android:launchMode="singleInstance"
-            android:excludeFromRecents="true">
+            android:launchMode="singleInstance">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

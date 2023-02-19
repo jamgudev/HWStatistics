@@ -351,7 +351,8 @@ class StatisticsLoader(private val mContext: FragmentActivity) : INeedPermission
         cpuUtils = cpuInfo?.getPerCpuUtilisation()
 
         for (i in 0 until cpuNumb) {
-            val cpuTemp = CPUInfoManager.getCpuTemp(i)
+//            val cpuTemp = CPUInfoManager.getCpuTemp(i)
+            val cpuTemp = 0f
             val cpuMaxFreq = 0f
             val cpuMinFreq = 0f
             val cpuRunningFreq = CPUInfoManager.getCpuRunningFreq(i)
