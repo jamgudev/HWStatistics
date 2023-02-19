@@ -2,9 +2,13 @@ package com.jamgu.hwstatistics
 
 import android.app.Activity
 import android.app.Application
+import android.content.Intent
+import android.os.Process
 import com.jamgu.common.Common
 import com.jamgu.common.util.log.JLog
 import com.jamgu.hwstatistics.net.upload.DataSaver
+import kotlin.system.exitProcess
+
 
 /**
  * @author jamgudev
@@ -30,7 +34,7 @@ class BaseApplication: Application(), Thread.UncaughtExceptionHandler {
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
 
-        DataSaver.addTestTracker(this, "$TAG, onTrimMemory level = $level")
+        DataSaver.addDebugTracker(this, "$TAG, onTrimMemory level = $level")
     }
 
     fun addThisActivityToRunningActivities(cls: Class<out Activity>) {
@@ -47,7 +51,17 @@ class BaseApplication: Application(), Thread.UncaughtExceptionHandler {
 
     override fun uncaughtException(t: Thread, e: Throwable) {
         JLog.e(TAG, "uncaughtException happens[${t.name}]: error{${e.printStackTrace()}}")
-        DataSaver.addErrorTracker(this, "uncaughtException happens[${t.name}]: error{${e.printStackTrace()}}")
+        DataSaver.addInfoTracker(this, "uncaughtException happens in thread[${t.name}]: error{${e.stackTraceToString()}}")
+        val intent = applicationContext.packageManager.getLaunchIntentForPackage(packageName)
+        intent?.addFlags(
+            Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        )
+        // 重启自己
+//        applicationContext.startActivity(intent)
+        // 杀掉之前的进程
+//        Process.killProcess(Process.myPid())
+        exitProcess(0)
     }
 
 }

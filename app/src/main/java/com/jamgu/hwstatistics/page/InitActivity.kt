@@ -1,14 +1,19 @@
 package com.jamgu.hwstatistics.page
 
 import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.view.View
+import androidx.activity.result.contract.ActivityResultContracts
 import com.jamgu.common.page.activity.ViewBindingActivity
 import com.jamgu.common.util.preference.PreferenceUtil
 import com.jamgu.hwstatistics.databinding.ActivityInitLayoutBinding
 import com.jamgu.hwstatistics.keeplive.utils.KeepLiveUtils
 import com.jamgu.hwstatistics.keeplive.utils.PhoneUtils
 import com.jamgu.hwstatistics.net.upload.DataSaver
+import com.jamgu.hwstatistics.power.StatisticsLoader
 import com.jamgu.krouter.annotation.KRouter
 import com.jamgu.krouter.core.router.KRouterUriBuilder
 import com.jamgu.krouter.core.router.KRouters
@@ -26,11 +31,13 @@ class InitActivity : ViewBindingActivity<ActivityInitLayoutBinding>() {
         private const val TAG = "InitActivity"
         private const val BATTERY_INIT = "battery_init"
         private const val USAGE_STATE_PERMISSION = "usage_state_permission"
+        private const val REQUEST_PERMISSION = "request_permission"
+        const val MONITOR_INIT = "monitor_init"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        DataSaver.addTestTracker(this, "$TAG, onCreate")
+        DataSaver.addDebugTracker(this, "$TAG, onCreate")
     }
 
     override fun initWidget() {
@@ -39,6 +46,7 @@ class InitActivity : ViewBindingActivity<ActivityInitLayoutBinding>() {
         val preference = PreferenceUtil.getCachePreference(this, 0)
         val isBatteryInit = preference.getBoolean(BATTERY_INIT, false)
         val isUsageStatePermissionSet = preference.getBoolean(USAGE_STATE_PERMISSION, false)
+        val requestPermission = preference.getBoolean(REQUEST_PERMISSION, false)
 
         if (isBatteryInit) {
             mBinding.vBtnBatterySave.isEnabled = false
@@ -46,6 +54,10 @@ class InitActivity : ViewBindingActivity<ActivityInitLayoutBinding>() {
 
         if (isUsageStatePermissionSet) {
             mBinding.vBtnUsageState.isEnabled = false
+        }
+
+        if (requestPermission) {
+            mBinding.vBtnUserPermissionRequest.isEnabled = false
         }
 
         mBinding.vBtnBatterySave.setOnClickListener {
@@ -56,12 +68,14 @@ class InitActivity : ViewBindingActivity<ActivityInitLayoutBinding>() {
             }
         }
 
+        val mMonitorActivityLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            preference.edit().putBoolean(USAGE_STATE_PERMISSION, true).apply()
+        }
         mBinding.vBtnUsageState.setOnClickListener {
             if (!isUsageStatePermissionSet) {
                 // 打开获取应用信息页面
                 val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
-                startActivityForResult(intent, 0)
-                preference.edit().putBoolean(USAGE_STATE_PERMISSION, true).apply()
+                mMonitorActivityLauncher.launch(intent)
             }
         }
 
@@ -70,6 +84,28 @@ class InitActivity : ViewBindingActivity<ActivityInitLayoutBinding>() {
                 this, KRouterUriBuilder().appendAuthority(AUTO_MONITOR_PAGE)
                     .with(AUTO_MONITOR_START_FROM_INIT, true).build()
             )
+
+            preference.edit().putBoolean(MONITOR_INIT, true).apply()
+            finish()
+        }
+
+        mBinding.vBtnUserPermissionRequest.setOnClickListener {
+            StatisticsLoader(this).requestedPermission()
+            preference.edit().putBoolean(REQUEST_PERMISSION, true).apply()
+        }
+
+        val mFileAccessBtn = mBinding.vBtnFileAccess
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            mFileAccessBtn.visibility = View.VISIBLE
+            val fileAccessActivityLauncher = registerForActivityResult(
+                ActivityResultContracts.StartActivityForResult()) { }
+            mFileAccessBtn.setOnClickListener {
+                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+                intent.data = Uri.parse("package:" + this.packageName)
+                fileAccessActivityLauncher.launch(intent)
+            }
+        } else {
+            mFileAccessBtn.visibility = View.GONE
         }
     }
 

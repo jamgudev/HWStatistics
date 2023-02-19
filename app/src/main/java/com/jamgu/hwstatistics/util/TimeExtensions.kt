@@ -10,6 +10,14 @@ import java.util.*
  *
  * @description
  */
+object TimeExtensions{
+    // in mills
+    const val ONE_DAY = 86400L
+    const val THREE_DAYS = 3 * ONE_DAY
+    const val ONE_WEEK = 7 * ONE_DAY
+    const val HALF_MONTH = 15 * ONE_DAY
+}
+
 fun Long.timeStamp2DateStringWithMills(): String {
     return getSdfWithMills().format(Date(this))
 }

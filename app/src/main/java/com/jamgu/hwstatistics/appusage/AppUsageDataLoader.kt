@@ -5,6 +5,7 @@ import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.content.ComponentCallbacks2.*
 import android.content.Context
+import androidx.fragment.app.FragmentActivity
 import com.jamgu.common.util.log.JLog
 import com.jamgu.common.util.preference.PreferenceUtil
 import com.jamgu.common.util.timer.VATimer
@@ -30,7 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  *
  * @description 用户打开app信息收集器
  */
-class AppUsageDataLoader(private val mContext: Context) :
+class AppUsageDataLoader(private val mContext: FragmentActivity) :
     ActiveBroadcastReceiver.IOnScreenStateChanged, PowerConnectReceiver.IOnPhoneChargeStateChanged {
 
     @Volatile
@@ -516,7 +517,7 @@ class AppUsageDataLoader(private val mContext: Context) :
                 JLog.d(TAG, "TRIM_MEMORY_BACKGROUND")
             }
         }
-        DataSaver.addTestTracker(mContext, "onTrimMemory, level = $level")
+        DataSaver.addDebugTracker(mContext, "onTrimMemory, level = $level")
 
         if (level >= TRIM_MEMORY_RUNNING_CRITICAL) {
             checkIfSavePhoneChargeData2File(true)

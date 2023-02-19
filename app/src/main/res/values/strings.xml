@@ -6,6 +6,8 @@
     <string name="app_being_killed_reboot">日志APP下线啦！点击重启</string>
     <string name="app_battery_save_init">电量白名单初始化</string>
     <string name="app_usage_state_perm">获取应用信息白名单</string>
+    <string name="app_v30_all_file_access_auth">Android_11版本外部文件管理授权</string>
+    <string name="app_request_permission">应用权限授权</string>
     <string name="app_start_monitor">启动活动监控日志</string>
     <string name="usage_screen_on">Screen On</string>
     <string name="usage_screen_off">Screen Off</string>

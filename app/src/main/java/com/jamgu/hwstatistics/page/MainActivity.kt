@@ -41,7 +41,7 @@ class MainActivity : ViewBindingActivity<ActivityMainBinding>() {
 
     override fun initWidget() {
         mBinding.vStart.setOnClickListener {
-            if (mLoader.requestedPermission(this)) {
+            if (mLoader.requestedPermission()) {
                 if (!mLoader.isStarted()) {
                     mData.clear()
                     mAdapter.notifyDataSetChanged()
