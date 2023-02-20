@@ -268,7 +268,7 @@ class StatisticsLoader(private val mContext: FragmentActivity) : INeedPermission
             }
             .request { allGranted, _, deniedList ->
                 if (allGranted) {
-                    start()
+//                    start()
                 } else {
                     ThreadPool.runUITask {
                         Toast.makeText(
@@ -396,7 +396,7 @@ interface IOnDataEnough {
         THRESH_HALF_HOUR(1800),
         THRESH_FOR_TRACKER(10),
         THRESH_FOR_ERROR(1),
-        THRESH_FIVE_MINS(60),
+        THRESH_FIVE_MINS(300),
         THRESH_FOR_CHARGE(4),
     }
 

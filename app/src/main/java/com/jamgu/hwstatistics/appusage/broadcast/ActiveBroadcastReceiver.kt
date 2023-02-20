@@ -1,13 +1,20 @@
 package com.jamgu.hwstatistics.appusage.broadcast
 
+import android.annotation.SuppressLint
+import android.app.Activity
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import com.jamgu.common.util.log.JLog
 import com.jamgu.hwstatistics.R
-import com.jamgu.hwstatistics.keeplive.utils.KeepLiveUtils
+import com.jamgu.hwstatistics.page.AUTO_MONITOR_START_FROM_BOOT
 import com.jamgu.hwstatistics.page.TRANSITION_PAGE
 import com.jamgu.hwstatistics.page.TransitionActivity
 import com.jamgu.krouter.core.router.KRouterUriBuilder
@@ -55,7 +62,7 @@ class ActiveBroadcastReceiver @JvmOverloads constructor(private val listener: IO
                     listener?.onPhoneBootComplete()
                     JLog.d(TAG, "ACTION_BOOT_COMPLETED")
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        KeepLiveUtils.startCallActivityVersionHigh(
+                        startCallActivityVersionHigh(
                             context,
                             R.string.click_to_start, TransitionActivity::class.java
                         )
@@ -78,6 +85,38 @@ class ActiveBroadcastReceiver @JvmOverloads constructor(private val listener: IO
                 listener?.onUserPresent()
             }
         }
+    }
+
+    private fun startCallActivityVersionHigh(context: Context?, contentTextID: Int, pdActivity: Class<out Activity?>?) {
+        var contextText = contentTextID
+        if (context == null) return
+        if (contextText <= 0) {
+            contextText = R.string.click_to_start
+        }
+        val intent = Intent(context, pdActivity)
+        intent.putExtra(AUTO_MONITOR_START_FROM_BOOT, true)
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        @SuppressLint("UnspecifiedImmutableFlag") val pendingIntent = PendingIntent
+            .getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE)
+        val channelID = "app_call_notification"
+        val channelName = "日志APP拉起通知"
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val level = NotificationManager.IMPORTANCE_HIGH
+            val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            val channel = NotificationChannel(channelID, channelName, level)
+            manager.createNotificationChannel(channel)
+        }
+        val builder = NotificationCompat.Builder(context, channelID)
+            .setSmallIcon(R.mipmap.ic_launcher_round)
+            .setContentText(context.getString(contextText))
+            .setContentTitle(context.getString(R.string.app_name))
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setCategory(NotificationCompat.CATEGORY_CALL)
+            .setVibrate(longArrayOf(0, 1000L, 1000L, 1000L))
+            .setContentIntent(pendingIntent) // 点击时的intent
+            .setDeleteIntent(pendingIntent) // 被用户清除时的intent
+            .setAutoCancel(true)
+        NotificationManagerCompat.from(context).notify(100, builder.build())
     }
 
     /**

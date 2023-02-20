@@ -80,9 +80,12 @@ class InitActivity : ViewBindingActivity<ActivityInitLayoutBinding>() {
         }
 
         mBinding.vBtnMonitorStart.setOnClickListener {
+            val bundle = Bundle().apply {
+                putBoolean(AUTO_MONITOR_START_FROM_INIT, true)
+            }
             KRouters.open(
                 this, KRouterUriBuilder().appendAuthority(AUTO_MONITOR_PAGE)
-                    .with(AUTO_MONITOR_START_FROM_INIT, true).build()
+                    .build(), bundle
             )
 
             preference.edit().putBoolean(MONITOR_INIT, true).apply()

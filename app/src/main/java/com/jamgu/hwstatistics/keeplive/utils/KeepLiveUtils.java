@@ -90,38 +90,4 @@ public class KeepLiveUtils {
         return isBackground;
     }
 
-    public static void startCallActivityVersionHigh(Context context, int contentTextID, Class<? extends Activity> pdActivity) {
-        if (context == null) return;
-
-        if (contentTextID <= 0) {
-            contentTextID = R.string.click_to_start;
-        }
-
-        Intent intent = new Intent(context, pdActivity);
-        intent.putExtra(AUTO_MONITOR_START_FROM_BOOT, true);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        @SuppressLint("UnspecifiedImmutableFlag") PendingIntent pendingIntent = PendingIntent
-                .getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
-        String channelID = "app_call_notification";
-        String channelName = "日志APP拉起通知";
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            int level = NotificationManager.IMPORTANCE_HIGH;
-            NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-            NotificationChannel channel = new NotificationChannel(channelID, channelName, level);
-            manager.createNotificationChannel(channel);
-        }
-
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, channelID)
-                .setSmallIcon(R.mipmap.ic_launcher_round)
-                .setContentText(context.getString(contentTextID))
-                .setContentTitle(context.getString(R.string.app_name))
-                .setPriority(NotificationCompat.PRIORITY_MAX)
-                .setCategory(NotificationCompat.CATEGORY_CALL)
-                .setVibrate(new long[]{0, 1000L, 1000L, 1000L})
-                .setContentIntent(pendingIntent)    // 点击时的intent
-                .setDeleteIntent(pendingIntent)     // 被用户清除时的intent
-                .setAutoCancel(true);
-        NotificationManagerCompat.from(context).notify(100, builder.build());
-    }
-
 }
