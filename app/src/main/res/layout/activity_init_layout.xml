@@ -7,6 +7,13 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical">
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/vBtnUserPermissionRequest"
+            android:layout_width="match_parent"
+            android:layout_height="46dp"
+            android:text="@string/app_request_permission"/>
+
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/vBtnBatterySave"
             android:layout_width="match_parent"
@@ -24,12 +31,6 @@
             android:layout_width="match_parent"
             android:layout_height="46dp"
             android:text="@string/app_v30_all_file_access_auth"/>
-
-        <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/vBtnUserPermissionRequest"
-            android:layout_width="match_parent"
-            android:layout_height="46dp"
-            android:text="@string/app_request_permission"/>
 
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/vBtnRegister"

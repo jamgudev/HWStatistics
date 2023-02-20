@@ -2,6 +2,7 @@ package com.jamgu.hwstatistics.page
 
 import android.annotation.SuppressLint
 import android.app.ActivityManager
+import android.content.Intent
 import android.os.Bundle
 import androidx.core.content.getSystemService
 import androidx.recyclerview.widget.DividerItemDecoration
@@ -30,7 +31,8 @@ import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 
 
-@KRouter(value = [AUTO_MONITOR_PAGE], booleanParams = [AUTO_MONITOR_START_FROM_NOTIFICATION])
+@KRouter(value = [AUTO_MONITOR_PAGE], booleanParams = [AUTO_MONITOR_START_FROM_NOTIFICATION, AUTO_MONITOR_START_FROM_BOOT,
+    AUTO_MONITOR_START_FROM_KILLED, AUTO_MONITOR_START_FROM_INIT])
 class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
 
     companion object {
@@ -51,6 +53,7 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
     private var mData: ArrayList<String> = ArrayList()
     private var mShowTime: Boolean = false
     private var mKeepLiveServiceOpen: Boolean = false
+    @Volatile
     private var isInit = AtomicBoolean(false)
 
     override fun isBackPressedNeedConfirm(): Boolean {
@@ -60,9 +63,15 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         mAppUsageDataLoader.onCreate()
+        JLog.d(TAG, "onCreate")
 
         // 加入任务栈
         (applicationContext as? BaseApplication)?.addThisActivityToRunningActivities(this.javaClass)
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        this.intent = intent
     }
 
     override fun onResume() {
@@ -88,15 +97,14 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
 
             val enableStart = !startFromInit || startFromKilled || startFromBoot || isStartFromNotification
 
-            if (enableStart || mAppUsageDataLoader.isStarted()) {
+            if (enableStart) {
                 ThreadPool.runUITask({
-                    if (enableStart) {
-                        mBinding.vStart.text = getString(R.string.already_started)
-                        mBinding.vStart.isEnabled = false
-                    }
                     if (!mAppUsageDataLoader.isStarted()) {
                         mAppUsageDataLoader.start()
                         mStartTime = System.currentTimeMillis()
+                    } else {
+                        mBinding.vStart.text = getString(R.string.already_started)
+                        mBinding.vStart.isEnabled = false
                     }
                 }, 400)
             }
