@@ -270,14 +270,14 @@ class Builder2 {
 //        this.cpu6 = cpus[6].curFreq * cpus[6].temp
 //        this.cpu7 = cpus[7].curFreq * cpus[7].temp
 
-        this.cpu0 = (cpus[0].curFreq / 1000f).roundToDecimals(2)
-        this.cpu1 = (cpus[1].curFreq / 1000f).roundToDecimals(2)
-        this.cpu2 = (cpus[2].curFreq / 1000f).roundToDecimals(2)
-        this.cpu3 = (cpus[3].curFreq / 1000f).roundToDecimals(2)
-        this.cpu4 = (cpus[4].curFreq / 1000f).roundToDecimals(2)
-        this.cpu5 = (cpus[5].curFreq / 1000f).roundToDecimals(2)
-        this.cpu6 = (cpus[6].curFreq / 1000f).roundToDecimals(2)
-        this.cpu7 = (cpus[7].curFreq / 1000f).roundToDecimals(2)
+        this.cpu0 = (cpus[0].curFreq / 100f).roundToDecimals(2)
+        this.cpu1 = (cpus[1].curFreq / 100f).roundToDecimals(2)
+        this.cpu2 = (cpus[2].curFreq / 100f).roundToDecimals(2)
+        this.cpu3 = (cpus[3].curFreq / 100f).roundToDecimals(2)
+        this.cpu4 = (cpus[4].curFreq / 100f).roundToDecimals(2)
+        this.cpu5 = (cpus[5].curFreq / 100f).roundToDecimals(2)
+        this.cpu6 = (cpus[6].curFreq / 100f).roundToDecimals(2)
+        this.cpu7 = (cpus[7].curFreq / 100f).roundToDecimals(2)
 
         this.cpuTemp0 = (cpus[0].temp / 10f).roundToDecimals(2)
         this.cpuTemp1 = (cpus[1].temp / 10f).roundToDecimals(2)
@@ -289,14 +289,14 @@ class Builder2 {
         this.cpuTemp7 = (cpus[7].temp / 10f).roundToDecimals(2)
 
 //        JLog.d(TAG, "cpu freq = ${this.cpu0}, temp = ${this.cpuTemp0}")
-        this.cpu0 = (this.cpu0.toDouble().pow(3.0) * this.cpuTemp0.toDouble().pow(2.0)).toFloat()
-        this.cpu1 = (this.cpu1.toDouble().pow(3.0) * this.cpuTemp1.toDouble().pow(2.0)).toFloat()
-        this.cpu2 = (this.cpu2.toDouble().pow(3.0) * this.cpuTemp2.toDouble().pow(2.0)).toFloat()
-        this.cpu3 = (this.cpu3.toDouble().pow(3.0) * this.cpuTemp3.toDouble().pow(2.0)).toFloat()
-        this.cpu4 = (this.cpu4.toDouble().pow(3.0) * this.cpuTemp4.toDouble().pow(2.0)).toFloat()
-        this.cpu5 = (this.cpu5.toDouble().pow(3.0) * this.cpuTemp5.toDouble().pow(2.0)).toFloat()
-        this.cpu6 = (this.cpu6.toDouble().pow(3.0) * this.cpuTemp6.toDouble().pow(2.0)).toFloat()
-        this.cpu7 = (this.cpu7.toDouble().pow(3.0) * this.cpuTemp7.toDouble().pow(2.0)).toFloat()
+//        this.cpu0 = (this.cpu0.toDouble().pow(3.0) * this.cpuTemp0.toDouble().pow(2.0)).toFloat()
+//        this.cpu1 = (this.cpu1.toDouble().pow(3.0) * this.cpuTemp1.toDouble().pow(2.0)).toFloat()
+//        this.cpu2 = (this.cpu2.toDouble().pow(3.0) * this.cpuTemp2.toDouble().pow(2.0)).toFloat()
+//        this.cpu3 = (this.cpu3.toDouble().pow(3.0) * this.cpuTemp3.toDouble().pow(2.0)).toFloat()
+//        this.cpu4 = (this.cpu4.toDouble().pow(3.0) * this.cpuTemp4.toDouble().pow(2.0)).toFloat()
+//        this.cpu5 = (this.cpu5.toDouble().pow(3.0) * this.cpuTemp5.toDouble().pow(2.0)).toFloat()
+//        this.cpu6 = (this.cpu6.toDouble().pow(3.0) * this.cpuTemp6.toDouble().pow(2.0)).toFloat()
+//        this.cpu7 = (this.cpu7.toDouble().pow(3.0) * this.cpuTemp7.toDouble().pow(2.0)).toFloat()
 
         /*if (this.totalCpu != 0f) {
             this.cpu0utils = cpus[0].utilization.roundToDecimals(2)
