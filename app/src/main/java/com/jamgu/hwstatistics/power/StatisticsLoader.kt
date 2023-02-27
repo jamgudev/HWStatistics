@@ -35,17 +35,18 @@ class StatisticsLoader(private val mContext: FragmentActivity) : INeedPermission
     private val mPowerData: MutableList<ArrayList<Any>> = Collections.synchronizedList(ArrayList<ArrayList<Any>>())
 
     private var mOnDataEnough: IOnDataEnough? = null
-    private var mDataNumThreshold: IOnDataEnough.ThreshLength = IOnDataEnough.ThreshLength.THRESH_FOR_ERROR
+    private var mDataNumThreshold: Long = IOnDataEnough.ThreshLength.THRESH_ONE_MIN.length
 
     /**
      * 数据查询间隔 in ms，越大采样率越低，最大不超过 1000 ms，默认为 200 ms，既每秒采样 5 次
      */
     private var mDataQueryInternal: Long = 200L
 
-    /**
-     * 设置数据采样间隔，in ms，采样间隔超过 1000ms 会被置为 1000 ms
-     */
-    fun setOnDataEnoughListener(threshold: IOnDataEnough.ThreshLength, onDataEnough: IOnDataEnough) {
+    fun getDataNumThreshold(): Long {
+        return mDataNumThreshold
+    }
+
+    fun setOnDataEnoughListener(threshold: Long, onDataEnough: IOnDataEnough) {
         mDataNumThreshold = threshold
         mOnDataEnough = onDataEnough
     }
@@ -94,7 +95,7 @@ class StatisticsLoader(private val mContext: FragmentActivity) : INeedPermission
             } else {
                 if (dataTemp.isNotEmpty()) {
                     mPowerData.add(dataTemp.divideBy(tempDataTimes))
-                    if (mPowerData.size >= mDataNumThreshold.length) {
+                    if (mPowerData.size >= mDataNumThreshold) {
                         mOnDataEnough?.onDataEnough()
                     }
                 }
@@ -397,7 +398,8 @@ interface IOnDataEnough {
         THRESH_HALF_HOUR(1800),
         THRESH_FOR_TRACKER(10),
         THRESH_FOR_ERROR(1),
-        THRESH_FIVE_MINS(300),
+        THRESH_THREE_MINS(180),
+        THRESH_ONE_MIN(60),
         THRESH_FOR_CHARGE(4),
     }
 

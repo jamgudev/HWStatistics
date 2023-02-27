@@ -102,10 +102,9 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
                     if (!mAppUsageDataLoader.isStarted()) {
                         mAppUsageDataLoader.start()
                         mStartTime = System.currentTimeMillis()
-                    } else {
-                        mBinding.vStart.text = getString(R.string.already_started)
-                        mBinding.vStart.isEnabled = false
                     }
+                    mBinding.vStart.text = getString(R.string.already_started)
+                    mBinding.vStart.isEnabled = false
                 }, 400)
             }
             JLog.d(TAG, "onResume isStartFromBoot = $isStartFromNotification, isStarted = ${mAppUsageDataLoader.isStarted()}")

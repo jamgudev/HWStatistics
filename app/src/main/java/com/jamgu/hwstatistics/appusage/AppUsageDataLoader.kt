@@ -17,6 +17,7 @@ import com.jamgu.hwstatistics.power.StatisticsLoader
 import com.jamgu.hwstatistics.net.upload.DataSaver
 import com.jamgu.hwstatistics.net.upload.DataSaver.TAG_SCREEN_OFF
 import com.jamgu.hwstatistics.net.upload.DataUploader
+import com.jamgu.hwstatistics.net.upload.DataUploader.PA_THRESHOLD
 import com.jamgu.hwstatistics.util.getCurrentDateString
 import com.jamgu.hwstatistics.util.timeMillsBetween
 import com.jamgu.hwstatistics.util.timeStamp2DateStringWithMills
@@ -373,9 +374,14 @@ class AppUsageDataLoader(private val mContext: FragmentActivity) :
         mActiveBroadcastReceiver?.registerReceiver(mContext)
         mPowerConnectReceiver?.registerReceiver(mContext)
         mPowerDataLoader = StatisticsLoader(mContext).initOnCreate {}.apply {
-            setOnDataEnoughListener(IOnDataEnough.ThreshLength.THRESH_FIVE_MINS, object : IOnDataEnough {
+            setOnDataEnoughListener(IOnDataEnough.ThreshLength.THRESH_THREE_MINS.length, object : IOnDataEnough {
                 override fun onDataEnough() {
                     saveTempUserUsageData2File()
+                    // 更新阈值
+                    val paThreshold = PreferenceUtil.getCachePreference(mContext, 0).getLong(PA_THRESHOLD, 60)
+                    if (mPowerDataLoader.getDataNumThreshold() != paThreshold) {
+                        mPowerDataLoader.setOnDataEnoughListener(paThreshold, this)
+                    }
                 }
             })
         }
