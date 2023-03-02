@@ -13,7 +13,7 @@ import com.jamgu.krouter.annotation.KRouter
  * @author jamgudev
  * @date 2022/11/29 10:16 下午
  *
- * @description 开机自启，用于过渡的activity
+ * @description 用于启动AutoMonitorActivity的过渡的activity
  */
 @KRouter(value = [TRANSITION_PAGE])
 class TransitionActivity : AppCompatActivity() {
@@ -37,13 +37,15 @@ class TransitionActivity : AppCompatActivity() {
 
         ThreadPool.runUITask({
             val intent = Intent(this, AutoMonitorActivity::class.java)
-            intent.putExtra(AUTO_MONITOR_START_FROM_BOOT, true)
+            getIntent()?.extras?.keySet()?.forEach { key ->
+                intent.putExtra(key, getIntent().getBooleanExtra(key, false))
+            }
             this@TransitionActivity.startActivity(intent)
             finish()
         }, 500)
 
         JLog.d(TAG, "onCreate")
-        DataSaver.addDebugTracker(this, "$TAG, onCreate")
+        DataSaver.addDebugTracker(this, "TransitionActivity，onCreate")
     }
 
     override fun onDestroy() {

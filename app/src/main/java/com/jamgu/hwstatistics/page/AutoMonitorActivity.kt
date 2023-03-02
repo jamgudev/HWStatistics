@@ -19,15 +19,12 @@ import com.jamgu.hwstatistics.appusage.UsageRecord
 import com.jamgu.hwstatistics.databinding.ActivityAutoMonitorBinding
 import com.jamgu.hwstatistics.keeplive.service.KeepAliveService
 import com.jamgu.hwstatistics.net.upload.DataSaver
-import com.jamgu.hwstatistics.net.upload.DataUploader
 import com.jamgu.hwstatistics.page.InitActivity.Companion.MONITOR_INIT
 import com.jamgu.hwstatistics.power.StatisticAdapter
-import com.jamgu.hwstatistics.util.timeStamp2DateStringWithMills
 import com.jamgu.hwstatistics.util.timeStamp2SimpleDateString
 import com.jamgu.krouter.annotation.KRouter
 import com.jamgu.krouter.core.router.KRouterUriBuilder
 import com.jamgu.krouter.core.router.KRouters
-import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 
 
@@ -55,6 +52,7 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
     private var mKeepLiveServiceOpen: Boolean = false
     @Volatile
     private var isInit = AtomicBoolean(false)
+    private var mEnableAutoStart = false
 
     override fun isBackPressedNeedConfirm(): Boolean {
         return true
@@ -63,10 +61,33 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         mAppUsageDataLoader.onCreate()
-        JLog.d(TAG, "onCreate")
 
         // 加入任务栈
         (applicationContext as? BaseApplication)?.addThisActivityToRunningActivities(this.javaClass)
+
+        val isStartFromNormalNotification =
+            intent.extras?.getBoolean(AUTO_MONITOR_START_FROM_NOTIFICATION) ?: false
+
+        val startFromBoot =
+            intent.extras?.getBoolean(AUTO_MONITOR_START_FROM_BOOT) ?: false
+
+        val startFromKilled =
+            intent.extras?.getBoolean(AUTO_MONITOR_START_FROM_KILLED) ?: false
+
+        val trace = if (isStartFromNormalNotification) {
+            intent.extras?.putBoolean(AUTO_MONITOR_START_FROM_NOTIFICATION, false)
+            "正常从前台服务重启"
+        } else if (startFromBoot) {
+            intent.extras?.putBoolean(AUTO_MONITOR_START_FROM_BOOT, false)
+            "开机通过通知重启"
+        } else if (startFromKilled) {
+            intent.extras?.putBoolean(AUTO_MONITOR_START_FROM_KILLED, false)
+            "异常从前台服务重启"
+        } else {
+            "点击icon重启"
+        }
+        mEnableAutoStart = startFromBoot || startFromKilled || isStartFromNormalNotification
+        DataSaver.addInfoTracker(this, "$TAG::onCreate, $trace")
     }
 
     override fun onNewIntent(intent: Intent?) {
@@ -83,37 +104,22 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
                 KRouters.open(this, KRouterUriBuilder().appendAuthority(INIT_PAGE).build())
             }, 400)
         } else {
-            val isStartFromNotification =
-                intent.extras?.getBoolean(AUTO_MONITOR_START_FROM_NOTIFICATION) ?: false
+            // 没启动且不是由初始化页面过来的：简而言之，初始化后回到activity，只要没启动都会启动
+            val fromInit = intent.extras?.getBoolean(AUTO_MONITOR_START_FROM_INIT, false) ?: false
+            if (!mAppUsageDataLoader.isStarted()) {
+                if (!fromInit) {
+                    mAppUsageDataLoader.start()
+                }
+            }
 
-            val startFromBoot =
-                intent.extras?.getBoolean(AUTO_MONITOR_START_FROM_BOOT) ?: false
-
-            val startFromKilled =
-                intent.extras?.getBoolean(AUTO_MONITOR_START_FROM_KILLED) ?: false
-
-            val startFromInit =
-                intent.extras?.getBoolean(AUTO_MONITOR_START_FROM_INIT) ?: false
-
-            val enableStart = !startFromInit || startFromKilled || startFromBoot || isStartFromNotification
-
-            if (enableStart) {
-                ThreadPool.runUITask({
-                    if (!mAppUsageDataLoader.isStarted()) {
-                        mAppUsageDataLoader.start()
-                        mStartTime = System.currentTimeMillis()
-                    }
+            ThreadPool.runUITask ({
+                if (mAppUsageDataLoader.isStarted()) {
                     mBinding.vStart.text = getString(R.string.already_started)
                     mBinding.vStart.isEnabled = false
-                }, 400)
-            }
-            JLog.d(TAG, "onResume isStartFromBoot = $isStartFromNotification, isStarted = ${mAppUsageDataLoader.isStarted()}")
+                }
+            }, 100L)
 
-            DataSaver.addDebugTracker(this, "onResume startFromNotif = $isStartFromNotification, " +
-                    "startFromInit = $startFromInit, " +
-                    "startFromKilled = $startFromKilled, " +
-                    "startFromBoot = $startFromBoot, " +
-                    "isStarted = ${mAppUsageDataLoader.isStarted()}")
+            checkResumeEnterPoint()
 
             mStartTime?.let { startTime ->
                 val duration = System.currentTimeMillis() - startTime
@@ -128,9 +134,30 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
             }
 
             this.isInit.set(isInit)
-//            val nowDate = System.currentTimeMillis().timeStamp2DateStringWithMills()
-//            DataUploader.recursivelyUpload(this, File(DataSaver.getCacheRootPath()), nowDate)
         }
+    }
+
+    private fun checkResumeEnterPoint() {
+        val isStartFromNormalNotification =
+            intent.extras?.getBoolean(AUTO_MONITOR_START_FROM_NOTIFICATION) ?: false
+
+        val startFromBoot =
+            intent.extras?.getBoolean(AUTO_MONITOR_START_FROM_BOOT) ?: false
+
+        val startFromKilled =
+            intent.extras?.getBoolean(AUTO_MONITOR_START_FROM_KILLED) ?: false
+
+        val trace = if (isStartFromNormalNotification) {
+            "正常从前台服务进入"
+        } else if (startFromBoot) {
+            "开机通过通知进入"
+        } else if (startFromKilled) {
+            "异常从前台服务进入"
+        } else {
+            "点击icon进入"
+        }
+
+        DataSaver.addInfoTracker(this, "$TAG onResume --------> $trace, isStarted = ${mAppUsageDataLoader.isStarted()}")
     }
 
     override fun onDestroy() {

@@ -1,5 +1,6 @@
 package com.jamgu.hwstatistics.keeplive.service;
 
+import static com.jamgu.hwstatistics.page.PageRouterKt.AUTO_MONITOR_START_FROM_KILLED;
 import static com.jamgu.hwstatistics.page.PageRouterKt.AUTO_MONITOR_START_FROM_NOTIFICATION;
 
 import android.app.Activity;
@@ -19,12 +20,12 @@ import android.util.Log;
 import androidx.annotation.RequiresApi;
 
 import com.jamgu.common.util.log.JLog;
-import com.jamgu.hwstatistics.page.AutoMonitorActivity;
 import com.jamgu.hwstatistics.BaseApplication;
 import com.jamgu.hwstatistics.R;
 import com.jamgu.hwstatistics.keeplive.forground.ForgroundNF;
-import com.jamgu.hwstatistics.page.TransitionActivity;
 import com.jamgu.hwstatistics.net.upload.DataSaver;
+import com.jamgu.hwstatistics.page.AutoMonitorActivity;
+import com.jamgu.hwstatistics.page.TransitionActivity;
 
 /**
  * 创建一个JobService用于提高应用优先级
@@ -42,6 +43,7 @@ public class KeepAliveService extends JobService {
     private ComponentName JOB_PG;
     private int NOTIFICATION_ID = 10;
     private ForgroundNF mForgroundNF;
+    private String mCurrentContent = "";
 
     private Handler mJobHandler = new Handler(new Handler.Callback() {
 
@@ -61,10 +63,15 @@ public class KeepAliveService extends JobService {
                 if (mForgroundNF == null) {
                     initForeGroundNF(AutoMonitorActivity.class);
                 }
+                String currentContent = mForgroundNF.getCurrentContent();
                 String rebootText = getString(R.string.app_being_killed_reboot);
                 if (!inBackStack) {
+                    if (rebootText.equals(currentContent)) {
+                        return true;
+                    }
                     mForgroundNF.updateContent(rebootText);
                     Intent intent = new Intent(KeepAliveService.this, TransitionActivity.class);
+                    intent.putExtra(AUTO_MONITOR_START_FROM_KILLED, true);
                     intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     PendingIntent pendingIntent = PendingIntent.getActivity(
                             KeepAliveService.this,
@@ -72,10 +79,11 @@ public class KeepAliveService extends JobService {
                     );
                     mForgroundNF.setContentIntent(pendingIntent);
                     mForgroundNF.startForegroundNotification();
-                } else if (rebootText.equals(mForgroundNF.getCurrentContent())){
+                } else if (rebootText.equals(currentContent)){
                     mForgroundNF.updateContent(getString(R.string.working_background));
                     mForgroundNF.startForegroundNotification();
                 }
+                mCurrentContent = currentContent;
             }
             if (msg != null && msg.obj instanceof JobParameters) {
                 jobFinished((JobParameters) msg.obj, true);
@@ -197,6 +205,7 @@ public class KeepAliveService extends JobService {
         if (mForgroundNF != null) {
             mForgroundNF.stopForegroundNotification();
         }
+        mCurrentContent = "";
         JLog.d(TAG, "onDestroy");
         DataSaver.INSTANCE.addDebugTracker(this, TAG + " onDestroy.");
     }

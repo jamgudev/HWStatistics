@@ -41,6 +41,7 @@ class StatisticsLoader(private val mContext: FragmentActivity) : INeedPermission
      * 数据查询间隔 in ms，越大采样率越低，最大不超过 1000 ms，默认为 200 ms，既每秒采样 5 次
      */
     private var mDataQueryInternal: Long = 200L
+    private var isRegister = false
 
     fun getDataNumThreshold(): Long {
         return mDataNumThreshold
@@ -51,12 +52,19 @@ class StatisticsLoader(private val mContext: FragmentActivity) : INeedPermission
         mOnDataEnough = onDataEnough
     }
 
-    fun initOnCreate(callback: ((String) -> Unit)?): StatisticsLoader {
-        uiCallback = callback
-        mPowerData.clear()
+    private fun register() {
         PhoneStateManager.register(mContext)
         BrightnessManager.registerReceiver(mContext)
         SystemManager.registerSystemReceiver(mContext)
+        isRegister = true
+    }
+
+    fun initOnCreate(callback: ((String) -> Unit)?): StatisticsLoader {
+        uiCallback = callback
+        mPowerData.clear()
+        if (isRegister) {
+            register()
+        }
         return this
     }
 
@@ -190,6 +198,7 @@ class StatisticsLoader(private val mContext: FragmentActivity) : INeedPermission
         PhoneStateManager.unregister(mContext)
         BrightnessManager.unregisterReceiver(mContext)
         SystemManager.unregisterSystemReceiver(mContext)
+        isRegister = false
         mPowerData.clear()
     }
 
@@ -269,6 +278,7 @@ class StatisticsLoader(private val mContext: FragmentActivity) : INeedPermission
             }
             .request { allGranted, _, deniedList ->
                 if (allGranted) {
+                    register()
 //                    start()
                 } else {
                     ThreadPool.runUITask {

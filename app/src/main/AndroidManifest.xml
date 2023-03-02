@@ -111,7 +111,7 @@
         </provider>
         <!-- 开机、关机、解锁广播 -->
         <receiver
-            android:name=".appusage.broadcast.ActiveBroadcastReceiver"
+            android:name=".appusage.broadcast.PhoneCycleBroadcastReceiver"
             android:enabled="true"
             android:exported="true"
             android:priority="99999999">

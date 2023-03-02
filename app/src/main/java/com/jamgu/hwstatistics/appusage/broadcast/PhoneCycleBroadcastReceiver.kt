@@ -26,7 +26,7 @@ import com.jamgu.krouter.core.router.KRouters
  *
  * @description 手机开屏、息屏、开机、关机广播接收器
  */
-class ActiveBroadcastReceiver @JvmOverloads constructor(private val listener: IOnScreenStateChanged? = null) : BroadcastReceiver() {
+class PhoneCycleBroadcastReceiver @JvmOverloads constructor(private val listener: IOnScreenStateChanged? = null) : BroadcastReceiver() {
 
     /**
      * 关机重启时获取开机通知，系统会调用该无参构造方法

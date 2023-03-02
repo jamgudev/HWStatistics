@@ -3,7 +3,6 @@ package com.jamgu.hwstatistics
 import android.app.Activity
 import android.app.Application
 import android.content.Intent
-import android.os.Process
 import com.jamgu.common.Common
 import com.jamgu.common.util.log.JLog
 import com.jamgu.hwstatistics.net.upload.DataSaver

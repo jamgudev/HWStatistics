@@ -5,19 +5,20 @@ import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.content.ComponentCallbacks2.*
 import android.content.Context
+import android.os.HandlerThread
 import androidx.fragment.app.FragmentActivity
 import com.jamgu.common.util.log.JLog
 import com.jamgu.common.util.preference.PreferenceUtil
 import com.jamgu.common.util.timer.VATimer
 import com.jamgu.hwstatistics.R
-import com.jamgu.hwstatistics.appusage.broadcast.ActiveBroadcastReceiver
+import com.jamgu.hwstatistics.appusage.broadcast.PhoneCycleBroadcastReceiver
 import com.jamgu.hwstatistics.appusage.broadcast.PowerConnectReceiver
-import com.jamgu.hwstatistics.power.IOnDataEnough
-import com.jamgu.hwstatistics.power.StatisticsLoader
 import com.jamgu.hwstatistics.net.upload.DataSaver
 import com.jamgu.hwstatistics.net.upload.DataSaver.TAG_SCREEN_OFF
 import com.jamgu.hwstatistics.net.upload.DataUploader
 import com.jamgu.hwstatistics.net.upload.DataUploader.PA_THRESHOLD
+import com.jamgu.hwstatistics.power.IOnDataEnough
+import com.jamgu.hwstatistics.power.StatisticsLoader
 import com.jamgu.hwstatistics.util.getCurrentDateString
 import com.jamgu.hwstatistics.util.timeMillsBetween
 import com.jamgu.hwstatistics.util.timeStamp2DateStringWithMills
@@ -33,7 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * @description 用户打开app信息收集器
  */
 class AppUsageDataLoader(private val mContext: FragmentActivity) :
-    ActiveBroadcastReceiver.IOnScreenStateChanged, PowerConnectReceiver.IOnPhoneChargeStateChanged {
+    PhoneCycleBroadcastReceiver.IOnScreenStateChanged, PowerConnectReceiver.IOnPhoneChargeStateChanged {
 
     @Volatile
     private var mScreenOn: AtomicBoolean = AtomicBoolean(false)
@@ -48,7 +49,7 @@ class AppUsageDataLoader(private val mContext: FragmentActivity) :
     private val mChargeData: MutableList<UsageRecord> = Collections.synchronizedList(ArrayList())
 
     // 监听手机Session生命周期
-    private var mActiveBroadcastReceiver: ActiveBroadcastReceiver? = null
+    private var mActiveBroadcastReceiver: PhoneCycleBroadcastReceiver? = null
 
     // 监听手机充电状态
     private var mPowerConnectReceiver: PowerConnectReceiver? = null
@@ -79,7 +80,7 @@ class AppUsageDataLoader(private val mContext: FragmentActivity) :
     init {
         // 注册开机、关机、解锁广播
         if (mActiveBroadcastReceiver == null) {
-            mActiveBroadcastReceiver = ActiveBroadcastReceiver(this)
+            mActiveBroadcastReceiver = PhoneCycleBroadcastReceiver(this)
         }
         if (mPowerConnectReceiver == null) {
             mPowerConnectReceiver = PowerConnectReceiver(this)
@@ -148,6 +149,9 @@ class AppUsageDataLoader(private val mContext: FragmentActivity) :
                         if (dataSize == 0) {
                             mUserUsageData.add(resumeRecord)
                         } else {
+                            // 经测试，可能存在PAUSE事件漏发的情况，
+                            // 在新的RESUME事件到来之前，检查一遍上一个Activity事件是否完整
+                            replaceLastResumeRecord2UsageRecord(resumeRecord.mTimeStamp)
                             // 2. 新增一条 resume record记录
                             mUserUsageData.add(resumeRecord)
                         }
@@ -232,16 +236,28 @@ class AppUsageDataLoader(private val mContext: FragmentActivity) :
         mLastPauseRecord = firstRecord
     }
 
+    private fun getUserPresentRecord(): UsageRecord.PhoneLifeCycleRecord {
+        val usageName = mContext.getString(R.string.usage_user_present)
+        val occurrenceTime = System.currentTimeMillis().timeStamp2DateStringWithMills()
+        return UsageRecord.PhoneLifeCycleRecord(usageName, occurrenceTime)
+    }
+
     /**
      * 记录一次用户解锁
      */
     private fun addUserPresentRecord() {
-
-        val usageName = mContext.getString(R.string.usage_user_present)
-        val occurrenceTime = System.currentTimeMillis().timeStamp2DateStringWithMills()
-        val cycleRecord = UsageRecord.PhoneLifeCycleRecord(usageName, occurrenceTime)
-        mUserUsageData.add(cycleRecord)
-        mUserPresentRecord = cycleRecord
+        // 用户解锁事件，因为消息可能存在延迟，事件到来的时间点可能会比Activity Resume事件来的晚
+        // 所以固定将解锁事件放在 ScreenOn 事件下面
+        val addIndex = if (mUserUsageData.isEmpty()) {
+            0
+        } else {
+            1
+        }
+        val presentRecord = mUserPresentRecord ?: getUserPresentRecord()
+        mUserUsageData.add(addIndex, presentRecord)
+        if (mUserPresentRecord == null) {
+            mUserPresentRecord = presentRecord
+        }
     }
 
     /**
@@ -251,7 +267,7 @@ class AppUsageDataLoader(private val mContext: FragmentActivity) :
         val usageName = mContext.getString(R.string.usage_screen_on)
         val occurrenceTime = System.currentTimeMillis().timeStamp2DateStringWithMills()
         val cycleRecord = UsageRecord.PhoneLifeCycleRecord(usageName, occurrenceTime)
-        mUserUsageData.add(cycleRecord)
+        mUserUsageData.add(0, cycleRecord)
         mScreenOnRecord = cycleRecord
     }
 
@@ -309,7 +325,7 @@ class AppUsageDataLoader(private val mContext: FragmentActivity) :
      * 经历完屏幕亮起和熄灭后，记录一次session
      */
     private fun addSessionRecord(screenOfRecord: UsageRecord.PhoneLifeCycleRecord): UsageRecord.SingleSessionRecord {
-        addEmptyLine()
+//        addEmptyLine()
         addTextTitle(arrayOf(TEXT_SESSION_SUMMARIZE))
 
         val activitySession = summarizeActivityUsageRecords()
@@ -374,11 +390,11 @@ class AppUsageDataLoader(private val mContext: FragmentActivity) :
         mActiveBroadcastReceiver?.registerReceiver(mContext)
         mPowerConnectReceiver?.registerReceiver(mContext)
         mPowerDataLoader = StatisticsLoader(mContext).initOnCreate {}.apply {
-            setOnDataEnoughListener(IOnDataEnough.ThreshLength.THRESH_THREE_MINS.length, object : IOnDataEnough {
+            setOnDataEnoughListener(IOnDataEnough.ThreshLength.THRESH_ONE_MIN.length, object : IOnDataEnough {
                 override fun onDataEnough() {
                     saveTempUserUsageData2File()
                     // 更新阈值
-                    val paThreshold = PreferenceUtil.getCachePreference(mContext, 0).getLong(PA_THRESHOLD, 60)
+                    val paThreshold = PreferenceUtil.getCachePreference(mContext, 0).getInt(PA_THRESHOLD, 60).toLong()
                     if (mPowerDataLoader.getDataNumThreshold() != paThreshold) {
                         mPowerDataLoader.setOnDataEnoughListener(paThreshold, this)
                     }
@@ -431,6 +447,10 @@ class AppUsageDataLoader(private val mContext: FragmentActivity) :
         }
         mPowerDataLoader.startNonMainThread()
         addOnScreenOnRecord()
+        // 可能存在present事件比screen_on事件先到，导致present事件丢失的情况
+        if (mUserPresentRecord != null) {
+            addUserPresentRecord()
+        }
         mSessionListener?.onSessionBegin()
     }
 
@@ -459,6 +479,7 @@ class AppUsageDataLoader(private val mContext: FragmentActivity) :
 
     override fun onUserPresent() {
         if (!mScreenOn.get()) {
+            mUserPresentRecord = getUserPresentRecord()
             return
         }
         addUserPresentRecord()
