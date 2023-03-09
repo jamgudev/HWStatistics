@@ -2,9 +2,11 @@ package com.jamgu.hwstatistics.power
 
 import android.widget.Toast
 import androidx.fragment.app.FragmentActivity
+import com.jamgu.common.Common
 import com.jamgu.common.thread.ThreadPool
 import com.jamgu.common.util.timer.VATimer
 import com.jamgu.hwstatistics.R
+import com.jamgu.hwstatistics.net.upload.DataSaver
 import com.jamgu.hwstatistics.power.mobiledata.bluetooth.BluetoothManager
 import com.jamgu.hwstatistics.power.mobiledata.brightness.BrightnessManager
 import com.jamgu.hwstatistics.power.mobiledata.cpu.CPUInfoManager
@@ -62,7 +64,7 @@ class StatisticsLoader(private val mContext: FragmentActivity) : INeedPermission
     fun initOnCreate(callback: ((String) -> Unit)?): StatisticsLoader {
         uiCallback = callback
         mPowerData.clear()
-        if (isRegister) {
+        if (!isRegister) {
             register()
         }
         return this
@@ -77,7 +79,12 @@ class StatisticsLoader(private val mContext: FragmentActivity) : INeedPermission
 
     private fun start(internal: Long = 200) {
         if (mTimer == null) {
-            mTimer = VATimer()
+            mTimer = VATimer("PowerDataLoader").apply {
+                setUncaughtExceptionHandler { t, e ->
+                    DataSaver.addInfoTracker(Common.getInstance().getApplicationContext(),
+                        "uncaughtException: threadName#${t.name}, e = ${e.stackTraceToString()}")
+                }
+            }
         }
 
         var lastTimeString = ""

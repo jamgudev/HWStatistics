@@ -57,7 +57,7 @@ dependencies {
     implementation 'commons-io:commons-io:2.4'
 
     //  Common 库
-    implementation 'io.github.jamgudev:common:0.6.0'
+    implementation 'io.github.jamgudev:common:0.6.1'
     //  SettingPie 库
     implementation 'io.github.jamgudev:settingpie:1.0.1'
 

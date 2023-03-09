@@ -5,8 +5,8 @@ import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.content.ComponentCallbacks2.*
 import android.content.Context
-import android.os.HandlerThread
 import androidx.fragment.app.FragmentActivity
+import com.jamgu.common.Common
 import com.jamgu.common.util.log.JLog
 import com.jamgu.common.util.preference.PreferenceUtil
 import com.jamgu.common.util.timer.VATimer
@@ -38,6 +38,7 @@ class AppUsageDataLoader(private val mContext: FragmentActivity) :
 
     @Volatile
     private var mScreenOn: AtomicBoolean = AtomicBoolean(false)
+
     @Volatile
     private var mIsCharging: AtomicBoolean = AtomicBoolean(false)
 
@@ -56,9 +57,11 @@ class AppUsageDataLoader(private val mContext: FragmentActivity) :
 
     // 上一个事件轮询的最后一个 activity resume 事件
     private var mLastResumeRecord: UsageRecord.ActivityResumeRecord? = null
+    private var mResumeRecordLock = Any()
 
     // 上一个事件轮询的最后一个 activity pause 事件
     private var mLastPauseRecord: UsageRecord.ActivityPauseRecord? = null
+    private var mPauseRecordLock = Any()
 
     // 屏幕亮起事件
     private var mScreenOnRecord: UsageRecord.PhoneLifeCycleRecord? = null
@@ -70,7 +73,13 @@ class AppUsageDataLoader(private val mContext: FragmentActivity) :
 
     private lateinit var mPowerDataLoader: StatisticsLoader
 
-    private var mTimer: VATimer = VATimer()
+    private var mTimer: VATimer = VATimer("AppUsageData").apply {
+        setUncaughtExceptionHandler { t, e ->
+            DataSaver.addInfoTracker(
+                Common.getInstance().getApplicationContext(),
+                "uncaughtException: threadName#${t.name}, e = ${e.stackTraceToString()}")
+        }
+    }
 
     companion object {
         private const val TAG = "AppUsageDataLoader"
@@ -106,6 +115,7 @@ class AppUsageDataLoader(private val mContext: FragmentActivity) :
     }
 
     private fun clearUsageData() {
+        mPowerDataLoader.clearData()
         return mUserUsageData.clear()
     }
 
@@ -139,6 +149,11 @@ class AppUsageDataLoader(private val mContext: FragmentActivity) :
                         className, timeStamp.timeStamp2DateStringWithMills()
                     )
 
+                    JLog.d(
+                        TAG,
+                        "activity resume, packageName = $packageName，className = $className, tm = $timeStamp"
+                    )
+
                     // 当前事件是否是新事件
                     if (!isNewResumeRecord(resumeRecord)) {
                         return
@@ -158,10 +173,6 @@ class AppUsageDataLoader(private val mContext: FragmentActivity) :
 
                         updateLatestResumeRecord(resumeRecord)
                     }
-                    JLog.d(
-                        TAG,
-                        "activity resume, packageName = $packageName，className = $className, tm = $timeStamp"
-                    )
                 }
                 UsageEvents.Event.ACTIVITY_PAUSED -> {
                     val pauseRecord = UsageRecord.ActivityPauseRecord(
@@ -169,23 +180,51 @@ class AppUsageDataLoader(private val mContext: FragmentActivity) :
                         className, timeStamp.timeStamp2DateStringWithMills()
                     )
 
+                    JLog.d(
+                        TAG,
+                        "activity pause, packageName = $packageName，className = $className, tm = $timeStamp"
+                    )
+
                     if (!isNewPauseRecord(pauseRecord)) {
                         return
                     }
                     // 新的pause事件
                     else {
-                        // 因为 resume 和 pause 事件是顺序到来的，
-                        // 所以当 pause 事件到来时，上一个事件一定是resume事件
-                        replaceLastResumeRecord2UsageRecord(pauseRecord.mTimeStamp)
+                        checkWhetherPreviousResumeIsMissing(pauseRecord)
                         updateLatestPauseRecord(pauseRecord)
                     }
-                    JLog.d(
-                        TAG,
-                        "activity pause, packageName = $packageName，className = $className, tm = $timeStamp"
-                    )
+                }
+                else -> {
+//                    JLog.d(
+//                        TAG,
+//                        "other event = ${event.eventType}, packageName = $packageName，className = $className, tm = $timeStamp"
+//                    )
                 }
             }
         }
+    }
+
+    /**
+     * 新的pauseRecord到来时，如果上一个record已经是完整的ActivityUsageRecord，说明有resumeRecord遗漏了需要补充
+     * 如果上一个record是ResumeRecord，说明数据正常，走ResumeRecord替换逻辑
+     */
+    private fun checkWhetherPreviousResumeIsMissing(pauseRecord: UsageRecord.ActivityPauseRecord) {
+        val dataSize = mUserUsageData.size
+        if (dataSize <= 0) return
+
+        val lastRecord = mUserUsageData[dataSize - 1]
+        if (lastRecord is UsageRecord.AppUsageRecord && lastRecord.mEndTime < pauseRecord.mTimeStamp) {
+            // 如果上一个record是一个完整的Activity记录，且activity记录结束时间比当前的pauseEventTime要早
+            // 说明有ActivityResume事件遗漏了，需要补充完整
+            val newResumeRecord = UsageRecord.ActivityResumeRecord(
+                pauseRecord.mPackageName,
+                pauseRecord.mClassName, lastRecord.mEndTime
+            )
+            mUserUsageData.add(newResumeRecord)
+            updateLatestResumeRecord(newResumeRecord)
+        }
+
+        replaceLastResumeRecord2UsageRecord(pauseRecord.mTimeStamp)
     }
 
     /**
@@ -216,11 +255,15 @@ class AppUsageDataLoader(private val mContext: FragmentActivity) :
     private fun isNewResumeRecord(curRecord: UsageRecord.ActivityResumeRecord?): Boolean {
         curRecord ?: return false
 
-        return curRecord.mTimeStamp > (mLastResumeRecord?.mTimeStamp ?: "0")
+        return synchronized(mResumeRecordLock) {
+            curRecord.mTimeStamp > (mLastResumeRecord?.mTimeStamp ?: "0")
+        }
     }
 
-    private fun updateLatestResumeRecord(firstRecord: UsageRecord.ActivityResumeRecord?) {
-        mLastResumeRecord = firstRecord
+    private fun updateLatestResumeRecord(newRecord: UsageRecord.ActivityResumeRecord?) {
+        synchronized(mResumeRecordLock) {
+            mLastResumeRecord = newRecord
+        }
     }
 
     /**
@@ -229,11 +272,15 @@ class AppUsageDataLoader(private val mContext: FragmentActivity) :
     private fun isNewPauseRecord(curRecord: UsageRecord.ActivityPauseRecord?): Boolean {
         curRecord ?: return false
 
-        return curRecord.mTimeStamp > (mLastPauseRecord?.mTimeStamp ?: "0")
+        return synchronized(mPauseRecordLock) {
+            curRecord.mTimeStamp > (mLastPauseRecord?.mTimeStamp ?: "0")
+        }
     }
 
-    private fun updateLatestPauseRecord(firstRecord: UsageRecord.ActivityPauseRecord?) {
-        mLastPauseRecord = firstRecord
+    private fun updateLatestPauseRecord(newRecord: UsageRecord.ActivityPauseRecord?) {
+        synchronized(mPauseRecordLock) {
+            mLastPauseRecord = newRecord
+        }
     }
 
     private fun getUserPresentRecord(): UsageRecord.PhoneLifeCycleRecord {
@@ -419,11 +466,10 @@ class AppUsageDataLoader(private val mContext: FragmentActivity) :
     private fun resetAfterDataSaved() {
         mScreenOnRecord = null
         mUserPresentRecord = null
-        mLastResumeRecord = null
-        mLastPauseRecord = null
+        updateLatestPauseRecord(null)
+        updateLatestResumeRecord(null)
         mScreenOn.set(false)
         clearUsageData()
-        mPowerDataLoader.clearData()
     }
 
     override fun onPhoneBootComplete() {
@@ -531,7 +577,7 @@ class AppUsageDataLoader(private val mContext: FragmentActivity) :
      */
     fun onTrimMemory(level: Int) {
         JLog.d(TAG, "onTrimMemory level = $level")
-        when(level) {
+        when (level) {
             TRIM_MEMORY_MODERATE -> {
                 JLog.d(TAG, "TRIM_MEMORY_MODERATE")
                 saveTempUserUsageData2File()
