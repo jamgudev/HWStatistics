@@ -33,7 +33,6 @@ import com.jamgu.hwstatistics.page.TransitionActivity;
  * 这个提示最好友好点，不然系统会提示一个后台运行的通知，很容易引导用户去关闭。
  * 如果是音乐类型的，可以直接使用音乐的服务MusicPlayerService挂接通知即可做的一定程度的保活
  */
-@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class KeepAliveService extends JobService {
     private static final String TAG = KeepAliveService.class.getSimpleName();
     private static final int JOB_ID = 1;
@@ -81,6 +80,14 @@ public class KeepAliveService extends JobService {
                     mForgroundNF.startForegroundNotification();
                 } else if (rebootText.equals(currentContent)){
                     mForgroundNF.updateContent(getString(R.string.working_background));
+                    Intent intent = new Intent(KeepAliveService.this, AutoMonitorActivity.class);
+                    intent.putExtra(AUTO_MONITOR_START_FROM_NOTIFICATION, true);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    PendingIntent pendingIntent = PendingIntent.getActivity(
+                            KeepAliveService.this,
+                            0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+                    );
+                    mForgroundNF.setContentIntent(pendingIntent);
                     mForgroundNF.startForegroundNotification();
                 }
                 mCurrentContent = currentContent;

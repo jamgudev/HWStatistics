@@ -23,7 +23,6 @@ import com.jamgu.hwstatistics.util.getCurrentDateString
 import com.jamgu.hwstatistics.util.timeMillsBetween
 import com.jamgu.hwstatistics.util.timeStamp2DateStringWithMills
 import com.jamgu.hwstatistics.util.timeStamp2SimpleDateString
-import java.io.File
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -505,8 +504,7 @@ class AppUsageDataLoader(private val mContext: FragmentActivity) :
         mScreenOn.set(false)
         PreferenceUtil.getCachePreference(mContext, 0).edit().putBoolean((TAG_SCREEN_OFF), !mScreenOn.get()).apply()
         if (mIsCharging.get()) {
-            val nowDate = System.currentTimeMillis().timeStamp2DateStringWithMills()
-            DataUploader.recursivelyUpload(mContext, File(DataSaver.getCacheRootPath()), nowDate)
+            DataUploader.uploadFile(mContext, DataSaver.getCacheRootPath())
         }
         val screenOffRecord = addOnScreenOffRecord()
         mSessionListener?.onSessionEnd(screenOffRecord)

@@ -19,6 +19,7 @@ import com.jamgu.hwstatistics.appusage.UsageRecord
 import com.jamgu.hwstatistics.databinding.ActivityAutoMonitorBinding
 import com.jamgu.hwstatistics.keeplive.service.KeepAliveService
 import com.jamgu.hwstatistics.net.upload.DataSaver
+import com.jamgu.hwstatistics.net.upload.DataUploader
 import com.jamgu.hwstatistics.page.InitActivity.Companion.MONITOR_INIT
 import com.jamgu.hwstatistics.power.StatisticAdapter
 import com.jamgu.hwstatistics.util.timeStamp2SimpleDateString
@@ -164,10 +165,21 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
         super.onDestroy()
         JLog.d(TAG, "onDestroy")
         val activityManager = getSystemService<ActivityManager>()
-        val memState = activityManager?.runningAppProcesses?.first()
-        ActivityManager.getMyMemoryState(memState)
-        DataSaver.addInfoTracker(this, "$TAG onDestroy called, memState = ${memState?.lastTrimLevel}")
+
+        var currentMemoryInfo: ActivityManager.RunningAppProcessInfo? = null
+        kotlin.run {
+            activityManager?.runningAppProcesses?.forEach {
+                if (it.pid == android.os.Process.myPid()) {
+                    currentMemoryInfo = it
+                    return@run
+                }
+            }
+        }
+        ActivityManager.getMyMemoryState(currentMemoryInfo)
+        DataSaver.addInfoTracker(this, "$TAG onDestroy called, memState = ${currentMemoryInfo?.lastTrimLevel}")
         DataSaver.flushTestData(this)
+        DataUploader.uploadFile(this, DataSaver.getErrorDataCachePath())
+
         mAppUsageDataLoader.onDestroy()
 
         (applicationContext as? BaseApplication)?.removeThisActivityFromRunningActivities(this.javaClass)

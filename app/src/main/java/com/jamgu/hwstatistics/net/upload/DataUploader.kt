@@ -12,6 +12,7 @@ import com.jamgu.hwstatistics.power.mobiledata.network.NetWorkManager
 import com.jamgu.hwstatistics.util.TimeExtensions.ONE_DAY
 import com.jamgu.hwstatistics.util.getCurrentDateString
 import com.jamgu.hwstatistics.util.timeMillsBetween
+import com.jamgu.hwstatistics.util.timeStamp2DateStringWithMills
 import io.reactivex.Observer
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
@@ -178,6 +179,11 @@ object DataUploader {
                 childPathSplits[1]
             } else ""
         } else ""
+    }
+
+    fun uploadFile(context: Context, path: String) {
+        val nowDate = System.currentTimeMillis().timeStamp2DateStringWithMills()
+        recursivelyUpload(context, File(path), nowDate)
     }
 
     /**

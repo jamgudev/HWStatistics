@@ -25,7 +25,6 @@
                 android:layout_marginRight="16dp"
                 android:hint="用户名"
                 android:imeOptions="actionNext"
-                android:maxLength="10"
                 android:singleLine="true" />
 
             <EditText
