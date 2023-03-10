@@ -110,6 +110,7 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
             if (!mAppUsageDataLoader.isStarted()) {
                 if (!fromInit) {
                     mAppUsageDataLoader.start()
+                    mStartTime = System.currentTimeMillis()
                 }
             }
 

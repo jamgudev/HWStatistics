@@ -4,7 +4,6 @@ package com.jamgu.hwstatistics.power
 
 import com.jamgu.hwstatistics.power.mobiledata.cpu.model.CPU
 import com.jamgu.hwstatistics.util.roundToDecimals
-import kotlin.math.pow
 
 private const val TAG = "StatisticDoMain2"
 
@@ -100,6 +99,7 @@ class Builder2 {
 
     // network speed kb
     var netWorkSpeed: Float = 0.0f
+    var isWifiApEnable: Int = 0
 
     // cpu0 当前频率
     var cpu0: Float = 0.0f
@@ -217,6 +217,11 @@ class Builder2 {
     fun isWifiNetwork(isWifi: Int?): Builder2 {
         isWifi ?: return this
         this.isWifiNetwork = isWifi
+        return this
+    }
+
+    fun isWifiApEnable(enable: Boolean): Builder2 {
+        this.isWifiApEnable = if (enable) 1 else 0
         return this
     }
 
@@ -370,7 +375,7 @@ class Builder2 {
         return arrayListOf(
             curTimeMills, /*isSystemOn, *//*isScreenOn, */screenBrightness,
             isMusicOn, isPhoneRinging, isPhoneOffHook,
-            isWifiNetwork, is2GNetwork, is3GNetwork, is4GNetwork, is5GNetwork, isOtherNetwork, netWorkSpeed,
+            isWifiNetwork, is2GNetwork, is3GNetwork, is4GNetwork, is5GNetwork, isOtherNetwork, isWifiApEnable, netWorkSpeed,
             cpu0, cpu1, cpu2, cpu3, cpu4, cpu5, cpu6, cpu7,
 //            cpuTemp0, cpuTemp1, cpuTemp2, cpuTemp3, cpuTemp4, cpuTemp5, cpuTemp6, cpuTemp7,
             /*totalCpu,

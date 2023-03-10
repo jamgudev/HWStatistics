@@ -34,7 +34,7 @@ class StatisticsLoader(private val mContext: FragmentActivity) : INeedPermission
 
     private var mTimer: VATimer? = null
     private var uiCallback: ((String) -> Unit)? = null
-    private val mPowerData: MutableList<ArrayList<Any>> = Collections.synchronizedList(ArrayList<ArrayList<Any>>())
+    private val mPowerData: MutableList<ArrayList<Any>> = Collections.synchronizedList(ArrayList())
 
     private var mOnDataEnough: IOnDataEnough? = null
     private var mDataNumThreshold: Long = IOnDataEnough.ThreshLength.THRESH_ONE_MIN.length
@@ -81,8 +81,10 @@ class StatisticsLoader(private val mContext: FragmentActivity) : INeedPermission
         if (mTimer == null) {
             mTimer = VATimer("PowerDataLoader").apply {
                 setUncaughtExceptionHandler { t, e ->
-                    DataSaver.addInfoTracker(Common.getInstance().getApplicationContext(),
-                        "uncaughtException: threadName#${t.name}, e = ${e.stackTraceToString()}")
+                    DataSaver.addInfoTracker(
+                        Common.getInstance().getApplicationContext(),
+                        "uncaughtException: threadName#${t.name}, e = ${e.stackTraceToString()}"
+                    )
                 }
             }
         }
@@ -131,6 +133,7 @@ class StatisticsLoader(private val mContext: FragmentActivity) : INeedPermission
         val phoneState = getPhoneState()
         val musicState = getMusicState()
         val networkType = getNetworkType()
+        val wifiApOpen = NetWorkManager.isWifiApEnable(mContext)
         val netWorkSpeed = getNetWorkSpeed()
         val cpuInfo = getCpuInfo()
         val cpuTotalUsage = getCpuTotalUsage()
@@ -170,6 +173,7 @@ class StatisticsLoader(private val mContext: FragmentActivity) : INeedPermission
                     is5GNetwork(1)
                 }
             }
+            isWifiApEnable(wifiApOpen)
             networkSpeed(netWorkSpeed)
             totalCpu(cpuTotalUsage)
             cpus(cpuInfo)
@@ -214,39 +218,40 @@ class StatisticsLoader(private val mContext: FragmentActivity) : INeedPermission
     }
 
     fun getDataWithTitle(): ArrayList<ArrayList<Any>> {
-        mPowerData.add(
-            0,
-            arrayListOf(
-                "cur_time_mills",
-                "screen_brightness",
-                "music_on",
-                "phone_ring",
-                "phone_off_hook",
-                "wifi_network",
-                "2g_network",
-                "3g_network",
-                "4g_network",
-                "5g_network",
-                "other_network",
-                "network_speed",
-                "cpu0",
-                "cpu1",
-                "cpu2",
-                "cpu3",
-                "cpu4",
-                "cpu5",
-                "cpu6",
-                "cpu7",
-                "bluetooth",
-                "mem_available",
-                "mem_active",
-                "mem_dirty",
-                "mem_anonPages",
-                "mem_mapped",
-                "avg_p",
+        return ArrayList(mPowerData).apply {
+            add(
+                0, arrayListOf(
+                    "cur_time_mills",
+                    "screen_brightness",
+                    "music_on",
+                    "phone_ring",
+                    "phone_off_hook",
+                    "wifi_network",
+                    "2g_network",
+                    "3g_network",
+                    "4g_network",
+                    "5g_network",
+                    "other_network",
+                    "is_wifi_enable",
+                    "network_speed",
+                    "cpu0",
+                    "cpu1",
+                    "cpu2",
+                    "cpu3",
+                    "cpu4",
+                    "cpu5",
+                    "cpu6",
+                    "cpu7",
+                    "bluetooth",
+                    "mem_available",
+                    "mem_active",
+                    "mem_dirty",
+                    "mem_anonPages",
+                    "mem_mapped",
+                    "avg_p",
+                )
             )
-        )
-        return ArrayList(mPowerData)
+        }
     }
 
     fun clearData() {

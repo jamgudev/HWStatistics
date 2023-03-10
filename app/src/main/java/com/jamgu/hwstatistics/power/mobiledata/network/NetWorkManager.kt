@@ -3,7 +3,12 @@ package com.jamgu.hwstatistics.power.mobiledata.network
 import android.annotation.SuppressLint
 import android.content.Context
 import android.net.TrafficStats
+import android.net.wifi.WifiManager
 import com.jamgu.hwstatistics.power.INeedPermission
+import java.lang.reflect.Field
+import java.lang.reflect.InvocationTargetException
+import java.lang.reflect.Method
+
 
 /**
  * Created by jamgu on 2021/10/15
@@ -44,6 +49,30 @@ object NetWorkManager: INeedPermission {
     @SuppressLint("MissingPermission")
     fun getNetworkType(context: Context?): Int {
         return CpNetUtil.getInstance().getNetType(context).value
+    }
+
+    /**
+     * 判断热点是否开启
+     * @param context
+     * @return
+     */
+    fun isWifiApEnable(context: Context): Boolean {
+        try {
+            val manager = context.getSystemService(Context.WIFI_SERVICE) as WifiManager
+            //通过放射获取 getWifiApState()方法
+            val method: Method = manager.javaClass.getDeclaredMethod("getWifiApState")
+            //调用getWifiApState() ，获取返回值
+            val state = method.invoke(manager) as Int
+            //通过放射获取 WIFI_AP的开启状态属性
+            val field: Field = manager.javaClass.getDeclaredField("WIFI_AP_STATE_ENABLED")
+            //获取属性值
+            val value = field.get(manager) as Int
+            //判断是否开启
+            return state == value
+        } catch (e: java.lang.Exception) {
+            e.printStackTrace()
+        }
+        return false
     }
 
     override fun permission(): Array<String> = arrayOf(android.Manifest.permission.READ_PHONE_STATE)

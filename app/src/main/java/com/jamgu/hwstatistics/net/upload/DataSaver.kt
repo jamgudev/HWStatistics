@@ -172,7 +172,7 @@ object DataSaver {
                 chargeAnyData.add(singleData)
             }
 
-            val dirFile = File(getChargeDataCachePath())
+            val dirFile = File("${getTestDataCachePath()}/${getDateOfTodayString()}")
             if (!dirFile.exists()) {
                 dirFile.mkdirs()
             }
@@ -200,7 +200,7 @@ object DataSaver {
                 testAnyData.add(singleData)
             }
 
-            val dirFile = File(getTestDataCachePath())
+            val dirFile = File("${getTestDataCachePath()}/${getDateOfTodayString()}")
             if (!dirFile.exists()) {
                 dirFile.mkdirs()
             }
@@ -228,7 +228,7 @@ object DataSaver {
                 errorAnyData.add(singleData)
             }
 
-            val dirFile = File(getErrorDataCachePath())
+            val dirFile = File("${getErrorDataCachePath()}/${getDateOfTodayString()}")
             if (!dirFile.exists()) {
                 dirFile.mkdirs()
             }

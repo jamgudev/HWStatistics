@@ -536,7 +536,7 @@ class AppUsageDataLoader(private val mContext: FragmentActivity) :
         if (mPowerDataLoader.isStarted()) {
             mPowerDataLoader.stop()
         }
-        val powerDataWithTitle = ArrayList(mPowerDataLoader.getDataWithTitle())
+        val powerDataWithTitle = mPowerDataLoader.getDataWithTitle()
         val appUsageData = ArrayList(mUserUsageData)
         DataSaver.saveAppUsageDataSync(mContext, appUsageData, powerDataWithTitle, startTime, endTime, true)
         resetAfterDataSaved()
@@ -548,7 +548,7 @@ class AppUsageDataLoader(private val mContext: FragmentActivity) :
      */
     private fun saveTempUserUsageData2File() {
         val screenOnTime = mScreenOnRecord?.mOccTime ?: ""
-        val powerDataWithTitle = ArrayList(mPowerDataLoader.getDataWithTitle())
+        val powerDataWithTitle = mPowerDataLoader.getDataWithTitle()
         mPowerDataLoader.clearData()
         DataSaver.saveAppUsageDataSync(mContext, null, powerDataWithTitle, screenOnTime, "", false)
     }
@@ -575,23 +575,9 @@ class AppUsageDataLoader(private val mContext: FragmentActivity) :
      */
     fun onTrimMemory(level: Int) {
         JLog.d(TAG, "onTrimMemory level = $level")
-        when (level) {
-            TRIM_MEMORY_MODERATE -> {
-                JLog.d(TAG, "TRIM_MEMORY_MODERATE")
-                saveTempUserUsageData2File()
-            }
-            TRIM_MEMORY_COMPLETE -> {
-                JLog.d(TAG, "TRIM_MEMORY_COMPLETE")
-                saveTempUserUsageData2File()
-//                mPowerDataLoader.startInInternal(1000)
-            }
-            TRIM_MEMORY_BACKGROUND -> {
-                JLog.d(TAG, "TRIM_MEMORY_BACKGROUND")
-            }
-        }
         DataSaver.addDebugTracker(mContext, "onTrimMemory, level = $level")
 
-        if (level >= TRIM_MEMORY_RUNNING_CRITICAL) {
+        if (level >= TRIM_MEMORY_BACKGROUND) {
             checkIfSavePhoneChargeData2File(true)
             saveTempUserUsageData2File()
             DataSaver.flushTestData(mContext)

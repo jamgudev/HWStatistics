@@ -191,7 +191,7 @@ object DataUploader {
      * @param timeStamp session文件，只会上传记录时间完成在timeStamp之前的文件
      */
     fun recursivelyUpload(context: Context, file: File, timeStamp: String) {
-        ThreadPool.runIOTask { innerRecursivelyUpload(context, file, timeStamp) }
+        ThreadPool.runNetworkTask { innerRecursivelyUpload(context, file, timeStamp) }
     }
 
     private fun isNetWorkEnable(context: Context): Boolean {
