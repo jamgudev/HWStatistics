@@ -88,7 +88,7 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
             "点击icon重启"
         }
         mEnableAutoStart = startFromBoot || startFromKilled || isStartFromNormalNotification
-        DataSaver.addInfoTracker(this, "$TAG::onCreate, $trace")
+        DataSaver.addInfoTracker(TAG, "onCreate, $trace")
     }
 
     override fun onNewIntent(intent: Intent?) {
@@ -159,7 +159,7 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
             "点击icon进入"
         }
 
-        DataSaver.addInfoTracker(this, "$TAG onResume --------> $trace, isStarted = ${mAppUsageDataLoader.isStarted()}")
+        DataSaver.addInfoTracker(TAG, "onResume --------> $trace, isStarted = ${mAppUsageDataLoader.isStarted()}")
     }
 
     override fun onDestroy() {
@@ -177,9 +177,9 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
             }
         }
         ActivityManager.getMyMemoryState(currentMemoryInfo)
-        DataSaver.addInfoTracker(this, "$TAG onDestroy called, memState = ${currentMemoryInfo?.lastTrimLevel}")
+        DataSaver.addInfoTracker(TAG, "onDestroy called, memState = ${currentMemoryInfo?.lastTrimLevel}")
         DataSaver.flushTestData(this)
-        DataUploader.uploadFile(this, DataSaver.getErrorDataCachePath())
+        DataUploader.uploadFile(this, DataSaver.getINFODataCachePath())
 
         mAppUsageDataLoader.onDestroy()
 
@@ -218,7 +218,7 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
     override fun onLowMemory() {
         super.onLowMemory()
         JLog.d(TAG, "onLowMemory")
-        DataSaver.addDebugTracker(this, "$TAG onLowMemory called.")
+        DataSaver.addDebugTracker(TAG, "onLowMemory called.")
     }
 
     /**

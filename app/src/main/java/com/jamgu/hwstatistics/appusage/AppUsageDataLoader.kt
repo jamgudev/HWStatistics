@@ -75,8 +75,9 @@ class AppUsageDataLoader(private val mContext: FragmentActivity) :
     private var mTimer: VATimer = VATimer("AppUsageData").apply {
         setUncaughtExceptionHandler { t, e ->
             DataSaver.addInfoTracker(
-                Common.getInstance().getApplicationContext(),
-                "uncaughtException: threadName#${t.name}, e = ${e.stackTraceToString()}")
+                TAG,
+                "uncaughtException: threadName#${t.name}, e = ${e.stackTraceToString()}"
+            )
         }
     }
 
@@ -504,7 +505,7 @@ class AppUsageDataLoader(private val mContext: FragmentActivity) :
         mScreenOn.set(false)
         PreferenceUtil.getCachePreference(mContext, 0).edit().putBoolean((TAG_SCREEN_OFF), !mScreenOn.get()).apply()
         if (mIsCharging.get()) {
-            DataUploader.uploadFile(mContext, DataSaver.getCacheRootPath())
+            DataUploader.uploadFile(mContext, DataSaver.getCacheRootPath(), true)
         }
         val screenOffRecord = addOnScreenOffRecord()
         mSessionListener?.onSessionEnd(screenOffRecord)
@@ -575,7 +576,7 @@ class AppUsageDataLoader(private val mContext: FragmentActivity) :
      */
     fun onTrimMemory(level: Int) {
         JLog.d(TAG, "onTrimMemory level = $level")
-        DataSaver.addDebugTracker(mContext, "onTrimMemory, level = $level")
+        DataSaver.addDebugTracker(TAG, "onTrimMemory, level = $level")
 
         if (level >= TRIM_MEMORY_BACKGROUND) {
             checkIfSavePhoneChargeData2File(true)

@@ -2,12 +2,11 @@ package com.jamgu.hwstatistics.power
 
 import android.widget.Toast
 import androidx.fragment.app.FragmentActivity
-import com.jamgu.common.Common
 import com.jamgu.common.thread.ThreadPool
 import com.jamgu.common.util.timer.VATimer
 import com.jamgu.hwstatistics.R
 import com.jamgu.hwstatistics.net.upload.DataSaver
-import com.jamgu.hwstatistics.power.mobiledata.bluetooth.BluetoothManager
+import com.jamgu.hwstatistics.power.mobiledata.bluetooth.BLEManager
 import com.jamgu.hwstatistics.power.mobiledata.brightness.BrightnessManager
 import com.jamgu.hwstatistics.power.mobiledata.cpu.CPUInfoManager
 import com.jamgu.hwstatistics.power.mobiledata.cpu.model.CPU
@@ -82,7 +81,7 @@ class StatisticsLoader(private val mContext: FragmentActivity) : INeedPermission
             mTimer = VATimer("PowerDataLoader").apply {
                 setUncaughtExceptionHandler { t, e ->
                     DataSaver.addInfoTracker(
-                        Common.getInstance().getApplicationContext(),
+                        TAG,
                         "uncaughtException: threadName#${t.name}, e = ${e.stackTraceToString()}"
                     )
                 }
@@ -141,7 +140,7 @@ class StatisticsLoader(private val mContext: FragmentActivity) : INeedPermission
         val memInfoFromFile = MemInfoManager.getMemInfoFromFile()
 
         // 蓝牙
-        val bluetoothData = BluetoothManager.getBluetoothData()
+        val bluetoothData = BLEManager.getBluetoothData()
         val blEnabled = if (bluetoothData?.enabled == true) 1 else 0
         val blConnectedNum = bluetoothData?.bondedDevices?.size ?: 0
 
@@ -262,7 +261,7 @@ class StatisticsLoader(private val mContext: FragmentActivity) : INeedPermission
         val permissions = ArrayList<String>().apply {
             addAll(permission())
             addAll(NetWorkManager.permission())
-            addAll(BluetoothManager.permission())
+            addAll(BLEManager.permission())
         }
         val notGrantedPermission = permissions.filterNot { PermissionX.isGranted(mContext, it) }
         return if (notGrantedPermission.isEmpty()) {

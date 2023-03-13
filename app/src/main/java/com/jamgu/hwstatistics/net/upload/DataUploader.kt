@@ -34,10 +34,10 @@ object DataUploader {
     const val UPLOADED_SUFFIX = "@"
     const val PA_THRESHOLD = "pa_threshold"
 
-    private fun upload(context: Context, file: File) {
+    private fun upload(context: Context, file: File, forceUpload: Boolean) {
         JLog.d("upload", "upload file = ${file.path}")
         val isScreenOff = PreferenceUtil.getCachePreference(context, 0).getBoolean((DataSaver.TAG_SCREEN_OFF), false)
-        if (!isScreenOff) {
+        if (!isScreenOff || forceUpload) {
             JLog.d(TAG, "uploading when screen off, file = ${file.path}")
             return
         }
@@ -131,7 +131,7 @@ object DataUploader {
         return file.exists() && file.isDirectory && file.name.contains(DataSaver.SESSION_TEMP_SUFFIX)
     }
 
-    private fun innerRecursivelyUpload(context: Context, file: File, timeStamp: String) {
+    private fun innerRecursivelyUpload(context: Context, file: File, timeStamp: String, forceUpload: Boolean) {
         if (!file.exists()) return
 
         val childFiles = file.listFiles()
@@ -150,7 +150,7 @@ object DataUploader {
                         true
                     } else !isSessionTempDir(child)
                     if (canUpload) {
-                        innerRecursivelyUpload(context, child, timeStamp)
+                        innerRecursivelyUpload(context, child, timeStamp, forceUpload)
                     }
                 }
             } else {
@@ -158,7 +158,7 @@ object DataUploader {
                 if (child.name.contains(UPLOADED_SUFFIX)) {
                     return@forEach
                 }
-                upload(context, child)
+                upload(context, child, forceUpload)
             }
         }
     }
@@ -181,17 +181,19 @@ object DataUploader {
         } else ""
     }
 
-    fun uploadFile(context: Context, path: String) {
+    @JvmOverloads
+    fun uploadFile(context: Context, path: String, forceUpload: Boolean = false) {
         val nowDate = System.currentTimeMillis().timeStamp2DateStringWithMills()
-        recursivelyUpload(context, File(path), nowDate)
+        recursivelyUpload(context, File(path), nowDate, forceUpload)
     }
 
     /**
      * 递归上传[file]目录下所有文件
      * @param timeStamp session文件，只会上传记录时间完成在timeStamp之前的文件
      */
-    fun recursivelyUpload(context: Context, file: File, timeStamp: String) {
-        ThreadPool.runNetworkTask { innerRecursivelyUpload(context, file, timeStamp) }
+    @JvmOverloads
+    fun recursivelyUpload(context: Context, file: File, timeStamp: String, forceUpload: Boolean = false) {
+        ThreadPool.runNetworkTask { innerRecursivelyUpload(context, file, timeStamp, forceUpload) }
     }
 
     private fun isNetWorkEnable(context: Context): Boolean {

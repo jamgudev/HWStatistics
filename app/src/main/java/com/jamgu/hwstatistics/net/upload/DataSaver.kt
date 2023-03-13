@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Environment
 import android.os.Environment.DIRECTORY_DOWNLOADS
 import androidx.core.content.FileProvider
+import com.jamgu.common.Common
 import com.jamgu.common.thread.ThreadPool
 import com.jamgu.common.util.log.JLog
 import com.jamgu.hwstatistics.appusage.UsageRecord
@@ -110,7 +111,7 @@ object DataSaver {
                     val suffixIndex = tempPath.lastIndexOf(SESSION_TEMP_SUFFIX)
                     if (suffixIndex < 0) {
                         JLog.e(TAG, "file = $tempPath, suffixIndex < 0, continue")
-                        addDebugTracker(context, "file = $tempPath, suffixIndex < 0, continue")
+                        addDebugTracker(TAG, "file = $tempPath, suffixIndex < 0, continue")
                         return@runIOTask
                     }
                     // 把临时文件后缀去掉
@@ -119,7 +120,7 @@ object DataSaver {
                     val finishFile = File(finishFileName)
                     if (!tempFile.renameTo(finishFile)) {
                         JLog.e(TAG, "file = ${tempFile.path} rename to path{$finishFileName} failed.")
-                        addInfoTracker(context, "file = ${tempFile.path} rename to path{$finishFileName} failed.")
+                        addInfoTracker(TAG, "file = ${tempFile.path} rename to path{$finishFileName} failed.")
                         return@runIOTask
                     } else {
                         // rename 成功，更改目录File
@@ -172,7 +173,7 @@ object DataSaver {
                 chargeAnyData.add(singleData)
             }
 
-            val dirFile = File("${getTestDataCachePath()}/${getDateOfTodayString()}")
+            val dirFile = File("${getChargeDataCachePath()}/${getDateOfTodayString()}")
             if (!dirFile.exists()) {
                 dirFile.mkdirs()
             }
@@ -190,7 +191,7 @@ object DataSaver {
     /**
      * 保存测试数据
      */
-    fun saveDebugData(context: Context, testData: ArrayList<UsageRecord>?) {
+    fun saveDebugData(testData: ArrayList<UsageRecord>?) {
         testData ?: return
         ThreadPool.runIOTask {
             val testAnyData = ArrayList<ArrayList<Any>>()
@@ -205,6 +206,7 @@ object DataSaver {
                 dirFile.mkdirs()
             }
 
+            val context = Common.getInstance().getApplicationContext()
             if (testData.isNotEmpty()) {
                 val timeMillis = System.currentTimeMillis().timeStamp2DateString()
                 val testRecordFile = File("${dirFile.path}/${DEBUG_FILE_PREFIX}_${timeMillis}$EXCEL_SUFFIX")
@@ -218,7 +220,7 @@ object DataSaver {
     /**
      * 保存测试数据
      */
-    fun saveInfoData(context: Context, errorData: ArrayList<UsageRecord>?) {
+    fun saveInfoData(errorData: ArrayList<UsageRecord>?) {
         errorData ?: return
         ThreadPool.runIOTask {
             val errorAnyData = ArrayList<ArrayList<Any>>()
@@ -228,7 +230,8 @@ object DataSaver {
                 errorAnyData.add(singleData)
             }
 
-            val dirFile = File("${getErrorDataCachePath()}/${getDateOfTodayString()}")
+            val context = Common.getInstance().getApplicationContext()
+            val dirFile = File("${getINFODataCachePath()}/${getDateOfTodayString()}")
             if (!dirFile.exists()) {
                 dirFile.mkdirs()
             }
@@ -265,7 +268,7 @@ object DataSaver {
 
     fun getTestDataCachePath() = "${getCacheRootPath()}/$DEBUG_RECORD_DIR"
 
-    fun getErrorDataCachePath() = "${getCacheRootPath()}/$INFO_RECORD_DIR"
+    fun getINFODataCachePath() = "${getCacheRootPath()}/$INFO_RECORD_DIR"
 
     private fun getSDPath(): String {
         val sdDir: File?
@@ -279,56 +282,56 @@ object DataSaver {
         return sdDir.toString()
     }
 
-    fun addDebugTracker(context: Context, track: String) {
+    fun addDebugTracker(tag: String, track: String) {
         mDebugData.add(UsageRecord.TestRecord(LinkedHashMap<String, String>().apply {
-            this["tracker"] = track
+            this[tag] = track
         }))
 
-        checkIfSaveDebugData2File(context, false)
+        checkIfSaveDebugData2File(false)
     }
 
-    fun addInfoTracker(context: Context, track: String) {
+    fun addInfoTracker(tag: String, track: String) {
         mInfoData.add(UsageRecord.TestRecord(LinkedHashMap<String, String>().apply {
-            this["ERROR"] = track
+            this[tag] = track
         }))
 
-        checkIfSaveInfoData2File(context)
+        checkIfSaveInfoData2File()
     }
 
     /**
      * 添加一条测试记录，每次更新检查是否需要将数据缓存到文件。
      */
-    fun addDebugTracker(context: Context, records: LinkedHashMap<String, String>) {
+    fun addDebugTracker(records: LinkedHashMap<String, String>) {
         mDebugData.add(UsageRecord.TestRecord(records))
 
-        checkIfSaveDebugData2File(context, false)
+        checkIfSaveDebugData2File(false)
     }
 
     /**
      * 检查是否将程序测试数据保存到文件中
      */
-    private fun checkIfSaveDebugData2File(context: Context, flushImmediately: Boolean) {
+    private fun checkIfSaveDebugData2File(flushImmediately: Boolean) {
         if (flushImmediately || mDebugData.size >= IOnDataEnough.ThreshLength.THRESH_FOR_TRACKER.length) {
             val testData = ArrayList(mDebugData)
             mDebugData.clear()
-            saveDebugData(context, testData)
+            saveDebugData(testData)
         }
     }
 
     /**
      * 检查是否将程序测试数据保存到文件中
      */
-    private fun checkIfSaveInfoData2File(context: Context) {
+    private fun checkIfSaveInfoData2File() {
         if (mInfoData.size >= IOnDataEnough.ThreshLength.THRESH_FOR_ERROR.length) {
             val testData = ArrayList(mInfoData)
+            saveInfoData(testData)
             mInfoData.clear()
-            saveInfoData(context, testData)
         }
     }
 
     @JvmStatic
     fun flushTestData(context: Context) {
-        checkIfSaveDebugData2File(context, true)
+        checkIfSaveDebugData2File(true)
     }
 
 }

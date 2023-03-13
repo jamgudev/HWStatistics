@@ -14,7 +14,7 @@ import com.jamgu.hwstatistics.power.mobiledata.bluetooth.model.ScanMode
  * Created by jamgu on 2021/11/18
  */
 @SuppressLint("HardwareIds", "MissingPermission")
-object BluetoothManager: INeedPermission {
+object BLEManager: INeedPermission {
 
     var data: BluetoothData? = null
         private set

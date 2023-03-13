@@ -37,7 +37,7 @@ class InitActivity : ViewBindingActivity<ActivityInitLayoutBinding>() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        DataSaver.addDebugTracker(this, "$TAG, onCreate")
+        DataSaver.addDebugTracker(TAG, "onCreate")
     }
 
     override fun initWidget() {

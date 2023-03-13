@@ -28,12 +28,13 @@ class BaseApplication: Application(), Thread.UncaughtExceptionHandler {
 
         Common.getInstance().init(this)
         Thread.setDefaultUncaughtExceptionHandler(this)
+        DataSaver.addDebugTracker(TAG, "onCreate")
     }
 
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
 
-        DataSaver.addDebugTracker(this, "$TAG, onTrimMemory level = $level")
+        DataSaver.addDebugTracker(TAG, "onTrimMemory level = $level")
     }
 
     fun addThisActivityToRunningActivities(cls: Class<out Activity>) {
@@ -50,7 +51,7 @@ class BaseApplication: Application(), Thread.UncaughtExceptionHandler {
 
     override fun uncaughtException(t: Thread, e: Throwable) {
         JLog.e(TAG, "uncaughtException happens[${t.name}]: error{${e.printStackTrace()}}")
-        DataSaver.addInfoTracker(this, "uncaughtException happens in thread[${t.name}]: error{${e.stackTraceToString()}}")
+        DataSaver.addInfoTracker(TAG, "uncaughtException happens in thread[${t.name}]: error{${e.stackTraceToString()}}")
         val intent = applicationContext.packageManager.getLaunchIntentForPackage(packageName)
         intent?.addFlags(
             Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
