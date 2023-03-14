@@ -2,6 +2,7 @@ package com.jamgu.hwstatistics.keeplive.service;
 
 import static com.jamgu.hwstatistics.page.PageRouterKt.AUTO_MONITOR_START_FROM_KILLED;
 import static com.jamgu.hwstatistics.page.PageRouterKt.AUTO_MONITOR_START_FROM_NOTIFICATION;
+import static com.jamgu.hwstatistics.util.TimeExtensionsKt.timeStamp2DateString;
 
 import android.app.Activity;
 import android.app.PendingIntent;
@@ -13,11 +14,10 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
-
-import androidx.annotation.RequiresApi;
 
 import com.jamgu.common.util.log.JLog;
 import com.jamgu.hwstatistics.BaseApplication;
@@ -41,7 +41,7 @@ public class KeepAliveService extends JobService {
     private JobScheduler mJobScheduler;
     private ComponentName JOB_PG;
     private int NOTIFICATION_ID = 10;
-    private ForgroundNF mForgroundNF;
+    private ForgroundNF mForegroundNF;
     private String mCurrentContent = "";
 
     private Handler mJobHandler = new Handler(new Handler.Callback() {
@@ -49,48 +49,33 @@ public class KeepAliveService extends JobService {
         @Override
         public boolean handleMessage(Message msg) {
             Log.d(TAG, "pull alive.");
-            if (mForgroundNF == null) {
-                initForeGroundNF(AutoMonitorActivity.class);
-            }
             Context applicationContext = getApplicationContext();
             // 判断Activity是否存活
             if (applicationContext instanceof BaseApplication) {
                 boolean inBackStack = ((BaseApplication) applicationContext)
                         .isActivityInBackStack(AutoMonitorActivity.class);
-                DataSaver.INSTANCE.addDebugTracker(KeepAliveService.this,
-                        TAG + " inBackStack = " + inBackStack);
-                if (mForgroundNF == null) {
-                    initForeGroundNF(AutoMonitorActivity.class);
-                }
-                String currentContent = mForgroundNF.getCurrentContent();
+                DataSaver.INSTANCE.addDebugTracker(TAG,
+                        "inBackStack = " + inBackStack);
+                String currentContent = mForegroundNF.getCurrentContent();
                 String rebootText = getString(R.string.app_being_killed_reboot);
                 if (!inBackStack) {
+                    DataSaver.INSTANCE.addInfoTracker(TAG, "检测到Activity已不在栈内");
                     if (rebootText.equals(currentContent)) {
                         return true;
                     }
-                    mForgroundNF.updateContent(rebootText);
-                    Intent intent = new Intent(KeepAliveService.this, TransitionActivity.class);
-                    intent.putExtra(AUTO_MONITOR_START_FROM_KILLED, true);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    PendingIntent pendingIntent = PendingIntent.getActivity(
-                            KeepAliveService.this,
-                            0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-                    );
-                    mForgroundNF.setContentIntent(pendingIntent);
-                    mForgroundNF.startForegroundNotification();
+                    Bundle bundle = new Bundle();
+                    bundle.putBoolean(AUTO_MONITOR_START_FROM_KILLED, true);
+                    initForeGroundNF(TransitionActivity.class, bundle);
+                    mForegroundNF.updateContent(rebootText);
+                    mForegroundNF.startForegroundNotification();
                 } else if (rebootText.equals(currentContent)){
-                    mForgroundNF.updateContent(getString(R.string.working_background));
-                    Intent intent = new Intent(KeepAliveService.this, AutoMonitorActivity.class);
-                    intent.putExtra(AUTO_MONITOR_START_FROM_NOTIFICATION, true);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    PendingIntent pendingIntent = PendingIntent.getActivity(
-                            KeepAliveService.this,
-                            0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-                    );
-                    mForgroundNF.setContentIntent(pendingIntent);
-                    mForgroundNF.startForegroundNotification();
+                    Bundle bundle = new Bundle();
+                    bundle.putBoolean(AUTO_MONITOR_START_FROM_NOTIFICATION, true);
+                    initForeGroundNF(AutoMonitorActivity.class, bundle);
+                    mForegroundNF.updateContent(getString(R.string.working_background));
+                    mForegroundNF.startForegroundNotification();
                 }
-                mCurrentContent = currentContent;
+                mCurrentContent = mForegroundNF.getCurrentContent();
             }
             if (msg != null && msg.obj instanceof JobParameters) {
                 jobFinished((JobParameters) msg.obj, true);
@@ -104,19 +89,28 @@ public class KeepAliveService extends JobService {
         super.onCreate();
         mJobScheduler = (JobScheduler) getSystemService(Context.JOB_SCHEDULER_SERVICE);
         JOB_PG = new ComponentName(getPackageName(), KeepAliveService.class.getName());
-        initForeGroundNF(AutoMonitorActivity.class);
+        Bundle bundle = new Bundle();
+        bundle.putBoolean(AUTO_MONITOR_START_FROM_NOTIFICATION, true);
+        initForeGroundNF(AutoMonitorActivity.class, bundle);
+        DataSaver.INSTANCE.addInfoTracker(TAG, "onCreate");
     }
 
-    private void initForeGroundNF(Class<? extends Activity> activityClass) {
-        mForgroundNF = new ForgroundNF(this, KeepAliveService.class.getSimpleName());
+    private void initForeGroundNF(Class<? extends Activity> activityClass, Bundle bundle) {
+//        if (mForgroundNF != null) {
+//            mForgroundNF.stopForegroundNotification();
+//        }
+
+        mForegroundNF = new ForgroundNF(this, timeStamp2DateString(System.currentTimeMillis()));
         Intent intent = new Intent(this, activityClass);
-        intent.putExtra(AUTO_MONITOR_START_FROM_NOTIFICATION, true);
+        if (bundle != null && !bundle.isEmpty()) {
+            intent.putExtras(bundle);
+        }
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 this,
                 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
-        mForgroundNF.setContentIntent(pendingIntent);
+        mForegroundNF.setContentIntent(pendingIntent);
     }
 
     /**
@@ -166,23 +160,20 @@ public class KeepAliveService extends JobService {
         mJobScheduler.cancel(JOB_ID);
         mJobScheduler.schedule(job);
         JLog.d(TAG, "onStartCommand");
-        startNotificationForGround();
+        startNotificationForeground();
+        DataSaver.INSTANCE.addDebugTracker(TAG, "onStartCommand");
         return super.onStartCommand(intent, flags, startId);
     }
 
     /**
      * 大于18可以使用一个取消Notification的服务
      */
-    private void startNotificationForGround() {
-        if (Build.VERSION.SDK_INT < 18) {
-            mForgroundNF.startForegroundNotification();
-        } else {
-            mForgroundNF.startForegroundNotification();
-            Intent it = new Intent(this, CancelNotifyervice.class);
+    private void startNotificationForeground() {
+        mForegroundNF.startForegroundNotification();
+//        Intent it = new Intent(this, CancelNotifyervice.class);
 //            if (!KeepLiveUtils.isBackgroundProcess(getApplicationContext())) {
 //                startService(it);
 //            }
-        }
     }
 
     /**
@@ -209,12 +200,12 @@ public class KeepAliveService extends JobService {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if (mForgroundNF != null) {
-            mForgroundNF.stopForegroundNotification();
+        if (mForegroundNF != null) {
+            mForegroundNF.stopForegroundNotification();
         }
         mCurrentContent = "";
         JLog.d(TAG, "onDestroy");
-        DataSaver.INSTANCE.addDebugTracker(this, TAG + " onDestroy.");
+        DataSaver.INSTANCE.addInfoTracker(TAG, " onDestroy.");
     }
 
 }

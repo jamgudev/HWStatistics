@@ -330,7 +330,7 @@ object DataSaver {
     }
 
     @JvmStatic
-    fun flushTestData(context: Context) {
+    fun flushTestData() {
         checkIfSaveDebugData2File(true)
     }
 

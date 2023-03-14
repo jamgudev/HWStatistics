@@ -56,7 +56,7 @@ public class ForgroundNF {
         notificationManager = (NotificationManager) service.getSystemService(Context.NOTIFICATION_SERVICE);
         //针对8.0+系统
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(mChannelID, CHANNEL_NAME + " " + mChannelID,
+            NotificationChannel channel = new NotificationChannel(mChannelID, CHANNEL_NAME,
                     NotificationManager.IMPORTANCE_HIGH);
             channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
             channel.setShowBadge(false);

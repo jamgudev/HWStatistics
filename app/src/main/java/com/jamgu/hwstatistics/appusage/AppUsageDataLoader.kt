@@ -581,7 +581,7 @@ class AppUsageDataLoader(private val mContext: FragmentActivity) :
         if (level >= TRIM_MEMORY_BACKGROUND) {
             checkIfSavePhoneChargeData2File(true)
             saveTempUserUsageData2File()
-            DataSaver.flushTestData(mContext)
+            DataSaver.flushTestData()
         }
     }
 

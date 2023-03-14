@@ -130,12 +130,12 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
             }
 
             // 保活前台服务
-            if (!mKeepLiveServiceOpen && isInit) {
-                mKeepLiveServiceOpen = true
+            if (!mKeepLiveServiceOpen) {
                 KeepAliveService.start(this)
+                mKeepLiveServiceOpen = true
             }
 
-            this.isInit.set(isInit)
+            this.isInit.set(true)
         }
     }
 
@@ -178,7 +178,7 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
         }
         ActivityManager.getMyMemoryState(currentMemoryInfo)
         DataSaver.addInfoTracker(TAG, "onDestroy called, memState = ${currentMemoryInfo?.lastTrimLevel}")
-        DataSaver.flushTestData(this)
+        DataSaver.flushTestData()
         DataUploader.uploadFile(this, DataSaver.getINFODataCachePath())
 
         mAppUsageDataLoader.onDestroy()
