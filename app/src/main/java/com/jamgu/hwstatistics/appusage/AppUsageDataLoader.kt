@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  *
  * @description 用户打开app信息收集器
  */
-class AppUsageDataLoader(private val mContext: FragmentActivity) :
+class AppUsageDataLoader(private val mContext: Context) :
     PhoneCycleBroadcastReceiver.IOnScreenStateChanged, PowerConnectReceiver.IOnPhoneChargeStateChanged {
 
     @Volatile

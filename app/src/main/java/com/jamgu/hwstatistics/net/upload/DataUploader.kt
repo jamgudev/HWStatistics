@@ -1,7 +1,6 @@
 package com.jamgu.hwstatistics.net.upload
 
 import android.content.Context
-import com.jamgu.common.Common
 import com.jamgu.common.thread.ThreadPool
 import com.jamgu.common.util.log.JLog
 import com.jamgu.common.util.preference.PreferenceUtil
@@ -35,9 +34,9 @@ object DataUploader {
     const val PA_THRESHOLD = "pa_threshold"
 
     private fun upload(context: Context, file: File, forceUpload: Boolean) {
-        JLog.d("upload", "upload file = ${file.path}")
+//        JLog.d("upload", "upload file = ${file.path}")
         val isScreenOff = PreferenceUtil.getCachePreference(context, 0).getBoolean((DataSaver.TAG_SCREEN_OFF), false)
-        if (!isScreenOff || forceUpload) {
+        if (!isScreenOff || !forceUpload) {
             JLog.d(TAG, "uploading when screen off, file = ${file.path}")
             return
         }
@@ -79,7 +78,7 @@ object DataUploader {
                                 val paThreshold = data.optInt(PA_THRESHOLD, IOnDataEnough.ThreshLength.THRESH_ONE_MIN.length.toInt())
                                 PreferenceUtil.getCachePreference(context, 0).edit().putInt(PA_THRESHOLD, paThreshold).apply()
                             }
-                            JLog.i(TAG, " code = ${rspModel.getCode()}, msg = ${rspModel.getMsg()}, filepath = $filePath\"")
+//                            JLog.i(TAG, " code = ${rspModel.getCode()}, msg = ${rspModel.getMsg()}, filepath = $filePath\"")
                         } catch (e: Exception) {
                             JLog.e(TAG, "onNext: filepath = ${file.absolutePath}, error happened, e = ${e.stackTraceToString()}")
                         }
@@ -142,7 +141,7 @@ object DataUploader {
                     child.delete()
                 } else {
                     val sessionEndTime = getSessionDirEndTime(child)
-                    JLog.d(TAG, "innerRecursivelyUpload, filepath = ${child.path}, sessionEndTime = $sessionEndTime")
+//                    JLog.d(TAG, "innerRecursivelyUpload, filepath = ${child.path}, sessionEndTime = $sessionEndTime")
                     val canUpload = if (sessionEndTime.isNotEmpty()) {
                         // session文件目录是否完整，完整才能上传
                         sessionEndTime < timeStamp

@@ -153,7 +153,7 @@ class Builder2 {
 
     // 蓝牙是否开启
     var blEnabled: Int = 0
-    // 蓝牙连接数量
+    // 蓝牙历史连接数量
     var blConnectedNum: Int = 0
 
     // ------ mem info
@@ -263,7 +263,7 @@ class Builder2 {
 
     fun cpus(cpus: ArrayList<CPU>?): Builder2 {
         cpus ?: return this
-        if (cpus.isNullOrEmpty() || cpus.size != 8) {
+        if (cpus.isEmpty() || cpus.size != 8) {
             return this
         }
 //        this.cpu0 = cpus[0].curFreq * cpus[0].temp
@@ -380,7 +380,7 @@ class Builder2 {
 //            cpuTemp0, cpuTemp1, cpuTemp2, cpuTemp3, cpuTemp4, cpuTemp5, cpuTemp6, cpuTemp7,
             /*totalCpu,
             cpu0utils, cpu1utils, cpu2utils, cpu3utils, cpu4utils, cpu5utils, cpu6utils, cpu7utils,*/
-            blEnabled + (blEnabled * blConnectedNum),
+            blEnabled,
             /*memFree,*/ memCurAvailable, memActive, /*memInactive,*/ memDirty, memAnonPages, memMapped,
 //            gpuCurFreq, gpuCurUtil,
         )

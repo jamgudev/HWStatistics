@@ -13,6 +13,7 @@ import com.jamgu.hwstatistics.appusage.UsageRecord
 import com.jamgu.hwstatistics.power.IOnDataEnough
 import com.jamgu.hwstatistics.util.ExcelUtil
 import com.jamgu.hwstatistics.util.getDateOfTodayString
+import com.jamgu.hwstatistics.util.timeMillsBetween
 import com.jamgu.hwstatistics.util.timeStamp2DateString
 import java.io.File
 import java.text.SimpleDateFormat
@@ -27,13 +28,13 @@ import java.util.*
  */
 object DataSaver {
 
-    const val ACTIVE_DIR = "active"
+    private const val ACTIVE_DIR = "active"
     const val CACHE_ROOT_DIR = "HWStatistics"
-    const val DEBUG_RECORD_DIR = "debug_record"
-    const val INFO_RECORD_DIR = "info_record"
+    private const val DEBUG_RECORD_DIR = "debug_record"
+    private const val INFO_RECORD_DIR = "info_record"
     const val SESSION_TEMP_SUFFIX = "#temp"
     const val SESSION_DIR_INFIX = "$$"
-    const val SESSION_FILE_PREFIX = "session"
+    private const val SESSION_FILE_PREFIX = "session"
     const val TAG_SCREEN_OFF = "tag_screen_off"
     private const val TAG = "DataSaver"
     private const val FILE_PROVIDER_AUTHORITY = "com.jamgu.hwstatistics"
@@ -102,7 +103,7 @@ object DataSaver {
                 getDateOfTodayString()
             }
 
-            var dirFile: File
+            val dirFile: File
             val tempPath = "${getActiveCachePath()}/$subDirName/$startTime$SESSION_TEMP_SUFFIX"
             if (isSessionFinish) {
                 val tempFile = File(tempPath)
@@ -144,7 +145,8 @@ object DataSaver {
             JLog.d(TAG, "saveAppUsageDataSync, dirFile.path = ${dirFile.path}")
             val timeMillis = System.currentTimeMillis().timeStamp2DateString()
             if (usageAnyData.isNotEmpty()) {
-                val appUsageFile = File("${dirFile.path}/${APP_USAGE_FILE}_$timeMillis$EXCEL_SUFFIX")
+                val duration = endTime?.timeMillsBetween(startTime) ?: timeMillis
+                val appUsageFile = File("${dirFile.path}/${APP_USAGE_FILE}_$duration$EXCEL_SUFFIX")
                 val appUsageUri =
                     FileProvider.getUriForFile(context, FILE_PROVIDER_AUTHORITY, appUsageFile)
                 saveData2DestFile(context, usageAnyData, appUsageUri)

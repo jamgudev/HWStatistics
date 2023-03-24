@@ -13,7 +13,7 @@ import com.jamgu.hwstatistics.databinding.ActivityInitLayoutBinding
 import com.jamgu.hwstatistics.keeplive.utils.KeepLiveUtils
 import com.jamgu.hwstatistics.keeplive.utils.PhoneUtils
 import com.jamgu.hwstatistics.net.upload.DataSaver
-import com.jamgu.hwstatistics.power.StatisticsLoader
+import com.jamgu.hwstatistics.power.permission.PermissionRequester
 import com.jamgu.krouter.annotation.KRouter
 import com.jamgu.krouter.core.router.KRouterUriBuilder
 import com.jamgu.krouter.core.router.KRouters
@@ -93,7 +93,7 @@ class InitActivity : ViewBindingActivity<ActivityInitLayoutBinding>() {
         }
 
         mBinding.vBtnUserPermissionRequest.setOnClickListener {
-            StatisticsLoader(this).requestedPermission()
+            PermissionRequester(this@InitActivity).requestedPermission()
             preference.edit().putBoolean(REQUEST_PERMISSION, true).apply()
         }
 

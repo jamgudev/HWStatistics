@@ -41,23 +41,23 @@ class MainActivity : ViewBindingActivity<ActivityMainBinding>() {
 
     override fun initWidget() {
         mBinding.vStart.setOnClickListener {
-            if (mLoader.requestedPermission()) {
-                if (!mLoader.isStarted()) {
-                    mData.clear()
-                    mAdapter.notifyDataSetChanged()
-                    mLoader.startNonMainThread()
-                    mBinding.vStart.text = "Stop"
-                } else {
-                    mLoader.stop()
-                    mBinding.vStart.text = "Start"
-
-                    val intent = Intent(Intent.ACTION_CREATE_DOCUMENT)
-                    intent.type = "application/*"
-                    intent.putExtra(Intent.EXTRA_TITLE, System.currentTimeMillis().toString() + ".xlsx")
-
-                    folderLauncher?.launch(intent)
-                }
-            }
+//            if (mLoader.requestedPermission()) {
+//                if (!mLoader.isStarted()) {
+//                    mData.clear()
+//                    mAdapter.notifyDataSetChanged()
+//                    mLoader.startNonMainThread()
+//                    mBinding.vStart.text = "Stop"
+//                } else {
+//                    mLoader.stop()
+//                    mBinding.vStart.text = "Start"
+//
+//                    val intent = Intent(Intent.ACTION_CREATE_DOCUMENT)
+//                    intent.type = "application/*"
+//                    intent.putExtra(Intent.EXTRA_TITLE, System.currentTimeMillis().toString() + ".xlsx")
+//
+//                    folderLauncher?.launch(intent)
+//                }
+//            }
         }
         mAdapter.setData(mData)
         mBinding.vRecycler.adapter = mAdapter
@@ -111,7 +111,7 @@ class MainActivity : ViewBindingActivity<ActivityMainBinding>() {
     override fun onResume() {
         super.onResume()
         // 保活程序
-        KeepAliveService.start(this)
+        KeepAliveService.init(this)
     }
 
     override fun onDestroy() {

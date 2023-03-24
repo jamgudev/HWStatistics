@@ -5,6 +5,7 @@ import android.app.Application
 import android.content.Intent
 import com.jamgu.common.Common
 import com.jamgu.common.util.log.JLog
+import com.jamgu.hwstatistics.keeplive.service.KeepAliveService
 import com.jamgu.hwstatistics.net.upload.DataSaver
 import kotlin.system.exitProcess
 
@@ -21,6 +22,7 @@ class BaseApplication: Application(), Thread.UncaughtExceptionHandler {
         private const val TAG = "BaseApplication"
     }
 
+    private var mKeepLiveServiceOpen: Boolean = false
     private val mRunningActivities = ArrayList<Class<out Activity>>()
 
     override fun onCreate() {

@@ -13,11 +13,10 @@ import androidx.core.app.NotificationCompat;
 import com.jamgu.common.util.log.JLog;
 import com.jamgu.hwstatistics.R;
 
-public class ForgroundNF {
-    private static final String TAG = "ForgroundNF";
+public class ForegroundNF {
+    private static final String TAG = "ForegroundNF";
     private static final int START_ID = 101;
-    private static final String CHANNEL_ID = "app_foreground_service";
-    private static final String CHANNEL_NAME = "前台保活服务";
+    private static final String CHANNEL_NAME = "前台核心服务";
 
     private final Service service;
     private NotificationManager notificationManager;
@@ -25,13 +24,12 @@ public class ForgroundNF {
 
     private String mNotificationContent;
     private String mChannelID = "";
-    public ForgroundNF(Service service, String channelID) {
+    public ForegroundNF(Service service, String channelID) {
         this.service = service;
         mChannelID = channelID;
         initNotificationManager();
         initCompatBuilder(service.getBaseContext());
     }
-
 
     /**
      * 初始化NotificationCompat.Builder
@@ -42,7 +40,7 @@ public class ForgroundNF {
         JLog.d(TAG, "initCompatBuilder");
         mNotificationCompatBuilder = new NotificationCompat.Builder(service, mChannelID);
         //标题
-        mNotificationCompatBuilder.setContentTitle(context.getString(R.string.app_name) + " " + mChannelID);
+        mNotificationCompatBuilder.setContentTitle(context.getString(R.string.app_name));
         //通知内容
         mNotificationContent = context.getString(R.string.working_background);
         mNotificationCompatBuilder.setContentText(mNotificationContent);

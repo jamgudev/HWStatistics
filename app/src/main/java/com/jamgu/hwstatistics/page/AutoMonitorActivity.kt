@@ -8,14 +8,13 @@ import androidx.core.content.getSystemService
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.jamgu.common.Common
 import com.jamgu.common.page.activity.ViewBindingActivity
 import com.jamgu.common.thread.ThreadPool
 import com.jamgu.common.util.log.JLog
 import com.jamgu.common.util.preference.PreferenceUtil
 import com.jamgu.hwstatistics.BaseApplication
 import com.jamgu.hwstatistics.R
-import com.jamgu.hwstatistics.appusage.AppUsageDataLoader
-import com.jamgu.hwstatistics.appusage.UsageRecord
 import com.jamgu.hwstatistics.databinding.ActivityAutoMonitorBinding
 import com.jamgu.hwstatistics.keeplive.service.KeepAliveService
 import com.jamgu.hwstatistics.net.upload.DataSaver
@@ -37,21 +36,20 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
         private const val TAG = "AutoMonitorActivity"
     }
 
-    private val mAppUsageDataLoader: AppUsageDataLoader = AppUsageDataLoader(this).apply {
-        setOnSessionListener(object : AppUsageDataLoader.IOnUserSessionListener {
-            override fun onSessionBegin() {
-            }
-
-            override fun onSessionEnd(session: UsageRecord.SingleSessionRecord) {
-            }
-        })
-    }
+//    private val mAppUsageDataLoader: AppUsageDataLoader = AppUsageDataLoader(this).apply {
+//        setOnSessionListener(object : AppUsageDataLoader.IOnUserSessionListener {
+//            override fun onSessionBegin() {
+//            }
+//
+//            override fun onSessionEnd(session: UsageRecord.SingleSessionRecord) {
+//            }
+//        })
+//    }
     private var mStartTime: Long? = null
     private var mAdapter: StatisticAdapter = StatisticAdapter()
     private var mData: ArrayList<String> = ArrayList()
     private var mShowTime: Boolean = false
     private var mKeepLiveServiceOpen: Boolean = false
-    @Volatile
     private var isInit = AtomicBoolean(false)
     private var mEnableAutoStart = false
 
@@ -61,7 +59,7 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        mAppUsageDataLoader.onCreate()
+//        mAppUsageDataLoader.onCreate()
 
         // 加入任务栈
         (applicationContext as? BaseApplication)?.addThisActivityToRunningActivities(this.javaClass)
@@ -106,20 +104,13 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
             }, 400)
         } else {
             // 没启动且不是由初始化页面过来的：简而言之，初始化后回到activity，只要没启动都会启动
-            val fromInit = intent.extras?.getBoolean(AUTO_MONITOR_START_FROM_INIT, false) ?: false
-            if (!mAppUsageDataLoader.isStarted()) {
-                if (!fromInit) {
-                    mAppUsageDataLoader.start()
-                    mStartTime = System.currentTimeMillis()
-                }
-            }
-
-            ThreadPool.runUITask ({
-                if (mAppUsageDataLoader.isStarted()) {
-                    mBinding.vStart.text = getString(R.string.already_started)
-                    mBinding.vStart.isEnabled = false
-                }
-            }, 100L)
+//            val fromInit = intent.extras?.getBoolean(AUTO_MONITOR_START_FROM_INIT, false) ?: false
+//            if (!mAppUsageDataLoader.isStarted()) {
+//                if (!fromInit) {
+//                    mAppUsageDataLoader.start()
+//                    mStartTime = System.currentTimeMillis()
+//                }
+//            }
 
             checkResumeEnterPoint()
 
@@ -131,9 +122,17 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
 
             // 保活前台服务
             if (!mKeepLiveServiceOpen) {
-                KeepAliveService.start(this)
+                KeepAliveService.init(Common.getInstance().getApplicationContext())
                 mKeepLiveServiceOpen = true
+                mStartTime = System.currentTimeMillis()
             }
+
+            ThreadPool.runUITask ({
+                if (mKeepLiveServiceOpen) {
+                    mBinding.vStart.text = getString(R.string.already_started)
+                    mBinding.vStart.isEnabled = false
+                }
+            }, 100L)
 
             this.isInit.set(true)
         }
@@ -159,7 +158,7 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
             "点击icon进入"
         }
 
-        DataSaver.addInfoTracker(TAG, "onResume --------> $trace, isStarted = ${mAppUsageDataLoader.isStarted()}")
+        DataSaver.addInfoTracker(TAG, "onResume --------> $trace, isStarted = ${KeepAliveService.isStarted()}")
     }
 
     override fun onDestroy() {
@@ -181,7 +180,7 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
         DataSaver.flushTestData()
         DataUploader.uploadFile(this, DataSaver.getINFODataCachePath())
 
-        mAppUsageDataLoader.onDestroy()
+//        mAppUsageDataLoader.onDestroy()
 
         (applicationContext as? BaseApplication)?.removeThisActivityFromRunningActivities(this.javaClass)
     }
@@ -200,14 +199,14 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
             mBinding.vShowTime.text = if (mShowTime) "不显示时间戳" else "显示时间戳"
         }
         mBinding.vStart.setOnClickListener {
-            if (!mAppUsageDataLoader.isStarted()) {
-                mData.clear()
-                mAdapter.notifyDataSetChanged()
-                mAppUsageDataLoader.start()
-                mStartTime = System.currentTimeMillis()
-                mBinding.vStart.text = getString(R.string.already_started)
-                mBinding.vStart.isEnabled = false
-            }
+//            if (!mAppUsageDataLoader.isStarted()) {
+//                mData.clear()
+//                mAdapter.notifyDataSetChanged()
+//                mAppUsageDataLoader.start()
+//                mStartTime = System.currentTimeMillis()
+//                mBinding.vStart.text = getString(R.string.already_started)
+//                mBinding.vStart.isEnabled = false
+//            }
         }
     }
 
@@ -237,7 +236,6 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
      */
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
-        mAppUsageDataLoader.onTrimMemory(level)
     }
 
     /**

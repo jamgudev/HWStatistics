@@ -7,12 +7,12 @@ import android.util.Log;
 
 import androidx.annotation.Nullable;
 
-import com.jamgu.hwstatistics.keeplive.forground.ForgroundNF;
+import com.jamgu.hwstatistics.keeplive.forground.ForegroundNF;
 
 
 public class CancelNotifyervice extends Service {
     private static final String TAG = "CancelNotifyervice";
-    ForgroundNF _mForgroundNF;
+    ForegroundNF _mForgroundNF;
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
@@ -23,7 +23,7 @@ public class CancelNotifyervice extends Service {
     public void onCreate() {
         super.onCreate();
         Log.d(TAG,"onCreate--");
-        _mForgroundNF = new ForgroundNF(this, CancelNotifyervice.class.getSimpleName()
+        _mForgroundNF = new ForegroundNF(this, CancelNotifyervice.class.getSimpleName()
         );
     }
 

@@ -1,8 +1,8 @@
 package com.jamgu.hwstatistics.power
 
+import android.content.Context
 import android.widget.Toast
 import androidx.fragment.app.FragmentActivity
-import com.jamgu.common.thread.ThreadPool
 import com.jamgu.common.util.timer.VATimer
 import com.jamgu.hwstatistics.R
 import com.jamgu.hwstatistics.net.upload.DataSaver
@@ -15,16 +15,16 @@ import com.jamgu.hwstatistics.power.mobiledata.memory.MemInfoManager
 import com.jamgu.hwstatistics.power.mobiledata.network.NetWorkManager
 import com.jamgu.hwstatistics.power.mobiledata.phonestate.PhoneStateManager
 import com.jamgu.hwstatistics.power.mobiledata.system.SystemManager
+import com.jamgu.hwstatistics.power.permission.PermissionRequester
 import com.jamgu.hwstatistics.util.divideBy
 import com.jamgu.hwstatistics.util.plus
 import com.jamgu.hwstatistics.util.timeStamp2DateString
-import com.permissionx.guolindev.PermissionX
 import java.util.*
 
 /**
  * Created by jamgu on 2021/10/14
  */
-class StatisticsLoader(private val mContext: FragmentActivity) : INeedPermission {
+class StatisticsLoader(private val mContext: Context) : INeedPermission {
 
     companion object {
         private const val TAG = "StatisticsLoader"
@@ -37,6 +37,8 @@ class StatisticsLoader(private val mContext: FragmentActivity) : INeedPermission
 
     private var mOnDataEnough: IOnDataEnough? = null
     private var mDataNumThreshold: Long = IOnDataEnough.ThreshLength.THRESH_ONE_MIN.length
+
+    private val mPermissionRequester = PermissionRequester(mContext)
 
     /**
      * 数据查询间隔 in ms，越大采样率越低，最大不超过 1000 ms，默认为 200 ms，既每秒采样 5 次
@@ -70,7 +72,7 @@ class StatisticsLoader(private val mContext: FragmentActivity) : INeedPermission
     }
 
     fun startInInternal(internal: Long) {
-        if (mContext is FragmentActivity && requestedPermission()) {
+        if (mContext is FragmentActivity && mPermissionRequester.requestedPermission()) {
             stop()
             start(internal)
         }
@@ -191,7 +193,7 @@ class StatisticsLoader(private val mContext: FragmentActivity) : INeedPermission
     }
 
     fun startNonMainThread() {
-        if (requestedPermission()) {
+        if (mPermissionRequester.isPermissionAllGranted()) {
             mPowerData.clear()
             start()
         } else {
@@ -255,53 +257,6 @@ class StatisticsLoader(private val mContext: FragmentActivity) : INeedPermission
 
     fun clearData() {
         mPowerData.clear()
-    }
-
-    fun requestedPermission(): Boolean {
-        val permissions = ArrayList<String>().apply {
-            addAll(permission())
-            addAll(NetWorkManager.permission())
-            addAll(BLEManager.permission())
-        }
-        val notGrantedPermission = permissions.filterNot { PermissionX.isGranted(mContext, it) }
-        return if (notGrantedPermission.isEmpty()) {
-            true
-        } else {
-            requestPermission(notGrantedPermission)
-            false
-        }
-    }
-
-    private fun requestPermission(notGrantedPermission: List<String>) {
-        PermissionX.init(mContext)
-            .permissions(notGrantedPermission)
-            .onExplainRequestReason { scope, deniedList ->
-                scope.showRequestReasonDialog(
-                    deniedList, "获取网络类型需要申请读取手机状态权限",
-                    "好的", "拒绝"
-                )
-            }
-            .onForwardToSettings { scope, deniedList ->
-                scope.showForwardToSettingsDialog(
-                    deniedList, "You need to allow necessary permissions in Settings manually",
-                    "OK", "Cancel"
-                )
-            }
-            .request { allGranted, _, deniedList ->
-                if (allGranted) {
-                    register()
-//                    start()
-                } else {
-                    ThreadPool.runUITask {
-                        Toast.makeText(
-                            mContext,
-                            "These permissions are denied: $deniedList",
-                            Toast.LENGTH_LONG
-                        )
-                            .show()
-                    }
-                }
-            }
     }
 
     /**
