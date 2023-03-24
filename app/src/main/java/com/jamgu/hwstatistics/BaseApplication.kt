@@ -30,13 +30,12 @@ class BaseApplication: Application(), Thread.UncaughtExceptionHandler {
 
         Common.getInstance().init(this)
         Thread.setDefaultUncaughtExceptionHandler(this)
-        DataSaver.addDebugTracker(TAG, "onCreate")
+        DataSaver.addInfoTracker(TAG, "onCreate")
     }
 
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
-
-        DataSaver.addDebugTracker(TAG, "onTrimMemory level = $level")
+        JLog.d(TAG, "onTrimMemory level = $level")
     }
 
     fun addThisActivityToRunningActivities(cls: Class<out Activity>) {

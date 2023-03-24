@@ -3,10 +3,8 @@ package com.jamgu.hwstatistics.appusage
 import android.app.Activity
 import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
-import android.content.ComponentCallbacks2.*
+import android.content.ComponentCallbacks2.TRIM_MEMORY_BACKGROUND
 import android.content.Context
-import androidx.fragment.app.FragmentActivity
-import com.jamgu.common.Common
 import com.jamgu.common.util.log.JLog
 import com.jamgu.common.util.preference.PreferenceUtil
 import com.jamgu.common.util.timer.VATimer
@@ -35,10 +33,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 class AppUsageDataLoader(private val mContext: Context) :
     PhoneCycleBroadcastReceiver.IOnScreenStateChanged, PowerConnectReceiver.IOnPhoneChargeStateChanged {
 
-    @Volatile
     private var mScreenOn: AtomicBoolean = AtomicBoolean(false)
 
-    @Volatile
     private var mIsCharging: AtomicBoolean = AtomicBoolean(false)
 
     // 用来存放一次Session用户行为
@@ -98,7 +94,7 @@ class AppUsageDataLoader(private val mContext: Context) :
 
     fun start() {
         mTimer.run({
-            queryCurrentUsedApp()
+            queryCurrentUsingApp()
         }, 1000)
     }
 
@@ -122,14 +118,14 @@ class AppUsageDataLoader(private val mContext: Context) :
     /**
      * 获取手机顶层Activity
      */
-    private fun queryCurrentUsedApp() {
+    private fun queryCurrentUsingApp() {
         checkIfSavePhoneChargeData2File(if (mContext is Activity) mContext.isDestroyed else false)
 
         if (!mScreenOn.get()) {
             return
         }
         val endTime = System.currentTimeMillis()
-        val beginTime = endTime - 1500
+        val beginTime = endTime - 2000
         val sUsageStatsManager =
             mContext.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
 
@@ -228,6 +224,35 @@ class AppUsageDataLoader(private val mContext: Context) :
     }
 
     /**
+     * 在完整的ActivityRecord记录被加进来的时候，检查一遍之前是否有同时遗漏Resume和Pause事件，
+     * 造成一整个ActivityRecord记录遗漏的情况，这种情况一般出现在操作系统的launchActivity中，
+     * 也就是手机的home页。经过测试数据分析，当下一个完整的ActivityRecord（AppUsageRecord）的开始
+     * 时间，与上一个完整的ActivityRecord的结束时间间隔超过1s时，我们认为这中间有Activity记录被遗漏了。
+     */
+    private fun checkWhetherResumeAndPauseRecordAreBothMissing(
+        insertedIndex: Int,
+        newInsertedAppUsageRecord: UsageRecord.AppUsageRecord) {
+        // 记录中起码得有2个记录才会检查
+        if (insertedIndex <= 0) return
+
+        val previousRecord = mUserUsageData[insertedIndex - 1]
+        if (previousRecord is UsageRecord.AppUsageRecord
+            && previousRecord.mUsageName == newInsertedAppUsageRecord.mUsageName
+            && previousRecord.mDetailUsage == newInsertedAppUsageRecord.mDetailUsage) {
+            val duration = newInsertedAppUsageRecord.mStartTime
+                .timeMillsBetween(previousRecord.mStartTime)
+            if (duration > 1000) {
+                val upRecord = UsageRecord.AppUsageRecord(
+                    previousRecord.mUsageName, previousRecord.mDetailUsage,
+                    previousRecord.mEndTime, newInsertedAppUsageRecord.mStartTime,
+                    duration.timeStamp2SimpleDateString(), duration
+                )
+                mUserUsageData.add(insertedIndex, upRecord)
+            }
+        }
+    }
+
+    /**
      * 更新上一个 resume record 记录为 usage record 记录：补充使用时长
      */
     private fun replaceLastResumeRecord2UsageRecord(endDateString: String) {
@@ -244,8 +269,12 @@ class AppUsageDataLoader(private val mContext: Context) :
                 endDateString, duration.timeStamp2SimpleDateString(), duration
             )
             // 替换记录
-            mUserUsageData.remove(lastResumeRecord)
-            mUserUsageData.add(usageRecord)
+            val idx = mUserUsageData.indexOf(lastResumeRecord)
+            if (idx >= 0) {
+                mUserUsageData.removeAt(idx)
+                mUserUsageData.add(idx, usageRecord)
+                checkWhetherResumeAndPauseRecordAreBothMissing(idx, usageRecord)
+            }
         }
     }
 
@@ -322,11 +351,22 @@ class AppUsageDataLoader(private val mContext: Context) :
      * 记录一次屏幕熄灭
      */
     private fun addOnScreenOffRecord(): UsageRecord.SingleSessionRecord {
-        replaceLastResumeRecord2UsageRecord(getCurrentDateString())
+        var currentDateString = getCurrentDateString()
+        replaceLastResumeRecord2UsageRecord(currentDateString)
 
         val usageName = mContext.getString(R.string.usage_screen_off)
-        val occurrenceTime = System.currentTimeMillis().timeStamp2DateStringWithMills()
-        val cycleRecord = UsageRecord.PhoneLifeCycleRecord(usageName, occurrenceTime)
+        // 记录 screen off 到来时，上一个Activity记录出现的时期
+        if (mUserUsageData.isNotEmpty()) {
+            val lastRecord = mUserUsageData.last()
+            if (lastRecord is UsageRecord.AppUsageRecord) {
+                DataSaver.addDebugTracker(TAG, "Screen off coming at $currentDateString, last activity recorded at ${lastRecord.mEndTime}")
+                // 存在 screen off 延迟超长才送来的情况
+                if (currentDateString.timeMillsBetween(lastRecord.mEndTime) >= 5000) {
+                    currentDateString = lastRecord.mEndTime
+                }
+            }
+        }
+        val cycleRecord = UsageRecord.PhoneLifeCycleRecord(usageName, currentDateString)
         mUserUsageData.add(cycleRecord)
 
         // 记录一次session
@@ -473,13 +513,11 @@ class AppUsageDataLoader(private val mContext: Context) :
     }
 
     override fun onPhoneBootComplete() {
-        // do noting
+        DataSaver.addInfoTracker(TAG, "onPhoneBootComplete")
     }
 
     override fun onPhoneShutdown() {
-        if (!mScreenOn.get()) {
-            return
-        }
+        DataSaver.addInfoTracker(TAG, "onPhoneShutdown")
 
         val shutdownRecord = addOnShutdownRecord()
         mSessionListener?.onSessionEnd(shutdownRecord)
@@ -509,7 +547,6 @@ class AppUsageDataLoader(private val mContext: Context) :
         }
         val screenOffRecord = addOnScreenOffRecord()
         mSessionListener?.onSessionEnd(screenOffRecord)
-
     }
 
     override fun onChargeState(curBatteryState: Float) {

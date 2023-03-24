@@ -9,6 +9,7 @@ import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import com.jamgu.common.page.activity.ViewBindingActivity
 import com.jamgu.common.util.preference.PreferenceUtil
+import com.jamgu.common.widget.toast.JToast
 import com.jamgu.hwstatistics.databinding.ActivityInitLayoutBinding
 import com.jamgu.hwstatistics.keeplive.utils.KeepLiveUtils
 import com.jamgu.hwstatistics.keeplive.utils.PhoneUtils
@@ -60,26 +61,78 @@ class InitActivity : ViewBindingActivity<ActivityInitLayoutBinding>() {
             mBinding.vBtnUserPermissionRequest.isEnabled = false
         }
 
+        var isBatteryBtmClick = false
         mBinding.vBtnBatterySave.setOnClickListener {
             if (!isBatteryInit || !KeepLiveUtils.isIgnoringBatteryOptimizations(this)) {
                 KeepLiveUtils.requestIgnoreBatteryOptimizations(this)
                 PhoneUtils.setReStartAction(this)
                 preference.edit().putBoolean(BATTERY_INIT, true).apply()
+                isBatteryBtmClick = true
             }
         }
 
         val mMonitorActivityLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             preference.edit().putBoolean(USAGE_STATE_PERMISSION, true).apply()
         }
+        var isUsageBtnClick = false
         mBinding.vBtnUsageState.setOnClickListener {
             if (!isUsageStatePermissionSet) {
                 // 打开获取应用信息页面
                 val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
                 mMonitorActivityLauncher.launch(intent)
+                isUsageBtnClick = true
             }
         }
 
+        mBinding.vBtnUserPermissionRequest.setOnClickListener {
+            PermissionRequester(this@InitActivity).requestedPermission()
+            preference.edit().putBoolean(REQUEST_PERMISSION, true).apply()
+        }
+
+        val mFileAccessBtn = mBinding.vBtnFileAccess
+
+        var isFileAccessBtnClick = false
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            mFileAccessBtn.visibility = View.VISIBLE
+            val fileAccessActivityLauncher = registerForActivityResult(
+                ActivityResultContracts.StartActivityForResult()) { }
+            mFileAccessBtn.setOnClickListener {
+                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+                intent.data = Uri.parse("package:" + this.packageName)
+                fileAccessActivityLauncher.launch(intent)
+                isFileAccessBtnClick = true
+            }
+        } else {
+            isFileAccessBtnClick = true
+            mFileAccessBtn.visibility = View.GONE
+        }
+
+        var isRegister = false
+        mBinding.vBtnRegister.setOnClickListener {
+            KRouters.open(this@InitActivity, REGISTER_PAGE)
+            isRegister = true
+        }
+
+
         mBinding.vBtnMonitorStart.setOnClickListener {
+            var tips = ""
+            if (!isBatteryBtmClick) {
+                tips = mBinding.vBtnBatterySave.text.toString()
+            } else if (!isFileAccessBtnClick) {
+                tips = mBinding.vBtnFileAccess.text.toString()
+            } else if (!isRegister) {
+                tips = mBinding.vBtnRegister.text.toString()
+            } else if (!isUsageBtnClick) {
+                tips = mBinding.vBtnUsageState.text.toString()
+            } else if (!PermissionRequester(this).isPermissionAllGranted()) {
+                tips = mBinding.vBtnUserPermissionRequest.text.toString()
+            }
+
+            if (tips.isNotEmpty()) {
+                JToast.showToast(this, "$tips 相关的权限未授予或者步骤未完成噢！")
+                return@setOnClickListener
+            }
+
             val bundle = Bundle().apply {
                 putBoolean(AUTO_MONITOR_START_FROM_INIT, true)
             }
@@ -90,29 +143,6 @@ class InitActivity : ViewBindingActivity<ActivityInitLayoutBinding>() {
 
             preference.edit().putBoolean(MONITOR_INIT, true).apply()
             finish()
-        }
-
-        mBinding.vBtnUserPermissionRequest.setOnClickListener {
-            PermissionRequester(this@InitActivity).requestedPermission()
-            preference.edit().putBoolean(REQUEST_PERMISSION, true).apply()
-        }
-
-        val mFileAccessBtn = mBinding.vBtnFileAccess
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            mFileAccessBtn.visibility = View.VISIBLE
-            val fileAccessActivityLauncher = registerForActivityResult(
-                ActivityResultContracts.StartActivityForResult()) { }
-            mFileAccessBtn.setOnClickListener {
-                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
-                intent.data = Uri.parse("package:" + this.packageName)
-                fileAccessActivityLauncher.launch(intent)
-            }
-        } else {
-            mFileAccessBtn.visibility = View.GONE
-        }
-
-        mBinding.vBtnRegister.setOnClickListener {
-            KRouters.open(this@InitActivity, REGISTER_PAGE)
         }
     }
 

@@ -152,7 +152,7 @@ public class KeepAliveService extends JobService {
     @Override
     public boolean onStartJob(JobParameters params) {
         Log.d(TAG, "onStartJob");
-        DataSaver.INSTANCE.addInfoTracker(TAG, "onStartJob");
+        DataSaver.INSTANCE.addDebugTracker(TAG, "onStartJob");
         mJobHandler.sendMessage(Message.obtain(mJobHandler, 1, params));
         return true;
     }
