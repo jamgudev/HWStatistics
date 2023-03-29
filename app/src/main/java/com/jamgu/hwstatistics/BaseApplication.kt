@@ -7,6 +7,8 @@ import com.jamgu.common.Common
 import com.jamgu.common.util.log.JLog
 import com.jamgu.hwstatistics.keeplive.service.KeepAliveService
 import com.jamgu.hwstatistics.net.upload.DataSaver
+import com.jamgu.hwstatistics.util.getCurrentDateString
+import com.jamgu.hwstatistics.util.timeMillsBetween
 import kotlin.system.exitProcess
 
 
@@ -35,7 +37,14 @@ class BaseApplication: Application(), Thread.UncaughtExceptionHandler {
 
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
-        JLog.d(TAG, "onTrimMemory level = $level")
+        val destroyTime = KeepAliveService.getActivityDestroyTime()
+        val millsBetween = getCurrentDateString().timeMillsBetween(destroyTime)
+        DataSaver.addDebugTracker(TAG, "onTrimMemory level = $level, activity destroyed time passed:" +
+                " $millsBetween, is loader running = ${KeepAliveService.isStarted()}")
+
+        if (KeepAliveService.checkIfNeedNotifyUser()) {
+            KeepAliveService.start(this)
+        }
     }
 
     fun addThisActivityToRunningActivities(cls: Class<out Activity>) {

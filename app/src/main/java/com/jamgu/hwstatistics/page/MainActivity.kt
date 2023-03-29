@@ -111,7 +111,7 @@ class MainActivity : ViewBindingActivity<ActivityMainBinding>() {
     override fun onResume() {
         super.onResume()
         // 保活程序
-        KeepAliveService.init(this)
+        KeepAliveService.start(this)
     }
 
     override fun onDestroy() {

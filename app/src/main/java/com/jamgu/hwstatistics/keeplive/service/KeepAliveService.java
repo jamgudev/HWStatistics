@@ -2,6 +2,8 @@ package com.jamgu.hwstatistics.keeplive.service;
 
 import static com.jamgu.hwstatistics.page.PageRouterKt.AUTO_MONITOR_START_FROM_KILLED;
 import static com.jamgu.hwstatistics.page.PageRouterKt.AUTO_MONITOR_START_FROM_NOTIFICATION;
+import static com.jamgu.hwstatistics.util.TimeExtensions.ONE_WEEK;
+import static com.jamgu.hwstatistics.util.TimeExtensionsKt.getCurrentDateString;
 import static com.jamgu.hwstatistics.util.TimeExtensionsKt.timeStamp2DateString;
 
 import android.annotation.SuppressLint;
@@ -18,6 +20,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.jamgu.common.util.log.JLog;
@@ -28,6 +31,7 @@ import com.jamgu.hwstatistics.keeplive.forground.ForegroundNF;
 import com.jamgu.hwstatistics.net.upload.DataSaver;
 import com.jamgu.hwstatistics.page.AutoMonitorActivity;
 import com.jamgu.hwstatistics.page.TransitionActivity;
+import com.jamgu.hwstatistics.util.TimeExtensionsKt;
 
 /**
  * 创建一个JobService用于提高应用优先级
@@ -42,8 +46,10 @@ public class KeepAliveService extends JobService {
     private JobScheduler mJobScheduler;
     private ComponentName JOB_PG;
     private ForegroundNF mForegroundNF;
-    private static Boolean isLoaderStarted = false;
+    private static Boolean sIsLoaderStarted = false;
     private AppUsageDataLoader mUsageLoader = null;
+
+    private static String sActivityDestroyedTime = null;
 
     private Handler mJobHandler = new Handler(new Handler.Callback() {
 
@@ -53,18 +59,22 @@ public class KeepAliveService extends JobService {
             Context applicationContext = getApplicationContext();
 
             if (mUsageLoader != null) {
-                isLoaderStarted = mUsageLoader.isStarted();
+                sIsLoaderStarted = mUsageLoader.isStarted();
             }
 
             // 判断Activity是否存活
             if (applicationContext instanceof BaseApplication) {
                 boolean inBackStack = ((BaseApplication) applicationContext)
                         .isActivityInBackStack(AutoMonitorActivity.class);
+                // 记录宿主activity的销毁时间
+                if (!inBackStack && TextUtils.isEmpty(sActivityDestroyedTime)) {
+                    sActivityDestroyedTime = getCurrentDateString();
+                }
                 DataSaver.INSTANCE.addDebugTracker(TAG,
-                        "inBackStack = " + inBackStack + ", isStart = " + isLoaderStarted);
+                        "inBackStack = " + inBackStack + ", isStart = " + sIsLoaderStarted);
                 String currentContent = mForegroundNF.getCurrentContent();
                 String rebootText = getString(R.string.app_being_killed_reboot);
-                if (!inBackStack && !isLoaderStarted) {
+                if ((!inBackStack && !sIsLoaderStarted) || checkIfNeedNotifyUser()) {
                     DataSaver.INSTANCE.addInfoTracker(TAG, "检测到Activity已不在栈内");
                     if (rebootText.equals(currentContent)) {
                         return true;
@@ -90,7 +100,26 @@ public class KeepAliveService extends JobService {
     });
 
     public static Boolean isStarted() {
-        return isLoaderStarted;
+        return sIsLoaderStarted;
+    }
+
+    public static String getActivityDestroyTime() {
+        return sActivityDestroyedTime;
+    }
+
+    /**
+     * activity 销毁事件大于 7天 也提示
+     * @return
+     */
+    public static boolean checkIfNeedNotifyUser() {
+        if (TextUtils.isEmpty(sActivityDestroyedTime)) {
+            return false;
+        }
+        long timeMillis = System.currentTimeMillis();
+        String dateString = TimeExtensionsKt.timeStamp2DateStringWithMills(timeMillis);
+        long millsBetween = TimeExtensionsKt.timeMillsBetween(dateString, sActivityDestroyedTime);
+
+        return millsBetween >= ONE_WEEK;
     }
 
     @Override
@@ -129,22 +158,7 @@ public class KeepAliveService extends JobService {
         mForegroundNF.setContentIntent(pendingIntent);
     }
 
-    /**
-     * 外部只需要调用这句话就可以启动一个保活状态
-     *
-     * @param context   启动服务的上下文
-     *                  <p>
-     *                  AliveStrategy.BATTERYOPTIMIZATION：启动电量优化保活
-     *                  <p>
-     *                  AliveStrategy.RESTARTACTION：启动自启动白名单保活
-     *                  <p>
-     *                  AliveStrategy.ALL:启动电量优化，启动白名单保活
-     *                  <p>
-     *                  AliveStrategy.NONE：不启动上面两个任何一个
-     *                  <p>
-     *                  AliveStrategy.JOB_SERVICE：只使用JobService进行保活
-     */
-    public static void init(Context context) {
+    public static void start(Context context) {
         Intent intent = new Intent(context, KeepAliveService.class);
         context.startService(intent);
     }
@@ -177,12 +191,11 @@ public class KeepAliveService extends JobService {
         mJobScheduler.schedule(job);
         JLog.d(TAG, "onStartCommand");
         startNotificationForeground();
-        boolean isStarted = false;
         if (mUsageLoader != null) {
-            isStarted = mUsageLoader.isStarted();
+            sIsLoaderStarted = mUsageLoader.isStarted();
         }
         DataSaver.INSTANCE.addInfoTracker(TAG,
-                "onStartCommand " + "mUsageLoader = " + mUsageLoader + ", isStarted = " + isStarted);
+                "onStartCommand " + "mUsageLoader = " + mUsageLoader + ", isStarted = " + sIsLoaderStarted);
 
         if (mUsageLoader == null) {
             mUsageLoader = new AppUsageDataLoader(getApplicationContext());
@@ -234,6 +247,7 @@ public class KeepAliveService extends JobService {
         if (mForegroundNF != null) {
             mForegroundNF.stopForegroundNotification();
         }
+        sIsLoaderStarted = false;
         mJobHandler = null;
         JLog.d(TAG, "onDestroy");
         DataSaver.INSTANCE.addInfoTracker(TAG, "onDestroy.");

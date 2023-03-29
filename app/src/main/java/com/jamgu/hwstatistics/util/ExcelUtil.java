@@ -3,15 +3,11 @@ package com.jamgu.hwstatistics.util;
 import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
-import android.widget.Toast;
+
 import com.jamgu.common.thread.ThreadPool;
 import com.jamgu.common.widget.toast.JToast;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.jamgu.hwstatistics.net.upload.DataSaver;
+
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DateUtil;
@@ -21,6 +17,14 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.WorkbookUtil;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * <pre>
@@ -202,15 +206,11 @@ public class ExcelUtil {
             outputStream.flush();
             outputStream.close();
             Log.i(TAG, "writeExcel: export successful");
-//            ThreadPool.runUITask(() ->
-//                    Toast.makeText(context, "export successful", Toast.LENGTH_SHORT).show()
-//            );
         } catch (Exception e) {
             e.printStackTrace();
             Log.e(TAG, "writeExcel: error" + e);
-//            ThreadPool.runUITask(() ->
-//                    Toast.makeText(context, "export error" + e, Toast.LENGTH_SHORT).show()
-//            );
+            DataSaver.INSTANCE.addInfoTracker(TAG, uri.toString() +
+                    ", err happened when store file, e = " + Arrays.toString(e.getStackTrace()));
         }
     }
 

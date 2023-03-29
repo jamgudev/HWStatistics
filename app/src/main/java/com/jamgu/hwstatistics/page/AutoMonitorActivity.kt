@@ -122,7 +122,7 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
 
             // 保活前台服务
             if (!mKeepLiveServiceOpen) {
-                KeepAliveService.init(Common.getInstance().getApplicationContext())
+                KeepAliveService.start(Common.getInstance().getApplicationContext())
                 mKeepLiveServiceOpen = true
                 mStartTime = System.currentTimeMillis()
             }

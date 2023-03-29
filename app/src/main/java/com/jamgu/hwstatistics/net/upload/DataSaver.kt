@@ -149,6 +149,7 @@ object DataSaver {
                 val appUsageFile = File("${dirFile.path}/${APP_USAGE_FILE}_$duration$EXCEL_SUFFIX")
                 val appUsageUri =
                     FileProvider.getUriForFile(context, FILE_PROVIDER_AUTHORITY, appUsageFile)
+                JLog.d(TAG, "appUsageUri = $appUsageUri")
                 saveData2DestFile(context, usageAnyData, appUsageUri)
             }
 

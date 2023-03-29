@@ -80,6 +80,7 @@ class AppUsageDataLoader(private val mContext: Context) :
     companion object {
         private const val TAG = "AppUsageDataLoader"
         const val TEXT_SESSION_SUMMARIZE = "Session Summarize"
+        private const val LAUNCH_PACKAGE_NAME = "launcher"
     }
 
     init {
@@ -118,10 +119,10 @@ class AppUsageDataLoader(private val mContext: Context) :
     /**
      * 获取手机顶层Activity
      */
-    private fun queryCurrentUsingApp() {
+    private fun queryCurrentUsingApp(isIgnoreScreenOnStat: Boolean = false) {
         checkIfSavePhoneChargeData2File(if (mContext is Activity) mContext.isDestroyed else false)
 
-        if (!mScreenOn.get()) {
+        if (!mScreenOn.get() && !isIgnoreScreenOnStat) {
             return
         }
         val endTime = System.currentTimeMillis()
@@ -152,7 +153,7 @@ class AppUsageDataLoader(private val mContext: Context) :
 
                     // 当前事件是否是新事件
                     if (!isNewResumeRecord(resumeRecord)) {
-                        return
+                        continue
                     }
                     // 说明是新事件，更新
                     else {
@@ -182,7 +183,7 @@ class AppUsageDataLoader(private val mContext: Context) :
                     )
 
                     if (!isNewPauseRecord(pauseRecord)) {
-                        return
+                        continue
                     }
                     // 新的pause事件
                     else {
@@ -218,6 +219,18 @@ class AppUsageDataLoader(private val mContext: Context) :
             )
             mUserUsageData.add(newResumeRecord)
             updateLatestResumeRecord(newResumeRecord)
+        } else if (lastRecord is UsageRecord.PhoneLifeCycleRecord) {
+            if (lastRecord.mLifeCycleName == mContext.getString(R.string.usage_user_present)) {
+                DataSaver.addInfoTracker(TAG, "checkWhetherPreviousResumeIsMissing:: pause event coming, " +
+                        "while last record is user_present, resume(${pauseRecord.mPackageName}, ${pauseRecord.mClassName}) event missing")
+                val newResumeRecord = UsageRecord.ActivityResumeRecord(
+                    pauseRecord.mPackageName,
+                    pauseRecord.mClassName,
+                    lastRecord.mOccTime
+                )
+                mUserUsageData.add(newResumeRecord)
+                updateLatestResumeRecord(newResumeRecord)
+            }
         }
 
         replaceLastResumeRecord2UsageRecord(pauseRecord.mTimeStamp)
@@ -231,23 +244,30 @@ class AppUsageDataLoader(private val mContext: Context) :
      */
     private fun checkWhetherResumeAndPauseRecordAreBothMissing(
         insertedIndex: Int,
-        newInsertedAppUsageRecord: UsageRecord.AppUsageRecord) {
+        newInsertedAppUsageRecord: UsageRecord.AppUsageRecord
+    ) {
         // 记录中起码得有2个记录才会检查
         if (insertedIndex <= 0) return
 
         val previousRecord = mUserUsageData[insertedIndex - 1]
-        if (previousRecord is UsageRecord.AppUsageRecord
-            && previousRecord.mUsageName == newInsertedAppUsageRecord.mUsageName
-            && previousRecord.mDetailUsage == newInsertedAppUsageRecord.mDetailUsage) {
-            val duration = newInsertedAppUsageRecord.mStartTime
-                .timeMillsBetween(previousRecord.mStartTime)
-            if (duration > 1000) {
-                val upRecord = UsageRecord.AppUsageRecord(
-                    previousRecord.mUsageName, previousRecord.mDetailUsage,
-                    previousRecord.mEndTime, newInsertedAppUsageRecord.mStartTime,
-                    duration.timeStamp2SimpleDateString(), duration
-                )
-                mUserUsageData.add(insertedIndex, upRecord)
+        if (previousRecord is UsageRecord.AppUsageRecord) {
+            val activityName = previousRecord.mUsageName
+            val detailUsage = previousRecord.mDetailUsage ?: ""
+            if (activityName.contains(LAUNCH_PACKAGE_NAME, true)
+                || detailUsage.contains(LAUNCH_PACKAGE_NAME, true)
+                || activityName == newInsertedAppUsageRecord.mUsageName
+                && detailUsage == newInsertedAppUsageRecord.mDetailUsage
+            ) {
+                val duration = newInsertedAppUsageRecord.mStartTime
+                    .timeMillsBetween(previousRecord.mEndTime)
+                if (duration > 1000) {
+                    val upRecord = UsageRecord.AppUsageRecord(
+                        activityName, detailUsage,
+                        previousRecord.mEndTime, newInsertedAppUsageRecord.mStartTime,
+                        duration.timeStamp2SimpleDateString(), duration
+                    )
+                    mUserUsageData.add(insertedIndex, upRecord)
+                }
             }
         }
     }
@@ -351,21 +371,50 @@ class AppUsageDataLoader(private val mContext: Context) :
      * 记录一次屏幕熄灭
      */
     private fun addOnScreenOffRecord(): UsageRecord.SingleSessionRecord {
-        var currentDateString = getCurrentDateString()
-        replaceLastResumeRecord2UsageRecord(currentDateString)
-
+        val currentDateString = getCurrentDateString()
         val usageName = mContext.getString(R.string.usage_screen_off)
         // 记录 screen off 到来时，上一个Activity记录出现的时期
         if (mUserUsageData.isNotEmpty()) {
             val lastRecord = mUserUsageData.last()
             if (lastRecord is UsageRecord.AppUsageRecord) {
-                DataSaver.addDebugTracker(TAG, "Screen off coming at $currentDateString, last activity recorded at ${lastRecord.mEndTime}")
-                // 存在 screen off 延迟超长才送来的情况
-                if (currentDateString.timeMillsBetween(lastRecord.mEndTime) >= 5000) {
-                    currentDateString = lastRecord.mEndTime
+                val duration = currentDateString.timeMillsBetween(lastRecord.mEndTime)
+                // 存在 screen off 延迟超长才送来的情况，其实是有完整的activity记录遗漏了（主要是home页）
+                if (duration >= 1500) {
+                    queryCurrentUsingApp(true)
+                    val newestRecord = mUserUsageData.last()
+                    DataSaver.addInfoTracker(TAG, "Screen off coming at $currentDateString" +
+                            ", last activity(${lastRecord.mUsageName}) recorded at ${lastRecord.mEndTime}, " +
+                            "passed = $duration, try to query current using app，success = ${lastRecord != newestRecord}")
+                    // 没有捞到丢失的事件
+                    if (newestRecord == lastRecord) {
+                        if (lastRecord.mUsageName.contains(LAUNCH_PACKAGE_NAME, true)
+                            || lastRecord.mUsageName.contains(LAUNCH_PACKAGE_NAME, true)) {
+                            // 上一个是launch页，直接补充
+                            val activityRecord = UsageRecord.AppUsageRecord(
+                                lastRecord.mUsageName, lastRecord.mDetailUsage,
+                                lastRecord.mEndTime, currentDateString,
+                                duration.timeStamp2SimpleDateString(), duration
+                            )
+                            mUserUsageData.add(activityRecord)
+                        }
+                    }
+                }
+            } else if (lastRecord is UsageRecord.PhoneLifeCycleRecord) {
+                // screen_off来了，但上一个事件是user_present，且screen_off与user_present时间间隔很大，
+                // 这时候很可能是有activity数据遗漏了，尝试捞一下数据
+                if (lastRecord.mLifeCycleName == mContext.getString(R.string.usage_user_present)) {
+                    val duration = currentDateString.timeMillsBetween(lastRecord.mOccTime)
+                    if (duration >= 1500) {
+                        queryCurrentUsingApp(true)
+                        val newestRecord = mUserUsageData.last()
+                        DataSaver.addInfoTracker(TAG, "Screen off coming at $currentDateString" +
+                                ", last RECORD is(${lastRecord.mLifeCycleName}) recorded at ${lastRecord.mOccTime}, " +
+                                "passed = $duration, try to query current using app, success = ${newestRecord != lastRecord}")
+                    }
                 }
             }
         }
+        replaceLastResumeRecord2UsageRecord(currentDateString)
         val cycleRecord = UsageRecord.PhoneLifeCycleRecord(usageName, currentDateString)
         mUserUsageData.add(cycleRecord)
 
@@ -524,6 +573,12 @@ class AppUsageDataLoader(private val mContext: Context) :
     }
 
     override fun onScreenOn() {
+        // 有时候 screen_on 来的比 user_present事件来的慢
+        // 在user_present里会调用一次onScreenOn()方法，避免重复调用
+        if (mScreenOn.get()) {
+            return
+        }
+
         mScreenOn.set(true)
         PreferenceUtil.getCachePreference(mContext, 0).edit().putBoolean((TAG_SCREEN_OFF), !mScreenOn.get()).apply()
         if (mPowerDataLoader.isStarted()) {
@@ -531,10 +586,6 @@ class AppUsageDataLoader(private val mContext: Context) :
         }
         mPowerDataLoader.startNonMainThread()
         addOnScreenOnRecord()
-        // 可能存在present事件比screen_on事件先到，导致present事件丢失的情况
-        if (mUserPresentRecord != null) {
-            addUserPresentRecord()
-        }
         mSessionListener?.onSessionBegin()
     }
 
@@ -561,8 +612,7 @@ class AppUsageDataLoader(private val mContext: Context) :
 
     override fun onUserPresent() {
         if (!mScreenOn.get()) {
-            mUserPresentRecord = getUserPresentRecord()
-            return
+            onScreenOn()
         }
         addUserPresentRecord()
     }

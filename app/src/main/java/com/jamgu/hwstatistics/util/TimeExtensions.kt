@@ -12,7 +12,8 @@ import java.util.*
  */
 object TimeExtensions{
     // in mills
-    const val ONE_DAY = 86400L
+    const val ONE_HOUR = 60 * 60 * 1000
+    const val ONE_DAY = 24 * ONE_HOUR
     const val THREE_DAYS = 3 * ONE_DAY
     const val ONE_WEEK = 7 * ONE_DAY
     const val HALF_MONTH = 15 * ONE_DAY
@@ -31,8 +32,8 @@ fun Long.timeStamp2SimpleDateString(): String {
     return getSimpleSdf().format(Date(this))
 }
 
-fun String.timeMillsBetween(fromTimeStr: String): Long {
-    if (fromTimeStr.isEmpty()) return 0L
+fun String.timeMillsBetween(fromTimeStr: String?): Long {
+    if (fromTimeStr.isNullOrEmpty()) return 0L
 
     val fromDate = getSdfWithMills().parse(fromTimeStr) ?: return 0L
     val toDate = getSdfWithMills().parse(this) ?: return 0L

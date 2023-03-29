@@ -8,7 +8,7 @@ import com.jamgu.hwstatistics.net.Network
 import com.jamgu.hwstatistics.net.RspModel
 import com.jamgu.hwstatistics.power.IOnDataEnough
 import com.jamgu.hwstatistics.power.mobiledata.network.NetWorkManager
-import com.jamgu.hwstatistics.util.TimeExtensions.ONE_DAY
+import com.jamgu.hwstatistics.util.TimeExtensions.ONE_HOUR
 import com.jamgu.hwstatistics.util.getCurrentDateString
 import com.jamgu.hwstatistics.util.timeMillsBetween
 import com.jamgu.hwstatistics.util.timeStamp2DateStringWithMills
@@ -106,16 +106,16 @@ object DataUploader {
         var delete = false
         if (file.absolutePath.contains(DataSaver.CACHE_ROOT_DIR)) {
             if (file.exists() && file.isDirectory) {
-                // session 数据文件，本地保留一周，一周后清除
                 if (isSessionTempDir(file)) {
                     val fileName = file.name
                     val split = fileName.split("#")
                     // 清除1天前的temp文件
                     try {
-                        if (split.size == 2 && getCurrentDateString().timeMillsBetween(split[0]) >= ONE_DAY) {
+                        if (split.size == 2 && getCurrentDateString().timeMillsBetween(split[0]) >= ONE_HOUR) {
                             file.deleteRecursively()
-                            delete = true
                         }
+                        // 是temp文件就需要删除
+                        delete = true
                     } catch (e: Exception) {
                         JLog.d(TAG, "checkIfNeedDelete, e = ${e.stackTraceToString()}")
                     }
