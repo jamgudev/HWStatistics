@@ -4,6 +4,8 @@ import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
 
+import androidx.core.content.FileProvider;
+
 import com.jamgu.common.thread.ThreadPool;
 import com.jamgu.common.widget.toast.JToast;
 import com.jamgu.hwstatistics.net.upload.DataSaver;
@@ -18,6 +20,7 @@ import org.apache.poi.ss.util.WorkbookUtil;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -175,7 +178,24 @@ public class ExcelUtil {
         return list;
     }
 
-    public static void writeExcelNew(Context context, ArrayList<ArrayList<Object>> exportExcel, Uri uri) {
+    public static void writeWithRetry(Context context, ArrayList<ArrayList<Object>> exportExcel, Uri uri) {
+        boolean success = writeExcelNew(context, exportExcel, uri);
+        if (!success) {
+            try {
+                int deleteResult = 0;
+                FileProvider fileProvider = new FileProvider();
+                deleteResult = fileProvider.delete(uri, null, null);
+                boolean retryResult = writeExcelNew(context, exportExcel, uri);
+                DataSaver.INSTANCE.addInfoTracker(TAG, "uri = " + uri.toString()
+                        + "old file delete result = " + deleteResult + " retry result = " + retryResult);
+            } catch (Exception e) {
+                DataSaver.INSTANCE.addInfoTracker(TAG, "writeWithRetry:: err happened "
+                        + e.getMessage() + " stackTrace + " + Arrays.toString(e.getStackTrace()));
+            }
+        }
+    }
+
+    public static boolean writeExcelNew(Context context, ArrayList<ArrayList<Object>> exportExcel, Uri uri) {
         try {
             XSSFWorkbook workbook = new XSSFWorkbook();
             XSSFSheet sheet = workbook.createSheet(WorkbookUtil.createSafeSheetName("Sheet1"));
@@ -206,11 +226,13 @@ public class ExcelUtil {
             outputStream.flush();
             outputStream.close();
             Log.i(TAG, "writeExcel: export successful");
+            return true;
         } catch (Exception e) {
             e.printStackTrace();
             Log.e(TAG, "writeExcel: error" + e);
             DataSaver.INSTANCE.addInfoTracker(TAG, uri.toString() +
-                    ", err happened when store file, e = " + Arrays.toString(e.getStackTrace()));
+                    ", err happened when store file, msg = " + e.getMessage() + ", e = " + Arrays.toString(e.getStackTrace()));
+            return false;
         }
     }
 

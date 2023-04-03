@@ -92,7 +92,7 @@ class PCRatioExporter(var hasRealPc: Boolean) {
         val filePath = "$fileDir/${fileName}_export_${System.currentTimeMillis()}.xlsx"
         val filePathUri = Uri.fromFile(File(filePath))
         if (exportList.size != 0) {
-            ExcelUtil.writeExcelNew(context, exportList, filePathUri)
+            ExcelUtil.writeWithRetry(context, exportList, filePathUri)
         }
     }
 

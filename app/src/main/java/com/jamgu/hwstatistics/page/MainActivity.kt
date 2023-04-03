@@ -97,7 +97,7 @@ class MainActivity : ViewBindingActivity<ActivityMainBinding>() {
                 if (data.isNullOrEmpty()) {
                     showToast("Data Is Empty...")
                 } else {
-                    ExcelUtil.writeExcelNew(this, data, uri)
+                    ExcelUtil.writeWithRetry(this, data, uri)
                 }
             }
         }

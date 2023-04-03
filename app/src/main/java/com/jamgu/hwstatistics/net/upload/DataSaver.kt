@@ -69,7 +69,7 @@ object DataSaver {
             val destFile = File(filePath)
             val uri = FileProvider.getUriForFile(context, FILE_PROVIDER_AUTHORITY, destFile)
             JLog.d(TAG, "uri = $uri")
-            ExcelUtil.writeExcelNew(context, data, uri)
+            ExcelUtil.writeWithRetry(context, data, uri)
         }
     }
 
@@ -186,7 +186,7 @@ object DataSaver {
                 val chargeRecordFile = File("${dirFile.path}/${CHARGE_USAGE_FILE_PREFIX}_${timeMillis}$EXCEL_SUFFIX")
                 val chargeUsageUri =
                     FileProvider.getUriForFile(context, FILE_PROVIDER_AUTHORITY, chargeRecordFile)
-                ExcelUtil.writeExcelNew(context, chargeAnyData, chargeUsageUri)
+                ExcelUtil.writeWithRetry(context, chargeAnyData, chargeUsageUri)
             }
         }
     }
@@ -215,7 +215,7 @@ object DataSaver {
                 val testRecordFile = File("${dirFile.path}/${DEBUG_FILE_PREFIX}_${timeMillis}$EXCEL_SUFFIX")
                 val testUsageUri =
                     FileProvider.getUriForFile(context, FILE_PROVIDER_AUTHORITY, testRecordFile)
-                ExcelUtil.writeExcelNew(context, testAnyData, testUsageUri)
+                ExcelUtil.writeWithRetry(context, testAnyData, testUsageUri)
             }
         }
     }
@@ -244,7 +244,7 @@ object DataSaver {
                 val errorRecordFile = File("${dirFile.path}/${INFO_FILE_PREFIX}_${dateStr}$EXCEL_SUFFIX")
                 val errorUsageUri =
                     FileProvider.getUriForFile(context, FILE_PROVIDER_AUTHORITY, errorRecordFile)
-                ExcelUtil.writeExcelNew(context, errorAnyData, errorUsageUri)
+                ExcelUtil.writeWithRetry(context, errorAnyData, errorUsageUri)
             }
         }
     }
@@ -254,7 +254,7 @@ object DataSaver {
         data: ArrayList<ArrayList<Any>>,
         destFileUri: Uri
     ) {
-        ExcelUtil.writeExcelNew(context, data, destFileUri)
+        ExcelUtil.writeWithRetry(context, data, destFileUri)
     }
 
     @SuppressLint("SimpleDateFormat")

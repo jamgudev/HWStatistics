@@ -221,8 +221,6 @@ class AppUsageDataLoader(private val mContext: Context) :
             updateLatestResumeRecord(newResumeRecord)
         } else if (lastRecord is UsageRecord.PhoneLifeCycleRecord) {
             if (lastRecord.mLifeCycleName == mContext.getString(R.string.usage_user_present)) {
-                DataSaver.addInfoTracker(TAG, "checkWhetherPreviousResumeIsMissing:: pause event coming, " +
-                        "while last record is user_present, resume(${pauseRecord.mPackageName}, ${pauseRecord.mClassName}) event missing")
                 val newResumeRecord = UsageRecord.ActivityResumeRecord(
                     pauseRecord.mPackageName,
                     pauseRecord.mClassName,
@@ -253,21 +251,15 @@ class AppUsageDataLoader(private val mContext: Context) :
         if (previousRecord is UsageRecord.AppUsageRecord) {
             val activityName = previousRecord.mUsageName
             val detailUsage = previousRecord.mDetailUsage ?: ""
-            if (activityName.contains(LAUNCH_PACKAGE_NAME, true)
-                || detailUsage.contains(LAUNCH_PACKAGE_NAME, true)
-                || activityName == newInsertedAppUsageRecord.mUsageName
-                && detailUsage == newInsertedAppUsageRecord.mDetailUsage
-            ) {
-                val duration = newInsertedAppUsageRecord.mStartTime
-                    .timeMillsBetween(previousRecord.mEndTime)
-                if (duration > 1000) {
-                    val upRecord = UsageRecord.AppUsageRecord(
-                        activityName, detailUsage,
-                        previousRecord.mEndTime, newInsertedAppUsageRecord.mStartTime,
-                        duration.timeStamp2SimpleDateString(), duration
-                    )
-                    mUserUsageData.add(insertedIndex, upRecord)
-                }
+            val duration = newInsertedAppUsageRecord.mStartTime
+                .timeMillsBetween(previousRecord.mEndTime)
+            if (duration > 1000) {
+                val upRecord = UsageRecord.AppUsageRecord(
+                    activityName, detailUsage,
+                    previousRecord.mEndTime, newInsertedAppUsageRecord.mStartTime,
+                    duration.timeStamp2SimpleDateString(), duration
+                )
+                mUserUsageData.add(insertedIndex, upRecord)
             }
         }
     }
@@ -382,14 +374,14 @@ class AppUsageDataLoader(private val mContext: Context) :
                 if (duration >= 1500) {
                     queryCurrentUsingApp(true)
                     val newestRecord = mUserUsageData.last()
-                    DataSaver.addInfoTracker(TAG, "Screen off coming at $currentDateString" +
+                    DataSaver.addDebugTracker(TAG, "Screen off coming at $currentDateString" +
                             ", last activity(${lastRecord.mUsageName}) recorded at ${lastRecord.mEndTime}, " +
                             "passed = $duration, try to query current using app，success = ${lastRecord != newestRecord}")
                     // 没有捞到丢失的事件
                     if (newestRecord == lastRecord) {
-                        if (lastRecord.mUsageName.contains(LAUNCH_PACKAGE_NAME, true)
-                            || lastRecord.mUsageName.contains(LAUNCH_PACKAGE_NAME, true)) {
-                            // 上一个是launch页，直接补充
+                        // 用户未解锁，却有activity记录，说明是打电话场景，不补充
+                        if (mUserPresentRecord != null && duration >= 3000) {
+                            // 直接按上一个activity补充
                             val activityRecord = UsageRecord.AppUsageRecord(
                                 lastRecord.mUsageName, lastRecord.mDetailUsage,
                                 lastRecord.mEndTime, currentDateString,
@@ -407,7 +399,7 @@ class AppUsageDataLoader(private val mContext: Context) :
                     if (duration >= 1500) {
                         queryCurrentUsingApp(true)
                         val newestRecord = mUserUsageData.last()
-                        DataSaver.addInfoTracker(TAG, "Screen off coming at $currentDateString" +
+                        DataSaver.addDebugTracker(TAG, "Screen off coming at $currentDateString" +
                                 ", last RECORD is(${lastRecord.mLifeCycleName}) recorded at ${lastRecord.mOccTime}, " +
                                 "passed = $duration, try to query current using app, success = ${newestRecord != lastRecord}")
                     }
