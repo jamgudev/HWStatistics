@@ -4,8 +4,6 @@ import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
 
-import androidx.core.content.FileProvider;
-
 import com.jamgu.common.thread.ThreadPool;
 import com.jamgu.common.widget.toast.JToast;
 import com.jamgu.hwstatistics.net.upload.DataSaver;
@@ -20,7 +18,6 @@ import org.apache.poi.ss.util.WorkbookUtil;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -182,12 +179,9 @@ public class ExcelUtil {
         boolean success = writeExcelNew(context, exportExcel, uri);
         if (!success) {
             try {
-                int deleteResult = 0;
-                FileProvider fileProvider = new FileProvider();
-                deleteResult = fileProvider.delete(uri, null, null);
                 boolean retryResult = writeExcelNew(context, exportExcel, uri);
                 DataSaver.INSTANCE.addInfoTracker(TAG, "uri = " + uri.toString()
-                        + "old file delete result = " + deleteResult + " retry result = " + retryResult);
+                        + "old file retry result = " + retryResult);
             } catch (Exception e) {
                 DataSaver.INSTANCE.addInfoTracker(TAG, "writeWithRetry:: err happened "
                         + e.getMessage() + " stackTrace + " + Arrays.toString(e.getStackTrace()));

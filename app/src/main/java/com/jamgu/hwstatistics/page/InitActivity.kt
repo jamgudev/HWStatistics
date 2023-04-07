@@ -14,6 +14,7 @@ import com.jamgu.hwstatistics.databinding.ActivityInitLayoutBinding
 import com.jamgu.hwstatistics.keeplive.utils.KeepLiveUtils
 import com.jamgu.hwstatistics.keeplive.utils.PhoneUtils
 import com.jamgu.hwstatistics.net.upload.DataSaver
+import com.jamgu.hwstatistics.net.upload.DataUploader
 import com.jamgu.hwstatistics.power.permission.PermissionRequester
 import com.jamgu.krouter.annotation.KRouter
 import com.jamgu.krouter.core.router.KRouterUriBuilder
@@ -32,7 +33,7 @@ class InitActivity : ViewBindingActivity<ActivityInitLayoutBinding>() {
         private const val TAG = "InitActivity"
         private const val BATTERY_INIT = "battery_init"
         private const val USAGE_STATE_PERMISSION = "usage_state_permission"
-        private const val REQUEST_PERMISSION = "request_permission"
+        private const val FILE_ACCESS_PERMISSION = "file_access_permission"
         const val MONITOR_INIT = "monitor_init"
     }
 
@@ -47,21 +48,25 @@ class InitActivity : ViewBindingActivity<ActivityInitLayoutBinding>() {
         val preference = PreferenceUtil.getCachePreference(this, 0)
         val isBatteryInit = preference.getBoolean(BATTERY_INIT, false)
         val isUsageStatePermissionSet = preference.getBoolean(USAGE_STATE_PERMISSION, false)
-        val requestPermission = preference.getBoolean(REQUEST_PERMISSION, false)
+
+        var isBatteryBtmClick = false
+        var isUsageBtnClick = false
+        var isFileAccessBtnClick = false
 
         if (isBatteryInit) {
             mBinding.vBtnBatterySave.isEnabled = false
+            isBatteryBtmClick = true
         }
 
         if (isUsageStatePermissionSet) {
             mBinding.vBtnUsageState.isEnabled = false
+            isUsageBtnClick = true
         }
 
-        if (requestPermission) {
+        if (PermissionRequester(this).isPermissionAllGranted()) {
             mBinding.vBtnUserPermissionRequest.isEnabled = false
         }
 
-        var isBatteryBtmClick = false
         mBinding.vBtnBatterySave.setOnClickListener {
             if (!isBatteryInit || !KeepLiveUtils.isIgnoringBatteryOptimizations(this)) {
                 KeepLiveUtils.requestIgnoreBatteryOptimizations(this)
@@ -74,7 +79,6 @@ class InitActivity : ViewBindingActivity<ActivityInitLayoutBinding>() {
         val mMonitorActivityLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             preference.edit().putBoolean(USAGE_STATE_PERMISSION, true).apply()
         }
-        var isUsageBtnClick = false
         mBinding.vBtnUsageState.setOnClickListener {
             if (!isUsageStatePermissionSet) {
                 // 打开获取应用信息页面
@@ -86,13 +90,16 @@ class InitActivity : ViewBindingActivity<ActivityInitLayoutBinding>() {
 
         mBinding.vBtnUserPermissionRequest.setOnClickListener {
             PermissionRequester(this@InitActivity).requestedPermission()
-            preference.edit().putBoolean(REQUEST_PERMISSION, true).apply()
         }
 
         val mFileAccessBtn = mBinding.vBtnFileAccess
-
-        var isFileAccessBtnClick = false
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val isFileAccessEnable = PreferenceUtil.getCachePreference(this, 0)
+                .getBoolean(FILE_ACCESS_PERMISSION, false) ?: false
+            if (!isFileAccessEnable) {
+                isFileAccessBtnClick = true
+                mFileAccessBtn.visibility = View.GONE
+            }
             mFileAccessBtn.visibility = View.VISIBLE
             val fileAccessActivityLauncher = registerForActivityResult(
                 ActivityResultContracts.StartActivityForResult()) { }
@@ -101,26 +108,30 @@ class InitActivity : ViewBindingActivity<ActivityInitLayoutBinding>() {
                 intent.data = Uri.parse("package:" + this.packageName)
                 fileAccessActivityLauncher.launch(intent)
                 isFileAccessBtnClick = true
+                PreferenceUtil.getCachePreference(this, 0).edit()
+                    .putBoolean(FILE_ACCESS_PERMISSION, isFileAccessBtnClick).apply()
             }
         } else {
             isFileAccessBtnClick = true
+            PreferenceUtil.getCachePreference(this, 0).edit()
+                .putBoolean(FILE_ACCESS_PERMISSION, isFileAccessBtnClick).apply()
             mFileAccessBtn.visibility = View.GONE
         }
 
-        var isRegister = false
         mBinding.vBtnRegister.setOnClickListener {
             KRouters.open(this@InitActivity, REGISTER_PAGE)
-            isRegister = true
         }
 
-
+        val username = PreferenceUtil.getCachePreference(this, 0)
+            .getString(DataUploader.USER_NAME, "") ?: ""
+        val isUserRegister = username.isNotEmpty()
         mBinding.vBtnMonitorStart.setOnClickListener {
             var tips = ""
             if (!isBatteryBtmClick) {
                 tips = mBinding.vBtnBatterySave.text.toString()
             } else if (!isFileAccessBtnClick) {
                 tips = mBinding.vBtnFileAccess.text.toString()
-            } else if (!isRegister) {
+            } else if (!isUserRegister) {
                 tips = mBinding.vBtnRegister.text.toString()
             } else if (!isUsageBtnClick) {
                 tips = mBinding.vBtnUsageState.text.toString()

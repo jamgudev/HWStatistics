@@ -68,6 +68,7 @@
             android:name=".page.AutoMonitorActivity"
             android:exported="true"
             android:screenOrientation="fullSensor"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar"
             android:launchMode="singleInstance">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

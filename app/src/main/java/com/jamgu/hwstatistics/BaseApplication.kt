@@ -9,7 +9,7 @@ import com.jamgu.hwstatistics.keeplive.service.KeepAliveService
 import com.jamgu.hwstatistics.net.upload.DataSaver
 import com.jamgu.hwstatistics.util.getCurrentDateString
 import com.jamgu.hwstatistics.util.timeMillsBetween
-import com.jamgu.hwstatistics.util.timeStamp2SimpleDateString
+import com.jamgu.hwstatistics.util.timeStamp2DateStringWithMills
 import kotlin.system.exitProcess
 
 
@@ -39,7 +39,7 @@ class BaseApplication: Application(), Thread.UncaughtExceptionHandler {
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
         val destroyTime = KeepAliveService.getActivityDestroyTime()
-        val millsBetween = getCurrentDateString().timeMillsBetween(destroyTime).timeStamp2SimpleDateString()
+        val millsBetween = getCurrentDateString().timeMillsBetween(destroyTime).timeStamp2DateStringWithMills()
         DataSaver.addDebugTracker(TAG, "onTrimMemory level = $level, activity destroyed time passed:" +
                 " $millsBetween, is loader running = ${KeepAliveService.isStarted()}")
 

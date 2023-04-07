@@ -11,6 +11,7 @@ import com.jamgu.common.thread.ThreadPool
 import com.jamgu.common.util.log.JLog
 import com.jamgu.hwstatistics.appusage.UsageRecord
 import com.jamgu.hwstatistics.power.IOnDataEnough
+import com.jamgu.hwstatistics.power.permission.PermissionRequester
 import com.jamgu.hwstatistics.util.ExcelUtil
 import com.jamgu.hwstatistics.util.getDateOfTodayString
 import com.jamgu.hwstatistics.util.timeMillsBetween
@@ -153,7 +154,7 @@ object DataSaver {
                 saveData2DestFile(context, usageAnyData, appUsageUri)
             }
 
-            if (!powerData.isNullOrEmpty()) {
+            if (!powerData.isNullOrEmpty() || powerData?.size == 1) {
                 val powerUsageFile =
                     File("${dirFile.path}/${POWER_USAGE_FILE_PREFIX}_$timeMillis$EXCEL_SUFFIX")
                 val powerUsageUri =
@@ -315,6 +316,9 @@ object DataSaver {
      */
     private fun checkIfSaveDebugData2File(flushImmediately: Boolean) {
         if (flushImmediately || mDebugData.size >= IOnDataEnough.ThreshLength.THRESH_FOR_TRACKER.length) {
+            if (!PermissionRequester(Common.getInstance().getApplicationContext()).isPermissionAllGranted()) {
+                return
+            }
             val testData = ArrayList(mDebugData)
             mDebugData.clear()
             saveDebugData(testData)
@@ -326,6 +330,9 @@ object DataSaver {
      */
     private fun checkIfSaveInfoData2File() {
         if (mInfoData.size >= IOnDataEnough.ThreshLength.THRESH_FOR_ERROR.length) {
+            if (!PermissionRequester(Common.getInstance().getApplicationContext()).isPermissionAllGranted()) {
+                return
+            }
             val testData = ArrayList(mInfoData)
             saveInfoData(testData)
             mInfoData.clear()
@@ -335,6 +342,42 @@ object DataSaver {
     @JvmStatic
     fun flushTestData() {
         checkIfSaveDebugData2File(true)
+    }
+
+    /**
+     * 删除已经上传的缓存文件
+     */
+    fun clearUploadedCacheFile(path: String?) {
+        path ?: return
+        if (path.isEmpty()) {
+            return
+        }
+        innerRecursivelyClear(File(path))
+    }
+
+    private fun innerRecursivelyClear(file: File) {
+        if (!file.exists()) return
+
+        val childFiles = file.listFiles()
+        childFiles?.forEach { child ->
+            val directory = child.isDirectory
+            if (directory) {
+                if (child.list()?.isEmpty() == true) {
+                    child.delete()
+                } else {
+                    innerRecursivelyClear(child)
+                }
+            } else {
+                // 检查该文件是否已经上传
+                if (child.name.contains(DataUploader.UPLOADED_SUFFIX)) {
+                    child.delete()
+                    // 如果文件已经清空了
+                    if (child.parentFile?.list()?.isEmpty() == true) {
+                        child.parentFile?.delete()
+                    }
+                } else return@forEach
+            }
+        }
     }
 
 }

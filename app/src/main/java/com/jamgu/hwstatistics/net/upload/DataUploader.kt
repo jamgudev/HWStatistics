@@ -55,6 +55,7 @@ object DataUploader {
 
             if (!isNetWorkEnable(context)) {
                 JLog.d(TAG, "network error, upload failed, file = $filePath")
+                DataSaver.addDebugTracker(TAG, "network error, upload failed, file = $filePath")
                 return
             }
 

@@ -2,9 +2,13 @@ package com.jamgu.hwstatistics.page
 
 import android.annotation.SuppressLint
 import android.app.ActivityManager
-import android.content.Intent
+import android.content.*
 import android.os.Bundle
+import android.view.Gravity
+import android.view.KeyEvent
+import android.view.View
 import androidx.core.content.getSystemService
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -13,6 +17,8 @@ import com.jamgu.common.page.activity.ViewBindingActivity
 import com.jamgu.common.thread.ThreadPool
 import com.jamgu.common.util.log.JLog
 import com.jamgu.common.util.preference.PreferenceUtil
+import com.jamgu.common.util.statusbar.StatusBarUtil
+import com.jamgu.common.widget.toast.JToast
 import com.jamgu.hwstatistics.BaseApplication
 import com.jamgu.hwstatistics.R
 import com.jamgu.hwstatistics.databinding.ActivityAutoMonitorBinding
@@ -25,6 +31,12 @@ import com.jamgu.hwstatistics.util.timeStamp2SimpleDateString
 import com.jamgu.krouter.annotation.KRouter
 import com.jamgu.krouter.core.router.KRouterUriBuilder
 import com.jamgu.krouter.core.router.KRouters
+import com.jamgu.settingpie.model.LayoutProp
+import com.jamgu.settingpie.model.SetConstants.DEFAULT_DIVIDER_COLOR
+import com.jamgu.settingpie.model.SetItemBuilder
+import com.jamgu.settingpie.model.SetListBuilder
+import com.jamgu.settingpie.model.ViewType.VIEW_TYPE_NORMAL
+import com.jamgu.settingpie.model.ViewType.VIEW_TYPE_TEXT_TITLE
 import java.util.concurrent.atomic.AtomicBoolean
 
 
@@ -58,6 +70,7 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        StatusBarUtil.setStatusBarColor(this, R.color.colorPrimary)
         super.onCreate(savedInstanceState)
 //        mAppUsageDataLoader.onCreate()
 
@@ -136,6 +149,40 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
 
             this.isInit.set(true)
         }
+        initSettings()
+    }
+
+    private fun initSettings() {
+        SetListBuilder(mBinding.vSettingRecycler)
+            .arrowOfTheme(false)
+            .paddingPair(12, 10)
+            .decorationOfTheme(2, 0, 0, null)
+            .decorationOfGroup(10, DEFAULT_DIVIDER_COLOR)
+            .showDecoration(true)
+            .addItem {
+                SetItemBuilder().viewType(VIEW_TYPE_TEXT_TITLE).mainText("设置", 18, "#FFFFFF").
+                layoutProp(LayoutProp(R.color.colorPrimary) {})
+            }
+            .addItem {
+            val username = PreferenceUtil.getCachePreference(this, 0)
+                .getString(DataUploader.USER_NAME, "unknown") ?: "unknown"
+            SetItemBuilder().mainText("用户名").hintText(username).layoutProp(LayoutProp("#FFFFFF") {
+                val service = this@AutoMonitorActivity.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+                service?.setPrimaryClip(ClipData(username, arrayOf(ClipDescription.MIMETYPE_TEXT_PLAIN), ClipData.Item(username)))
+                JToast.showToast(this, "已复制内容")
+            }).viewType(VIEW_TYPE_NORMAL)
+        }.addItem {
+            SetItemBuilder().mainText("清空缓存").layoutProp(LayoutProp {
+                ThreadPool.runIOTask {
+                    DataSaver.clearUploadedCacheFile(DataSaver.getCacheRootPath())
+                    JToast.showToast(this, "缓存已清空")
+                }
+            }).viewType(VIEW_TYPE_NORMAL).showArrow(true)
+        }.addGroupItem {
+            SetItemBuilder().mainText("回到初始化界面").layoutProp(LayoutProp {
+                KRouters.open(this@AutoMonitorActivity, INIT_PAGE)
+            }).viewType(VIEW_TYPE_NORMAL).showArrow(true)
+        }.build()
     }
 
     private fun checkResumeEnterPoint() {
@@ -208,6 +255,25 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
 //                mBinding.vStart.isEnabled = false
 //            }
         }
+        mBinding.vDrawer.addDrawerListener(object : DrawerLayout.SimpleDrawerListener() {
+            override fun onDrawerSlide(drawerView: View, slideOffset: Float) {
+                mBinding.vContentContainer.translationX = (drawerView.width * slideOffset)
+            }
+        })
+        mBinding.vMenu.setOnClickListener {
+            mBinding.vDrawer.openDrawer(Gravity.LEFT, true)
+        }
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_BACK && event?.repeatCount == 0) {
+            // 抽屉如果是打开状态，先关闭抽屉
+            if (mBinding.vDrawer.isDrawerOpen(mBinding.vSettingContainer)) {
+                mBinding.vDrawer.closeDrawer(Gravity.LEFT)
+                return false
+            }
+        }
+        return super.onKeyDown(keyCode, event)
     }
 
     /**
