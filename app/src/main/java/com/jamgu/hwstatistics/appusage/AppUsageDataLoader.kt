@@ -618,7 +618,7 @@ class AppUsageDataLoader(private val mContext: Context) :
         }
         val powerDataWithTitle = mPowerDataLoader.getDataWithTitle()
         val appUsageData = ArrayList(mUserUsageData)
-        DataSaver.saveAppUsageDataSync(mContext, appUsageData, powerDataWithTitle, startTime, endTime, true)
+        DataSaver.saveAppUsageDataASync(mContext, appUsageData, powerDataWithTitle, startTime, endTime, true)
         resetAfterDataSaved()
     }
 
@@ -630,7 +630,7 @@ class AppUsageDataLoader(private val mContext: Context) :
         val screenOnTime = mScreenOnRecord?.mOccTime ?: ""
         val powerDataWithTitle = mPowerDataLoader.getDataWithTitle()
         mPowerDataLoader.clearData()
-        DataSaver.saveAppUsageDataSync(mContext, null, powerDataWithTitle, screenOnTime, "", false)
+        DataSaver.saveAppUsageDataASync(mContext, null, powerDataWithTitle, screenOnTime, "", false)
     }
 
     /**

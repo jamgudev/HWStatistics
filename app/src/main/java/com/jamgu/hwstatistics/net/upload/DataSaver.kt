@@ -77,7 +77,7 @@ object DataSaver {
     /**
      * 保存用户行为数据
      */
-    fun saveAppUsageDataSync(
+    fun saveAppUsageDataASync(
         context: Context,
         usageData: ArrayList<UsageRecord>?,
         powerData: ArrayList<ArrayList<Any>>?,
@@ -104,42 +104,13 @@ object DataSaver {
                 getDateOfTodayString()
             }
 
-            val dirFile: File
             val tempPath = "${getActiveCachePath()}/$subDirName/$startTime$SESSION_TEMP_SUFFIX"
-            if (isSessionFinish) {
-                val tempFile = File(tempPath)
-                // 之前已经上传了部分power data，rename
-                if (tempFile.exists()) {
-                    val suffixIndex = tempPath.lastIndexOf(SESSION_TEMP_SUFFIX)
-                    if (suffixIndex < 0) {
-                        JLog.e(TAG, "file = $tempPath, suffixIndex < 0, continue")
-                        addDebugTracker(TAG, "file = $tempPath, suffixIndex < 0, continue")
-                        return@runIOTask
-                    }
-                    // 把临时文件后缀去掉
-                    val finishPath = tempPath.substring(0, suffixIndex)
-                    val finishFileName = "${finishPath}$SESSION_DIR_INFIX$endTime"
-                    val finishFile = File(finishFileName)
-                    if (!tempFile.renameTo(finishFile)) {
-                        JLog.e(TAG, "file = ${tempFile.path} rename to path{$finishFileName} failed.")
-                        addInfoTracker(TAG, "file = ${tempFile.path} rename to path{$finishFileName} failed.")
-                        return@runIOTask
-                    } else {
-                        // rename 成功，更改目录File
-                        dirFile = finishFile
-                    }
-                } else {
-                    // session时长低于power data分段保存的阈值，直接保存
-                    dirFile = File("${getActiveCachePath()}/$subDirName/$startTime$SESSION_DIR_INFIX$endTime")
-                    if (!dirFile.exists()) {
-                        dirFile.mkdirs()
-                    }
-                }
-            } else {
-                // 创建临时保存目录
-                dirFile = File(tempPath)
-                if (!dirFile.exists()) {
-                    dirFile.mkdirs()
+            // 创建临时保存目录
+            val dirFile = File(tempPath)
+            if (!dirFile.exists()) {
+                val mkdirsSuccess = dirFile.mkdirs()
+                if (!mkdirsSuccess) {
+                    addInfoTracker(TAG, "dirFile[${dirFile.path}] make dir fail.")
                 }
             }
 
@@ -160,6 +131,29 @@ object DataSaver {
                 val powerUsageUri =
                     FileProvider.getUriForFile(context, FILE_PROVIDER_AUTHORITY, powerUsageFile)
                 saveData2DestFile(context, powerData, powerUsageUri)
+            }
+
+            // 文件都保存后，最后给文件目录改名
+            if (isSessionFinish) {
+                val tempFile = File(tempPath)
+                // 之前已经上传了部分power data，rename
+                if (tempFile.exists()) {
+                    val suffixIndex = tempPath.lastIndexOf(SESSION_TEMP_SUFFIX)
+                    if (suffixIndex < 0) {
+                        JLog.e(TAG, "file = $tempPath, suffixIndex < 0, continue")
+                        addDebugTracker(TAG, "file = $tempPath, suffixIndex < 0, continue")
+                        return@runIOTask
+                    }
+                    // 把临时文件后缀去掉
+                    val finishPath = tempPath.substring(0, suffixIndex)
+                    val finishFileName = "${finishPath}$SESSION_DIR_INFIX$endTime"
+                    val finishFile = File(finishFileName)
+                    if (!tempFile.renameTo(finishFile)) {
+                        JLog.e(TAG, "file = ${tempFile.path} rename to path{$finishFileName} failed.")
+                        addInfoTracker(TAG, "file = ${tempFile.path} rename to path{$finishFileName} failed.")
+                        return@runIOTask
+                    }
+                }
             }
         }
     }
