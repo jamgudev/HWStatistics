@@ -67,7 +67,9 @@ public class KeepAliveService extends JobService {
                 boolean inBackStack = ((BaseApplication) applicationContext)
                         .isActivityInBackStack(AutoMonitorActivity.class);
                 // 记录宿主activity的销毁时间
-                if (!inBackStack && TextUtils.isEmpty(sActivityDestroyedTime)) {
+                if (inBackStack) {
+                    sActivityDestroyedTime = "";
+                } else if (TextUtils.isEmpty(sActivityDestroyedTime)) {
                     sActivityDestroyedTime = getCurrentDateString();
                 }
                 DataSaver.INSTANCE.addDebugTracker(TAG,
@@ -196,13 +198,24 @@ public class KeepAliveService extends JobService {
         DataSaver.INSTANCE.addInfoTracker(TAG,
                 "onStartCommand " + "mUsageLoader = " + mUsageLoader + ", isStarted = " + sIsLoaderStarted);
 
+        Context applicationContext = getApplicationContext();
         if (mUsageLoader == null) {
-            mUsageLoader = new AppUsageDataLoader(getApplicationContext());
+            mUsageLoader = new AppUsageDataLoader(applicationContext);
             mUsageLoader.onCreate();
         }
 
         if (!mUsageLoader.isStarted()) {
             mUsageLoader.start();
+        }
+
+        if (applicationContext instanceof BaseApplication) {
+            boolean inBackStack = ((BaseApplication) applicationContext)
+                    .isActivityInBackStack(AutoMonitorActivity.class);
+            if (inBackStack) {
+                sActivityDestroyedTime = "";
+            } else if (TextUtils.isEmpty(sActivityDestroyedTime)) {
+                sActivityDestroyedTime = getCurrentDateString();
+            }
         }
         return super.onStartCommand(intent, flags, startId);
     }

@@ -1,5 +1,6 @@
 package com.jamgu.hwstatistics.net
 
+import com.google.gson.annotations.SerializedName
 import org.json.JSONObject
 
 /**
@@ -11,11 +12,20 @@ import org.json.JSONObject
 class RspModel {
     private var msg: String? = null
     private var code: Int = -1
-    private var data: JSONObject? = null
+    private var data: RspData? = null
 
     fun getMsg(): String? = msg
 
     fun getCode(): Int = code
 
-    fun getData(): JSONObject? = data
+    fun getData(): RspData? = data
+
+    class RspData {
+        @SerializedName("pa_threshold")
+        private var paThreshold: Long? = null
+
+        fun getPaThreshold(): Long? = paThreshold
+
+    }
+
 }

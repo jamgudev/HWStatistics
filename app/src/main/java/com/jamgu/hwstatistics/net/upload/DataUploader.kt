@@ -76,8 +76,8 @@ object DataUploader {
                                 val uploadedFile = File("${tempFilePath}$UPLOADED_SUFFIX${DataSaver.EXCEL_SUFFIX}")
                                 val renameResult = file.renameTo(uploadedFile)
                                 val data = rspModel.getData() ?: return
-                                val paThreshold = data.optInt(PA_THRESHOLD, IOnDataEnough.ThreshLength.THRESH_ONE_MIN.length.toInt())
-                                PreferenceUtil.getCachePreference(context, 0).edit().putInt(PA_THRESHOLD, paThreshold).apply()
+                                val paThreshold = data.getPaThreshold() ?: IOnDataEnough.ThreshLength.THRESH_ONE_MIN.length
+                                PreferenceUtil.getCachePreference(context, 0).edit().putLong(PA_THRESHOLD, paThreshold).apply()
                             }
 //                            JLog.i(TAG, " code = ${rspModel.getCode()}, msg = ${rspModel.getMsg()}, filepath = $filePath\"")
                         } catch (e: Exception) {

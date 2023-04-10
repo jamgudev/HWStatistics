@@ -522,7 +522,7 @@ class AppUsageDataLoader(private val mContext: Context) :
                 override fun onDataEnough() {
                     saveTempUserUsageData2File()
                     // 更新阈值
-                    val paThreshold = PreferenceUtil.getCachePreference(mContext, 0).getInt(PA_THRESHOLD, 60).toLong()
+                    val paThreshold = PreferenceUtil.getCachePreference(mContext, 0).getLong(PA_THRESHOLD, 60)
                     if (mPowerDataLoader.getDataNumThreshold() != paThreshold) {
                         mPowerDataLoader.setOnDataEnoughListener(paThreshold, this)
                     }
