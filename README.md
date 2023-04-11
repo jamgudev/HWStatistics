@@ -38,14 +38,6 @@ Example file find in here: [Charge Usage Example File](readme/charge_usage_examp
 Example file find in here: [Power Data Example File](readme/power_usage_example.xlsx)
 
 
-##### TODO List
-1. 支持发送心跳包到服务器，方便记录用户存活时长（如果最后24小时无法保证时） 
-2. 用户关机频率 
-3. 用户充电时机 
-4. 实验对象信息注册
-5. 数据文件上传
-
-
 [1_app_usage_overview.png]: readme/pics/1_app_usage_overview.png
 [2_charge_usage_record.png]: readme/pics/2_charge_usage_record.png
 [3_power_data_record.png]: readme/pics/3_power_data_record.png 
