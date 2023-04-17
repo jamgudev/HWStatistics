@@ -14,6 +14,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.jamgu.common.util.log.JLog
 import com.jamgu.hwstatistics.R
+import com.jamgu.hwstatistics.net.upload.DataSaver
 import com.jamgu.hwstatistics.page.AUTO_MONITOR_START_FROM_BOOT
 import com.jamgu.hwstatistics.page.TRANSITION_PAGE
 import com.jamgu.hwstatistics.page.TransitionActivity
@@ -61,6 +62,7 @@ class PhoneCycleBroadcastReceiver @JvmOverloads constructor(private val listener
                 context?.let {
                     listener?.onPhoneBootComplete()
                     JLog.d(TAG, "ACTION_BOOT_COMPLETED")
+                    DataSaver.addDebugTracker(TAG, "手机重启拉起通知")
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         startCallActivityVersionHigh(
                             context,

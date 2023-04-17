@@ -76,7 +76,7 @@ public class KeepAliveService extends JobService {
                         "inBackStack = " + inBackStack + ", isStart = " + sIsLoaderStarted);
                 String currentContent = mForegroundNF.getCurrentContent();
                 String rebootText = getString(R.string.app_being_killed_reboot);
-                if ((!inBackStack && !sIsLoaderStarted) || checkIfNeedNotifyUser()) {
+                if ((!inBackStack && !sIsLoaderStarted)) {
                     DataSaver.INSTANCE.addInfoTracker(TAG, "检测到Activity已不在栈内");
                     if (rebootText.equals(currentContent)) {
                         return true;
@@ -192,9 +192,6 @@ public class KeepAliveService extends JobService {
         mJobScheduler.schedule(job);
         JLog.d(TAG, "onStartCommand");
         startNotificationForeground();
-        if (mUsageLoader != null) {
-            sIsLoaderStarted = mUsageLoader.isStarted();
-        }
         DataSaver.INSTANCE.addInfoTracker(TAG,
                 "onStartCommand " + "mUsageLoader = " + mUsageLoader + ", isStarted = " + sIsLoaderStarted);
 
@@ -206,6 +203,10 @@ public class KeepAliveService extends JobService {
 
         if (!mUsageLoader.isStarted()) {
             mUsageLoader.start();
+        }
+
+        if (mUsageLoader != null) {
+            sIsLoaderStarted = mUsageLoader.isStarted();
         }
 
         if (applicationContext instanceof BaseApplication) {

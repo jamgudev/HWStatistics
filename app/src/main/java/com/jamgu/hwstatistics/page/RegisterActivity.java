@@ -21,8 +21,7 @@ import com.jamgu.hwstatistics.net.Network;
 import com.jamgu.hwstatistics.net.RspModel;
 import com.jamgu.hwstatistics.net.model.UserModel;
 import com.jamgu.hwstatistics.net.upload.DataUploader;
-import com.jamgu.hwstatistics.net.upload.PhoneInfoManager;
-import com.jamgu.hwstatistics.util.TimeExtensions;
+import com.jamgu.hwstatistics.net.upload.DeviceInfoManager;
 import com.jamgu.krouter.annotation.KRouter;
 
 import io.reactivex.Observer;
@@ -78,7 +77,7 @@ public class RegisterActivity extends AppCompatActivity {
                 return;
             }
 
-            PhoneInfoManager.PhoneInfo phoneInfo = PhoneInfoManager.getPhoneInfo();
+            DeviceInfoManager.PhoneInfo phoneInfo = DeviceInfoManager.getPhoneInfo();
             JLog.d(TAG, "phoneInfo = " + phoneInfo);
 
             // 输入格式错误检查`

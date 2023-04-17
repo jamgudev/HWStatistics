@@ -43,7 +43,7 @@ object DataUploader {
         try {
             val filePath = file.path
             val suffixPath = filePath.substring(filePath.indexOf(DataSaver.CACHE_ROOT_DIR) - 1)
-            val defaultUserName = "default#${PhoneInfoManager.getPhoneInfo()}"
+            val defaultUserName = "default#${DeviceInfoManager.getPhoneInfo()}"
             val user = PreferenceUtil.getCachePreference(context, 0).getString(USER_NAME, defaultUserName) ?: defaultUserName
             val requestBody = file.asRequestBody("multipart/form-data".toMediaTypeOrNull())
             val multipartBody = MultipartBody.Builder()

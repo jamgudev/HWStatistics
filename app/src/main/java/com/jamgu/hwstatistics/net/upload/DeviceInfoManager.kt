@@ -6,7 +6,7 @@ package com.jamgu.hwstatistics.net.upload
  *
  * @description 手机信息管理器：手机品牌、系统版本信息
  */
-object PhoneInfoManager {
+object DeviceInfoManager {
 
     @JvmStatic
     fun getPhoneInfo(): PhoneInfo {
