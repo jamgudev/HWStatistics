@@ -63,7 +63,8 @@
         <activity
             android:name=".page.InitActivity"
             android:screenOrientation="fullSensor"
-            android:exported="true" />
+            android:exported="true"
+            android:launchMode="singleInstance"/>
         <activity
             android:name=".page.AutoMonitorActivity"
             android:exported="true"

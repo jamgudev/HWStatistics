@@ -158,7 +158,8 @@ public class RegisterActivity extends AppCompatActivity {
     };
 
     public static boolean isMobile(String str) {
-        return str.matches("[1][34578]\\d{9}");
+//        return str.matches("[1][34578]\\d{9}");
+        return true;
     }
 
 }

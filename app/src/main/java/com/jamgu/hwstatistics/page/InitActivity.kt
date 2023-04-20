@@ -122,10 +122,10 @@ class InitActivity : ViewBindingActivity<ActivityInitLayoutBinding>() {
             KRouters.open(this@InitActivity, REGISTER_PAGE)
         }
 
-        val username = PreferenceUtil.getCachePreference(this, 0)
-            .getString(DataUploader.USER_NAME, "") ?: ""
-        val isUserRegister = username.isNotEmpty()
         mBinding.vBtnMonitorStart.setOnClickListener {
+            val username = PreferenceUtil.getCachePreference(this, 0)
+                .getString(DataUploader.USER_NAME, "") ?: ""
+            val isUserRegister = username.isNotEmpty()
             var tips = ""
             if (!isBatteryBtmClick) {
                 tips = mBinding.vBtnBatterySave.text.toString()
