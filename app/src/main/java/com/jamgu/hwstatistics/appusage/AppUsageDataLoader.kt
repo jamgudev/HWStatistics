@@ -209,7 +209,7 @@ class AppUsageDataLoader(private val mContext: Context) :
         val dataSize = mUserUsageData.size
         if (dataSize <= 0) return
 
-        val lastRecord = mUserUsageData[dataSize - 1]
+        val lastRecord = mUserUsageData[mUserUsageData.size - 1]
         if (lastRecord is UsageRecord.AppUsageRecord && lastRecord.mEndTime < pauseRecord.mTimeStamp) {
             // 如果上一个record是一个完整的Activity记录，且activity记录结束时间比当前的pauseEventTime要早
             // 说明有ActivityResume事件遗漏了，需要补充完整
@@ -271,7 +271,7 @@ class AppUsageDataLoader(private val mContext: Context) :
         val dataSize = mUserUsageData.size
         if (dataSize <= 0) return
 
-        val lastResumeRecord = mUserUsageData[dataSize - 1]
+        val lastResumeRecord = mUserUsageData[mUserUsageData.size - 1]
         if (lastResumeRecord is UsageRecord.ActivityResumeRecord) {
             val startTime = lastResumeRecord.mTimeStamp
             val duration = endDateString.timeMillsBetween(startTime)
