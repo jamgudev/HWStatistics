@@ -13,8 +13,8 @@ android {
         applicationId "com.jamgu.hwstatistics"
         minSdkVersion 24
         targetSdkVersion 31
-        versionCode 101000
-        versionName "1.1.0"
+        versionCode 101001
+        versionName "1.1.1"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }

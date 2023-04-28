@@ -53,39 +53,39 @@ class InitActivity : ViewBindingActivity<ActivityInitLayoutBinding>() {
         var isUsageBtnClick = false
         var isFileAccessBtnClick = false
 
-        if (isBatteryInit) {
-            mBinding.vBtnBatterySave.isEnabled = false
-            isBatteryBtmClick = true
-        }
+//        if (isBatteryInit) {
+//            mBinding.vBtnBatterySave.isEnabled = false
+//            isBatteryBtmClick = true
+//        }
 
-        if (isUsageStatePermissionSet) {
-            mBinding.vBtnUsageState.isEnabled = false
-            isUsageBtnClick = true
-        }
+//        if (isUsageStatePermissionSet) {
+//            mBinding.vBtnUsageState.isEnabled = false
+//            isUsageBtnClick = true
+//        }
 
         if (PermissionRequester(this).isPermissionAllGranted()) {
             mBinding.vBtnUserPermissionRequest.isEnabled = false
         }
 
         mBinding.vBtnBatterySave.setOnClickListener {
-            if (!isBatteryInit || !KeepLiveUtils.isIgnoringBatteryOptimizations(this)) {
+//            if (!isBatteryInit || !KeepLiveUtils.isIgnoringBatteryOptimizations(this)) {
                 KeepLiveUtils.requestIgnoreBatteryOptimizations(this)
                 PhoneUtils.setReStartAction(this)
                 preference.edit().putBoolean(BATTERY_INIT, true).apply()
                 isBatteryBtmClick = true
-            }
+//            }
         }
 
         val mMonitorActivityLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             preference.edit().putBoolean(USAGE_STATE_PERMISSION, true).apply()
         }
         mBinding.vBtnUsageState.setOnClickListener {
-            if (!isUsageStatePermissionSet) {
+//            if (!isUsageStatePermissionSet) {
                 // 打开获取应用信息页面
                 val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
                 mMonitorActivityLauncher.launch(intent)
                 isUsageBtnClick = true
-            }
+//            }
         }
 
         mBinding.vBtnUserPermissionRequest.setOnClickListener {

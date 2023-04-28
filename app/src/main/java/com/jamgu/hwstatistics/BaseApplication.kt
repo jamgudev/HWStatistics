@@ -13,7 +13,7 @@ import com.jamgu.common.util.log.JLog
 import com.jamgu.common.util.preference.PreferenceUtil
 import com.jamgu.hwstatistics.keeplive.service.KeepAliveService
 import com.jamgu.hwstatistics.net.upload.DataSaver
-import com.jamgu.hwstatistics.page.AUTO_MONITOR_START_FROM_BOOT
+import com.jamgu.hwstatistics.page.AUTO_MONITOR_START_FROM_AUTO_START
 import com.jamgu.hwstatistics.page.AutoMonitorActivity
 import com.jamgu.hwstatistics.page.TransitionActivity
 import com.jamgu.hwstatistics.util.getCurrentDateString
@@ -64,7 +64,7 @@ class BaseApplication: Application(), Thread.UncaughtExceptionHandler {
             contextText = R.string.click_to_start
         }
         val intent = Intent(context, pdActivity)
-        intent.putExtra(AUTO_MONITOR_START_FROM_BOOT, true)
+        intent.putExtra(AUTO_MONITOR_START_FROM_AUTO_START, true)
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
         @SuppressLint("UnspecifiedImmutableFlag") val pendingIntent = PendingIntent
             .getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE)

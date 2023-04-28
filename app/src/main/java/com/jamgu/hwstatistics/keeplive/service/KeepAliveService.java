@@ -192,7 +192,7 @@ public class KeepAliveService extends JobService {
         mJobScheduler.schedule(job);
         JLog.d(TAG, "onStartCommand");
         startNotificationForeground();
-        DataSaver.INSTANCE.addInfoTracker(TAG,
+        DataSaver.INSTANCE.addDebugTracker(TAG,
                 "onStartCommand " + "mUsageLoader = " + mUsageLoader + ", isStarted = " + sIsLoaderStarted);
 
         Context applicationContext = getApplicationContext();

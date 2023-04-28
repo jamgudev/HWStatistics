@@ -41,7 +41,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 
 @KRouter(value = [AUTO_MONITOR_PAGE], booleanParams = [AUTO_MONITOR_START_FROM_NOTIFICATION, AUTO_MONITOR_START_FROM_BOOT,
-    AUTO_MONITOR_START_FROM_KILLED, AUTO_MONITOR_START_FROM_INIT])
+    AUTO_MONITOR_START_FROM_KILLED, AUTO_MONITOR_START_FROM_INIT, AUTO_MONITOR_START_FROM_AUTO_START])
 class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
 
     companion object {
@@ -83,6 +83,9 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
         val startFromBoot =
             intent.extras?.getBoolean(AUTO_MONITOR_START_FROM_BOOT) ?: false
 
+        val startFromAutoStart =
+            intent.extras?.getBoolean(AUTO_MONITOR_START_FROM_AUTO_START) ?: false
+
         val startFromKilled =
             intent.extras?.getBoolean(AUTO_MONITOR_START_FROM_KILLED) ?: false
 
@@ -92,6 +95,9 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
         } else if (startFromBoot) {
             intent.extras?.putBoolean(AUTO_MONITOR_START_FROM_BOOT, false)
             "开机通过通知重启"
+        } else if (startFromAutoStart) {
+            intent.extras?.putBoolean(AUTO_MONITOR_START_FROM_AUTO_START, false)
+            "通过自启动通知重启"
         } else if (startFromKilled) {
             intent.extras?.putBoolean(AUTO_MONITOR_START_FROM_KILLED, false)
             "异常从前台服务重启"
@@ -99,7 +105,7 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
             "点击icon重启"
         }
         mEnableAutoStart = startFromBoot || startFromKilled || isStartFromNormalNotification
-        DataSaver.addInfoTracker(TAG, "onCreate, $trace")
+        DataSaver.addDebugTracker(TAG, "onCreate, $trace")
     }
 
     override fun onNewIntent(intent: Intent?) {
@@ -205,7 +211,7 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
             "点击icon进入"
         }
 
-        DataSaver.addInfoTracker(TAG, "onResume --------> $trace, isStarted = ${KeepAliveService.isStarted()}")
+        DataSaver.addDebugTracker(TAG, "onResume --------> $trace, isStarted = ${KeepAliveService.isStarted()}")
     }
 
     override fun onDestroy() {
@@ -223,7 +229,7 @@ class AutoMonitorActivity : ViewBindingActivity<ActivityAutoMonitorBinding>() {
             }
         }
         ActivityManager.getMyMemoryState(currentMemoryInfo)
-        DataSaver.addInfoTracker(TAG, "onDestroy called, memState = ${currentMemoryInfo?.lastTrimLevel}")
+        DataSaver.addDebugTracker(TAG, "onDestroy called, memState = ${currentMemoryInfo?.lastTrimLevel}")
         DataSaver.flushTestData()
         DataUploader.uploadFile(this, DataSaver.getINFODataCachePath())
 

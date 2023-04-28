@@ -19,6 +19,6 @@ package com.jamgu.hwstatistics.power.mobiledata.bluetooth.model
 data class BluetoothData(
         val address: String,
         val enabled: Boolean,
-        val scanMode: ScanMode,
-        val bondedDevices: List<LightBluetoothDevice>) {
+        val scanMode: ScanMode?,
+        val bondedDevices: List<LightBluetoothDevice>?) {
 }

@@ -37,7 +37,7 @@ object BLEManager: INeedPermission {
 
     fun update() {
         data = BluetoothAdapter.getDefaultAdapter()?.let {
-            val mac = it.address
+            val mac = it.address ?: ""
             val isEnabled = it.isEnabled
             val scanMode = ScanMode.fromAndroidState(it.scanMode)
             val bonded = toList(it.bondedDevices)

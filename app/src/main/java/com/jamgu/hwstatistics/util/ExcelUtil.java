@@ -181,7 +181,7 @@ public class ExcelUtil {
             try {
                 boolean retryResult = writeExcelNew(context, exportExcel, uri);
                 DataSaver.INSTANCE.addInfoTracker(TAG, "uri = " + uri.toString()
-                        + "old file retry result = " + retryResult);
+                        + " old file retry result = " + retryResult);
             } catch (Exception e) {
                 DataSaver.INSTANCE.addInfoTracker(TAG, "writeWithRetry:: err happened "
                         + e.getMessage() + " stackTrace + " + Arrays.toString(e.getStackTrace()));

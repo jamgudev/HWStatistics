@@ -112,8 +112,9 @@ object DataUploader {
                     val split = fileName.split("#")
                     // 清除1天前的temp文件
                     try {
+                        // 不做真正删除，先保存到本地
                         if (split.size == 2 && getCurrentDateString().timeMillsBetween(split[0]) >= ONE_HOUR) {
-                            file.deleteRecursively()
+//                            file.deleteRecursively()
                         }
                         // 是temp文件就需要删除
                         delete = true
