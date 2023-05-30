@@ -518,7 +518,7 @@ class AppUsageDataLoader(private val mContext: Context) :
         mActiveBroadcastReceiver?.registerReceiver(mContext)
         mPowerConnectReceiver?.registerReceiver(mContext)
         mPowerDataLoader = StatisticsLoader(mContext).initOnCreate {}.apply {
-            setOnDataEnoughListener(IOnDataEnough.ThreshLength.THRESH_ONE_MIN.length, object : IOnDataEnough {
+            setOnDataEnoughListener(4 * IOnDataEnough.ThreshLength.THRESH_ONE_MIN.length, object : IOnDataEnough {
                 override fun onDataEnough() {
                     saveTempUserUsageData2File()
                     // 更新阈值

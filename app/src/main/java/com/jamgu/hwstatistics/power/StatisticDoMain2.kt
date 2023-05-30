@@ -4,6 +4,7 @@ package com.jamgu.hwstatistics.power
 
 import com.jamgu.hwstatistics.power.mobiledata.cpu.model.CPU
 import com.jamgu.hwstatistics.util.roundToDecimals
+import kotlin.math.absoluteValue
 
 private const val TAG = "StatisticDoMain2"
 
@@ -171,6 +172,14 @@ class Builder2 {
 
     var memMapped: Float = 0.0f
     // ------ mem info
+
+    var gpsEnable: Int = 0
+
+    var batteryVoltage: Int = 0
+
+    var batteryCharging: Int = 0
+
+    var batteryCurrent: Long = 0L
 
     fun curTimeMills(curTimeMills: String?): Builder2 {
         curTimeMills ?: return this
@@ -367,6 +376,26 @@ class Builder2 {
         return this
     }
 
+    fun gpsEnable(isEnable: Int): Builder2 {
+        this.gpsEnable = isEnable
+        return this
+    }
+
+    fun batteryVoltage(batteryVoltage: Int): Builder2 {
+        this.batteryVoltage = batteryVoltage
+        return this
+    }
+
+    fun batteryCharging(batteryCharging: Int): Builder2 {
+        this.batteryCharging = batteryCharging
+        return this
+    }
+
+    fun batteryCurrent(batteryCurrent: Long): Builder2 {
+        this.batteryCurrent = batteryCurrent
+        return this
+    }
+
     fun build(): StatisticDoMain2 {
         return StatisticDoMain2(this)
     }
@@ -383,6 +412,9 @@ class Builder2 {
             blEnabled,
             /*memFree,*/ memCurAvailable, memActive, /*memInactive,*/ memDirty, memAnonPages, memMapped,
 //            gpuCurFreq, gpuCurUtil,
+            gpsEnable,
+            batteryCharging, batteryVoltage, batteryCurrent,
+            if (batteryCharging == 1) 0 else (batteryVoltage * batteryCurrent / 1000F).absoluteValue,
         )
 
     }

@@ -4,8 +4,8 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.os.BatteryManager
 import android.text.TextUtils
+import com.jamgu.hwstatistics.power.mobiledata.battery.JBatteryManager
 
 
 /**
@@ -31,15 +31,7 @@ class PowerConnectReceiver @JvmOverloads constructor(private val listener: IOnPh
     override fun onReceive(context: Context?, intent: Intent?) {
         intent ?: return
         val action = intent.action
-        // 获取电池当前电量
-        val batteryStatus: Intent? = IntentFilter(Intent.ACTION_BATTERY_CHANGED).let { ifilter ->
-            context?.registerReceiver(null, ifilter)
-        }
-        val batteryPct: Float = batteryStatus?.let { batteryIntent ->
-            val level: Int = batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
-            val scale: Int = batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
-            level * 100 / scale.toFloat()
-        } ?: 0F
+        val batteryPct: Float = JBatteryManager.getBatteryPercent(context)
         if (TextUtils.equals(action, Intent.ACTION_POWER_CONNECTED)) {
             // 充电
             listener?.onChargeState(batteryPct)

@@ -13,9 +13,11 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.jamgu.common.util.log.JLog
+import com.jamgu.hwstatistics.BaseApplication
 import com.jamgu.hwstatistics.R
 import com.jamgu.hwstatistics.net.upload.DataSaver
 import com.jamgu.hwstatistics.page.AUTO_MONITOR_START_FROM_BOOT
+import com.jamgu.hwstatistics.page.AutoMonitorActivity
 import com.jamgu.hwstatistics.page.TRANSITION_PAGE
 import com.jamgu.hwstatistics.page.TransitionActivity
 import com.jamgu.krouter.core.router.KRouterUriBuilder
@@ -62,6 +64,14 @@ class PhoneCycleBroadcastReceiver @JvmOverloads constructor(private val listener
                 context?.let {
                     listener?.onPhoneBootComplete()
                     JLog.d(TAG, "ACTION_BOOT_COMPLETED")
+                    val applicationContext = context.applicationContext
+                    if (applicationContext is BaseApplication) {
+                        val inBackStack = applicationContext.isActivityInBackStack(AutoMonitorActivity::class.java)
+                        if (inBackStack) {
+                            DataSaver.addDebugTracker(TAG, "手机重启，但Activity已经在后台，不弹通知")
+                            return
+                        }
+                    }
                     DataSaver.addDebugTracker(TAG, "手机重启拉起通知")
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         startCallActivityVersionHigh(

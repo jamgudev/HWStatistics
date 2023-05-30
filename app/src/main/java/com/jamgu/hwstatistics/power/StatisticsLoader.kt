@@ -6,10 +6,12 @@ import androidx.fragment.app.FragmentActivity
 import com.jamgu.common.util.timer.VATimer
 import com.jamgu.hwstatistics.R
 import com.jamgu.hwstatistics.net.upload.DataSaver
+import com.jamgu.hwstatistics.power.mobiledata.battery.JBatteryManager
 import com.jamgu.hwstatistics.power.mobiledata.bluetooth.BLEManager
 import com.jamgu.hwstatistics.power.mobiledata.brightness.BrightnessManager
 import com.jamgu.hwstatistics.power.mobiledata.cpu.CPUInfoManager
 import com.jamgu.hwstatistics.power.mobiledata.cpu.model.CPU
+import com.jamgu.hwstatistics.power.mobiledata.gps.JGpsManager
 import com.jamgu.hwstatistics.power.mobiledata.mediastate.MediaStateManager
 import com.jamgu.hwstatistics.power.mobiledata.memory.MemInfoManager
 import com.jamgu.hwstatistics.power.mobiledata.network.NetWorkManager
@@ -146,6 +148,12 @@ class StatisticsLoader(private val mContext: Context) : INeedPermission {
         val blEnabled = if (bluetoothData?.enabled == true) 1 else 0
         val blConnectedNum = bluetoothData?.bondedDevices?.size ?: 0
 
+        val batteryVoltage = JBatteryManager.getBatteryVoltage(mContext)
+        val batteryCharging = JBatteryManager.isBatteryCharging(mContext)
+        val batteryCurrent = getBatteryCurrent()
+
+        val gpsEnable = JGpsManager.isGpsEnable(mContext)
+
         return Builder2().apply {
             curTimeMills(curTimeString)
             screenBrightness(screenBrightness)
@@ -181,6 +189,10 @@ class StatisticsLoader(private val mContext: Context) : INeedPermission {
             blEnabled(blEnabled)
             blConnectedNum(blConnectedNum)
             memAllInfo(memInfoFromFile)
+            gpsEnable(gpsEnable)
+            batteryVoltage(batteryVoltage)
+            batteryCharging(batteryCharging)
+            batteryCurrent(batteryCurrent)
         }.buildArray()
     }
 
@@ -249,6 +261,10 @@ class StatisticsLoader(private val mContext: Context) : INeedPermission {
                     "mem_dirty",
                     "mem_anonPages",
                     "mem_mapped",
+                    "gps_enable",
+                    "battery_charging",
+                    "battery_voltage",
+                    "battery_current",
                     "avg_p",
                 )
             )
@@ -307,6 +323,21 @@ class StatisticsLoader(private val mContext: Context) : INeedPermission {
      */
     private fun getNetworkType(): Int {
         return NetWorkManager.getNetworkType(mContext)
+    }
+
+    /**
+     * 获取充电状态
+     */
+    private fun getBatteryStatus(): Int {
+        return JBatteryManager.getBatteryStatus(mContext)
+    }
+
+    private fun getBatteryNum(): Int {
+        return JBatteryManager.getBatteryScale(mContext)
+    }
+
+    private fun getBatteryCurrent(): Long {
+        return JBatteryManager.getBatteryCurrent(mContext)
     }
 
     /**
