@@ -79,7 +79,7 @@
         </activity>
         <activity android:name=".page.PartPowerActivity" />
         <activity
-            android:name=".page.MainActivity"
+            android:name=".page.TimeSyncActivity"
             android:exported="true"
             android:screenOrientation="fullSensor"/>
         <activity android:name=".page.TransitionActivity" />

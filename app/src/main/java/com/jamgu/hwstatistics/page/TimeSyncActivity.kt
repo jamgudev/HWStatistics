@@ -13,14 +13,15 @@ import androidx.recyclerview.widget.RecyclerView.VERTICAL
 import com.jamgu.common.page.activity.ViewBindingActivity
 import com.jamgu.common.thread.ThreadPool
 import com.jamgu.common.util.log.JLog
+import com.jamgu.hwstatistics.databinding.ActivityMainBinding
 import com.jamgu.hwstatistics.power.StatisticAdapter
 import com.jamgu.hwstatistics.power.StatisticsLoader
-import com.jamgu.hwstatistics.databinding.ActivityMainBinding
-import com.jamgu.hwstatistics.keeplive.service.KeepAliveService
 import com.jamgu.hwstatistics.util.ExcelUtil
+import com.jamgu.krouter.annotation.KRouter
 import com.jamgu.krouter.core.router.KRouters
 
-class MainActivity : ViewBindingActivity<ActivityMainBinding>() {
+@KRouter([TIME_SYNC_PAGE])
+class TimeSyncActivity : ViewBindingActivity<ActivityMainBinding>() {
 
     companion object {
         private const val TAG = "MainActivity"
@@ -41,23 +42,21 @@ class MainActivity : ViewBindingActivity<ActivityMainBinding>() {
 
     override fun initWidget() {
         mBinding.vStart.setOnClickListener {
-//            if (mLoader.requestedPermission()) {
-//                if (!mLoader.isStarted()) {
-//                    mData.clear()
-//                    mAdapter.notifyDataSetChanged()
-//                    mLoader.startNonMainThread()
-//                    mBinding.vStart.text = "Stop"
-//                } else {
-//                    mLoader.stop()
-//                    mBinding.vStart.text = "Start"
-//
-//                    val intent = Intent(Intent.ACTION_CREATE_DOCUMENT)
-//                    intent.type = "application/*"
-//                    intent.putExtra(Intent.EXTRA_TITLE, System.currentTimeMillis().toString() + ".xlsx")
-//
-//                    folderLauncher?.launch(intent)
-//                }
-//            }
+            if (!mLoader.isStarted()) {
+                mData.clear()
+                mAdapter.notifyDataSetChanged()
+                mLoader.startNonMainThread()
+                mBinding.vStart.text = "Stop"
+            } else {
+                mLoader.stop()
+                mBinding.vStart.text = "Start"
+
+                val intent = Intent(Intent.ACTION_CREATE_DOCUMENT)
+                intent.type = "application/*"
+                intent.putExtra(Intent.EXTRA_TITLE, System.currentTimeMillis().toString() + ".xlsx")
+
+                folderLauncher?.launch(intent)
+            }
         }
         mAdapter.setData(mData)
         mBinding.vRecycler.adapter = mAdapter
@@ -110,8 +109,6 @@ class MainActivity : ViewBindingActivity<ActivityMainBinding>() {
 
     override fun onResume() {
         super.onResume()
-        // 保活程序
-        KeepAliveService.start(this)
     }
 
     override fun onDestroy() {

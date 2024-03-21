@@ -207,9 +207,10 @@ class StatisticsLoader(private val mContext: Context) : INeedPermission {
 
     fun release() {
         mTimer?.release()
-        PhoneStateManager.unregister(mContext)
-        BrightnessManager.unregisterReceiver(mContext)
-        SystemManager.unregisterSystemReceiver(mContext)
+        //INFO 需要进行时间同步测试时注释掉，正式使用时需要打开
+//        PhoneStateManager.unregister(mContext)
+//        BrightnessManager.unregisterReceiver(mContext)
+//        SystemManager.unregisterSystemReceiver(mContext)
         isRegister = false
         mPowerData.clear()
     }
@@ -375,7 +376,7 @@ interface IOnDataEnough {
         THRESH_FOR_TRACKER(10),
         THRESH_FOR_ERROR(1),
         THRESH_THREE_MINS(180),
-        THRESH_ONE_MIN(60),
+        THRESH_ONE_MIN(600),
         THRESH_FOR_CHARGE(4),
     }
 

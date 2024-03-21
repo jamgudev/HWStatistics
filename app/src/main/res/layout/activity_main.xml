@@ -3,7 +3,7 @@
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context=".page.MainActivity"
+        tools:context=".page.TimeSyncActivity"
         android:orientation="vertical">
 
     <androidx.recyclerview.widget.RecyclerView

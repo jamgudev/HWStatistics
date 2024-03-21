@@ -155,6 +155,10 @@ class InitActivity : ViewBindingActivity<ActivityInitLayoutBinding>() {
             preference.edit().putBoolean(MONITOR_INIT, true).apply()
             finish()
         }
+
+        mBinding.vBtnSyncTime.setOnClickListener {
+            KRouters.open(this@InitActivity, TIME_SYNC_PAGE)
+        }
     }
 
     override fun getViewBinding(): ActivityInitLayoutBinding = ActivityInitLayoutBinding.inflate(layoutInflater)
